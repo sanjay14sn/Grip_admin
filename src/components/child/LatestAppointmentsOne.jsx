@@ -1,0 +1,104 @@
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import dashboardApiProvider from "../../apiProvider/dashboardApi";
+
+const RecentMembers = () => {
+  const [recentMembers, setRecentMembers] = useState([]);
+
+  const fetchRecentMembers = async () => {
+    try {
+      const result = await dashboardApiProvider.getRecentMembers();
+
+      if (result.status) {
+        setRecentMembers(result.response.data || []);
+      } else {
+        console.warn(
+          "Failed to fetch recent members:",
+          result.response?.message
+        );
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecentMembers();
+  }, []);
+
+  const formatMeetingDay = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const options = { weekday: "long", month: "short", day: "numeric" };
+    return `${date.toLocaleDateString("en-US", options)}`;
+  };
+
+  return (
+    <div className="col-xxl-8">
+      <div className="card h-100">
+        <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between">
+          <h6 className="text-lg fw-semibold mb-0">Recent Members</h6>
+          <Link
+            to="/primarymember-list"
+            className="text-primary-600 hover-text-primary d-flex align-items-center gap-1"
+          >
+            View All
+            <iconify-icon
+              icon="solar:alt-arrow-right-linear"
+              className="icon"
+            />
+          </Link>
+        </div>
+        <div className="card-body p-0">
+          <div className="table-responsive scroll-sm px-3">
+            <table className="table bordered-table mb-0 rounded-0 border-0">
+              <thead>
+                <tr>
+                  <th scope="col" className="bg-transparent rounded-0">
+                    S.No
+                  </th>
+                  <th scope="col" className="bg-transparent rounded-0">
+                    Name
+                  </th>
+                  <th scope="col" className="bg-transparent rounded-0">
+                    Designation
+                  </th>
+                  <th scope="col" className="bg-transparent rounded-0">
+                    Company Name
+                  </th>
+                  <th scope="col" className="bg-transparent rounded-0">
+                    Chapter
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentMembers.length > 0 ? (
+                  recentMembers.map((member, index) => (
+                    <tr key={member._id}>
+                      <td>{index + 1}.</td>
+                      <td>{member.name}</td>
+                      <td>{member.designation}</td>
+                      <td>{member.companyName}</td>
+                      <td>
+                        GRIP {member.chapter} (
+                        {formatMeetingDay(member.meetingDate)})
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center text-secondary">
+                      No recent members found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RecentMembers;
