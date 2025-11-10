@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import memberApiProvider from "../apiProvider/memberApi";
 import { Modal, Button } from "react-bootstrap";
+import { hasPermission } from "../utils/auth";
 
 const AttedenseMemberListLayer = () => {
     const [members, setMembers] = useState([]);
@@ -80,23 +81,25 @@ const AttedenseMemberListLayer = () => {
         setShowModal(true);
     };
 
+
+
     const handleSubmitAttendance = async () => {
         try {
             if (!selectedMember?._id) {
                 alert("Member ID not found.");
                 return;
             }
-    
+
             const payload = {
                 meetingId: id, // directly from URL params
                 status: attendanceStatus,
                 memberId: selectedMember._id,
             };
-    
+
             console.log(payload, "payload");
-    
+
             const response = await memberApiProvider.attedenseMark(payload);
-    
+
             if (response.status) {
                 setShowModal(false);
                 fetchMembers(); // refresh the list
@@ -107,7 +110,49 @@ const AttedenseMemberListLayer = () => {
             alert("Error submitting attendance: " + error.message);
         }
     };
-    
+
+    const [editingMemberId, setEditingMemberId] = useState(null);
+
+    const handleEdit = (member) => {
+        console.log(member)
+        setEditingMemberId(member._id);
+        setAttendanceStatus(member.status || "present"); // prefill current status
+    };
+
+    const handleStatusChange = (e, member) => {
+        const newStatus = e.target.value;
+        handleEditAttendanceClick(member,newStatus);
+        setAttendanceStatus(newStatus);
+        
+    };
+
+    const handleEditAttendanceClick = async (member,newStatus) => {
+        try {
+            const payload = {
+                meetingId: id, // from URL params
+                status: newStatus, // get status for this specific member
+                memberId: member._id,
+                from:"edit"
+            };
+
+            console.log(payload, "payload");
+
+            const response = await memberApiProvider.attedenseMark(payload);
+
+            if (response.status) {
+               setEditingMemberId(null);
+               fetchMembers(); // refresh the list
+            } else {
+                alert("Failed to mark attendance: " + (response.data?.message || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("Error marking attendance:", error);
+            alert("Something went wrong while marking attendance");
+        }
+    };
+
+
+
 
     if (loading)
         return (
@@ -145,8 +190,11 @@ const AttedenseMemberListLayer = () => {
                                 <th>Company name</th>
                                 <th>Category</th>
                                 <th>Status</th>
+                                {/* ✅ Only show Action column if at least one member has status */}
+                                {members.some((m) => m.status) && <th>Action</th>}
                             </tr>
                         </thead>
+
                         <tbody>
                             {members.map((member, index) => (
                                 <tr key={member._id}>
@@ -156,10 +204,28 @@ const AttedenseMemberListLayer = () => {
                                     <td>{member.mobileNumber}</td>
                                     <td>{member.companyName}</td>
                                     <td>{member.categoryRepresented}</td>
+
                                     <td>
                                         {member.status ? (
-                                            member.status
+                                            // ✅ Show current status or editable dropdown
+                                            editingMemberId === member._id ? (
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={attendanceStatus}
+                                                    onChange={(e) => handleStatusChange(e, member)}
+                                                    style={{ width: "120px" }}
+                                                >
+                                                    <option value="present">Present</option>
+                                                    <option value="late">Late</option>
+                                                    <option value="absent">Absent</option>
+                                                    <option value="medical">Medical</option>
+                                                    <option value="substitute">Substitute</option>
+                                                </select>
+                                            ) : (
+                                                member.status
+                                            )
                                         ) : (
+                                            // 🟥 If no status yet, show "Mark Attendance" button
                                             <button
                                                 className="btn btn-sm btn-outline-danger"
                                                 onClick={() => handleAttendanceClick(member)}
@@ -168,6 +234,37 @@ const AttedenseMemberListLayer = () => {
                                             </button>
                                         )}
                                     </td>
+
+                                    {/* ✅ Show Action column only when member has status */}
+                                    {hasPermission("payments-create") && member.status && (
+                                        <td>
+                                            <button
+                                                type="button"
+                                                className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                                onClick={() => handleEdit(member)}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    aria-hidden="true"
+                                                    role="img"
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <g
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                    >
+                                                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z" />
+                                                    </g>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
@@ -254,7 +351,7 @@ const AttedenseMemberListLayer = () => {
                         <input
                             type="text"
                             className="form-control"
-                            value={selectedMember?.meetingName|| "N/A"}
+                            value={selectedMember?.meetingName || "N/A"}
                             readOnly
                         />
                     </div>
