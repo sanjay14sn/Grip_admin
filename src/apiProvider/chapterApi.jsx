@@ -27,50 +27,50 @@ class ChapterApiProvider {
 
     async createChapter(input) {
         try {
-          const response = await apiClient.post(`/chapters`, input);
-      
-          if (response.status === 200 || response.status === 201) {
-            // notification.success({
-            //   message: "Chapter created successfully",
-            //   placement: "topRight",
-            //   pauseOnHover: false,
-            // });
-            return { status: true, response: response.data };
-          } else {
-            notification.error({
-              message: response.data?.message ?? "❌ Failed to create chapter",
-              placement: "topRight",
-              pauseOnHover: false,
-            });
-            return { status: false, response: response.data };
-          }
+            const response = await apiClient.post(`/chapters`, input);
+
+            if (response.status === 200 || response.status === 201) {
+                // notification.success({
+                //   message: "Chapter created successfully",
+                //   placement: "topRight",
+                //   pauseOnHover: false,
+                // });
+                return { status: true, response: response.data };
+            } else {
+                notification.error({
+                    message: response.data?.message ?? "❌ Failed to create chapter",
+                    placement: "topRight",
+                    pauseOnHover: false,
+                });
+                return { status: false, response: response.data };
+            }
         } catch (error) {
-          console.error("Error fetching chapter:", error);
-      
-          if (error.response?.status === 401) {
-            notification.error({
-              message: "❌ Unauthorized access - check your token",
-              placement: "topRight",
-              pauseOnHover: false,
-            });
-          } else {
-            notification.error({
-              message: error?.data?.message ?? "❌ Unexpected server error",
-              placement: "topRight",
-              pauseOnHover: false,
-            });
-          }
-      
-          return { status: false, response: error.response?.data ?? null };
+            console.error("Error fetching chapter:", error);
+
+            if (error.response?.status === 401) {
+                notification.error({
+                    message: "❌ Unauthorized access - check your token",
+                    placement: "topRight",
+                    pauseOnHover: false,
+                });
+            } else {
+                notification.error({
+                    message: error?.data?.message ?? "❌ Unexpected server error",
+                    placement: "topRight",
+                    pauseOnHover: false,
+                });
+            }
+
+            return { status: false, response: error.response?.data ?? null };
         }
-      }
+    }
 
     async getAllChapters(input) {
         try {
             console.log("Fetching all chaptersdfg...");
-            const search = input && input.search ? input.search : ""; 
+            const search = input && input.search ? input.search : "";
             const response = await apiClient.get(`/chapters/list`, { params: { search } });
-console.log("Response from getAllChapters:", response);
+            console.log("Response from getAllChapters:", response);
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
             } else {
@@ -157,7 +157,7 @@ console.log("Response from getAllChapters:", response);
             const data = {
                 isActive: input.isActive,
             };
-            console.log(data,"ertyuiy345tyu");
+            console.log(data, "ertyuiy345tyu");
             const response = await apiClient.patch(`/chapters/${id}/status`, data);
 
             if (response.status === 200 || response.status === 201) {
@@ -285,6 +285,116 @@ console.log("Response from getAllChapters:", response);
             return { status: false, response: error.response?.data ?? null };
         }
     }
+
+    async deleteReferralSlipById(referralSlipId) {
+        try {
+            console.log("Deleting Referral Slip ID:", referralSlipId);
+
+            // Call the backend PATCH endpoint
+            const response = await apiClient.patch(`/referralslip/delete/${referralSlipId}`);
+
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error(
+                    "Failed to delete Referral Slip record:",
+                    response.data?.message ?? "Something went wrong"
+                );
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error deleting Referral Slip record:", error);
+
+            if (error.response && error.response.status === 401) {
+                console.error("Unauthorized access - check your token.");
+                console.error("Error Response:", error.response.data);
+            }
+
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+
+    async deleteThankYouSlipById(thankYouSlipId) {
+        try {
+            console.log("Deleting Thank You Slip ID:", thankYouSlipId);
+
+            const response = await apiClient.patch(`/thankyouslips/delete/${thankYouSlipId}`);
+
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error("Failed to delete Thank You Slip:", response.data?.message ?? "Something went wrong");
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error deleting Thank You Slip:", error);
+
+            if (error.response && error.response.status === 401) {
+                console.error("Unauthorized access - check your token.");
+                console.error("Error Response:", error.response.data);
+            }
+
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+
+    async deleteTestimonialById(testimonialId) {
+        try {
+            console.log("Deleting Testimonial ID:", testimonialId);
+
+            // Call the backend PATCH endpoint
+            const response = await apiClient.patch(`/testimonialslips/delete/${testimonialId}`);
+
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error(
+                    "Failed to delete Testimonial record:",
+                    response.data?.message ?? "Something went wrong"
+                );
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error deleting Testimonial record:", error);
+
+            if (error.response && error.response.status === 401) {
+                console.error("Unauthorized access - check your token.");
+                console.error("Error Response:", error.response.data);
+            }
+
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+
+    async deleteVisitorById(visitorId) {
+    try {
+        console.log("Deleting Visitor ID:", visitorId);
+
+        // Call the backend PATCH endpoint
+        const response = await apiClient.patch(`/visitors/delete/${visitorId}`);
+
+        if (response.status === 200 || response.status === 201) {
+            return { status: true, response: response.data };
+        } else {
+            console.error(
+                "Failed to delete Visitor record:",
+                response.data?.message ?? "Something went wrong"
+            );
+            return { status: false, response: response.data };
+        }
+    } catch (error) {
+        console.error("Error deleting Visitor record:", error);
+
+        if (error.response && error.response.status === 401) {
+            console.error("Unauthorized access - check your token.");
+            console.error("Error Response:", error.response.data);
+        }
+
+        return { status: false, response: error.response?.data ?? null };
+    }
+}
+
+
 
     async refferalListMember(input) {
         console.log(input, "input")
@@ -452,6 +562,30 @@ console.log("Response from getAllChapters:", response);
             }
         } catch (error) {
             console.error("Error fetching one to one slip list member:", error);
+
+            if (error.response && error.response.status === 401) {
+                console.error("Unauthorized access - check your token.");
+                console.error("Error Response:", error.response.data);
+            }
+
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+
+    async deleteOneToOneById(oneToOneId) {
+        try {
+            console.log("ddfdf", oneToOneId);
+
+            const response = await apiClient.patch(`/onetoone/delete/${oneToOneId}`);
+
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error("Failed to delete One-to-One record:", response.data?.message ?? "Something went wrong");
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error deleting One-to-One record:", error);
 
             if (error.response && error.response.status === 401) {
                 console.error("Unauthorized access - check your token.");

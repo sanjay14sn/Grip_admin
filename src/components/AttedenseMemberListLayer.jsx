@@ -236,7 +236,7 @@ const AttedenseMemberListLayer = () => {
                                     </td>
 
                                     {/* ✅ Show Action column only when member has status */}
-                                    {hasPermission("payments-create") && member.status && (
+                                    {hasPermission("payments-update") && member.status && (
                                         <td>
                                             <button
                                                 type="button"
