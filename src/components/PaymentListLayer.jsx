@@ -33,6 +33,7 @@ const MeetingListLayer = () => {
         topic: "",
         amount: "",
         chapters: [],
+        hotelName: "",
         startDate: "",
         endDate: "",
         location: "",
@@ -51,7 +52,7 @@ const MeetingListLayer = () => {
         googleMapsApiKey: config.googleMapsApiKey,
         libraries
     });
-    
+
     const onMapLoad = useCallback((map) => {
         mapRef.current = map;
     }, []);
@@ -62,7 +63,7 @@ const MeetingListLayer = () => {
 
     const onMapClick = useCallback((e) => {
         if (!isLoaded || !window.google || !window.google.maps) return;
-        
+
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
         setMarkerPosition({ lat, lng });
@@ -71,7 +72,7 @@ const MeetingListLayer = () => {
 
     const handlePlaceSelect = useCallback((place) => {
         if (!isLoaded || !window.google || !window.google.maps) return;
-        
+
         if (place && place.geometry) {
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
@@ -95,7 +96,7 @@ const MeetingListLayer = () => {
 
     const updateLocationFromCoordinates = async (lat, lng) => {
         if (!isLoaded || !window.google || !window.google.maps) return;
-        
+
         try {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
@@ -231,6 +232,8 @@ const MeetingListLayer = () => {
                 location: paymentToEdit.address || "",
                 latitude: paymentToEdit.latitude || "",
                 longitude: paymentToEdit.longitude || "",
+                hotelName: paymentToEdit.hotelName || "", // 👈 Added line
+
             });
 
             setModalVisible(true);
@@ -258,6 +261,17 @@ const MeetingListLayer = () => {
             return false;
         } else if (!/^[A-Za-z\s]+$/.test(formData.topic)) {
             newErrors.topic = "Only alphabets and spaces allowed";
+            setErrors(newErrors);
+            return false;
+        }
+
+        // ✅ Hotel Name validation
+        if (!formData.hotelName || formData.hotelName.trim() === "") {
+            newErrors.hotelName = "Hotel Name is required";
+            setErrors(newErrors);
+            return false;
+        } else if (!/^[A-Za-z0-9\s.,-]+$/.test(formData.hotelName)) {
+            newErrors.hotelName = "Only letters, numbers, spaces, commas, dots, and hyphens allowed";
             setErrors(newErrors);
             return false;
         }
@@ -315,6 +329,8 @@ const MeetingListLayer = () => {
             submissionData.append("topic", formData.topic);
             submissionData.append("image", null);
             submissionData.append("amount", formData.amount);
+            // ✅ Append hotel name to backend
+            submissionData.append("hotelName", formData.hotelName);
 
             const chapterIds = formData.chapters.map((chapter) => chapter.value);
             chapterIds.forEach((id) => {
@@ -386,7 +402,7 @@ const MeetingListLayer = () => {
         setIsEditMode(false);
         setCurrentPaymentId(null);
         setErrors({});
-        
+
         if (isLoaded) {
             setMapCenter(defaultCenter);
             setMarkerPosition(null);
@@ -526,16 +542,16 @@ const MeetingListLayer = () => {
         }
         return `${config.imageBaseUrl}${qrCodeData.docPath}/${qrCodeData.docName}`;
     };
-    
+
     const downloadQRCode = async (qrCodeData) => {
         const url = getQRCodeUrl(qrCodeData);
         if (!url) return;
-    
+
         const loadingToast = toast.loading('Downloading QR Code...');
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    
+
             const blobUrl = URL.createObjectURL(await response.blob());
             const link = document.createElement('a');
             link.href = blobUrl;
@@ -544,7 +560,7 @@ const MeetingListLayer = () => {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(blobUrl);
-    
+
             toast.success('QR Code downloaded successfully!');
         } catch (error) {
             console.error('Download error:', error);
@@ -553,12 +569,38 @@ const MeetingListLayer = () => {
             toast.dismiss(loadingToast);
         }
     };
-    
+
     const openQRCodeInNewTab = (qrCodeData) => {
         const url = getQRCodeUrl(qrCodeData);
         if (url) window.open(url, '_blank');
     };
-    
+
+    const handleHotelChange = (e) => {
+        const { value } = e.target;
+
+        // Optional: Add validation
+        if (!/^[A-Za-z0-9\s]*$/.test(value)) {
+            setErrors(prev => ({
+                ...prev,
+                hotelName: 'Only letters, numbers, and spaces are allowed'
+            }));
+            return;
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            hotelName: value,
+        }));
+
+        // Clear error if fixed
+        if (errors.hotelName) {
+            setErrors(prev => ({
+                ...prev,
+                hotelName: null
+            }));
+        }
+    };
+
 
     const customStyles = {
         control: (provided, state) => ({
@@ -657,7 +699,7 @@ const MeetingListLayer = () => {
                                     <td>
                                         {payment.qrCode ? (
                                             <div className="qr-code-container">
-                                                <img 
+                                                <img
                                                     src={`${config.imageBaseUrl}${payment.qrCode.docPath}/${payment.qrCode.docName}`}
                                                     alt="QR Code"
                                                     style={{ width: '40px', height: '40px', objectFit: 'contain' }}
@@ -897,6 +939,22 @@ const MeetingListLayer = () => {
                         </div>
                         <div className="col-12 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                                Hotel Name <span className="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="hotelName"
+                                className={`form-control radius-8 ${errors.hotelName ? "is-invalid" : ""}`}
+                                value={formData.hotelName || ""}
+                                onChange={handleHotelChange}
+                                placeholder="Enter hotel name"
+                            />
+                            {errors.hotelName && (
+                                <div className="invalid-feedback">{errors.hotelName}</div>
+                            )}
+                        </div>
+                        <div className="col-12 mb-20">
+                            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 Start Date & Time <span className="text-danger">*</span>
                             </label>
                             <input
@@ -966,7 +1024,7 @@ const MeetingListLayer = () => {
                                                             types: ['geocode', 'establishment'],
                                                             componentRestrictions: { country: 'IN' }
                                                         });
-                                                        
+
                                                         autocomplete.addListener('place_changed', () => {
                                                             const place = autocomplete.getPlace();
                                                             handlePlaceSelect(place);
