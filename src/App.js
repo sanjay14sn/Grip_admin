@@ -10,6 +10,7 @@ import HomePageSix from "./pages/HomePageSix";
 import HomePageSeven from "./pages/HomePageSeven";
 import EmailPage from "./pages/EmailPage";
 import AddUserPage from "./pages/AddUserPage";
+import AddPinPage from "./pages/AddPinPage";
 import AlertPage from "./pages/AlertPage";
 import AssignRolePage from "./pages/AssignRolePage";
 import AvatarPage from "./pages/AvatarPage";
@@ -101,10 +102,13 @@ import BlankPagePage from "./pages/BlankPagePage";
 import MembershipPage from "./pages/MembershipPage";
 import MemberListPage from "./pages/MemberListpage";
 import RoleListPage from "./pages/RoleListPage";
+import PinListPage from "./pages/PinListPage";
+import AddPinLayer from "./pages/AddPinPage";
 import RoleAcessPage from "./pages/RolesAcessPage";
 import PrimaryMemberListPage from "./pages/PrimaryMemberListPage";
 import AddPrimaryMemberPage from "./pages/AddPrimaryMemberPage";
 import ChapterwisePage from "./pages/ChapterwisePage";
+import ChapterpinPage from "./pages/ChapterpinPage";
 import OnetoOnePage from "./pages/OnetoOnePage";
 import ChapterOnePage from "./pages/chapterOnePage";
 import ChapterViewPage from "./pages/ChapterViewPage";
@@ -135,7 +139,7 @@ function App() {
 
   useEffect(() => {
     const token = sessionStorage.getItem("authToken");
-    console.log(token, 'tttttttttt');
+    console.log(token, "tttttttttt");
 
     setIsAuthenticated(!!token);
   }, []);
@@ -155,7 +159,10 @@ function App() {
             }
           }
         } catch (error) {
-          console.error("Failed to refresh user data on application load:", error);
+          console.error(
+            "Failed to refresh user data on application load:",
+            error
+          );
         }
       }
     };
@@ -167,8 +174,18 @@ function App() {
     <BrowserRouter>
       <RouteScrollToTop />
       <Routes>
-      <Route path="/sign-in" element={isAuthenticated ? <Navigate to="/dashboard" /> : <SignInPage />} />
-      <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/sign-in" />} />
+        <Route
+          path="/sign-in"
+          element={
+            isAuthenticated ? <Navigate to="/dashboard" /> : <SignInPage />
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            isAuthenticated ? <DashboardPage /> : <Navigate to="/sign-in" />
+          }
+        />
         {/* <Route exact path='/index-8' element={<HomePageOne />} />
         <Route exact path='/index-2' element={<HomePageTwo />} />
         <Route exact path='/index-3' element={<HomePageThree />} />
@@ -180,183 +197,287 @@ function App() {
         <Route exact path='/index-10' element={<HomePageTen />} />
         <Route exact path='/index-11' element={<HomePageEleven />} /> */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-          <Route exact path='/dashboard' element={<DashboardPage />} />
+          <Route exact path="/dashboard" element={<DashboardPage />} />
           <Route
             path="/"
-            element={<Navigate to={isAuthenticated ? "/dashboard" : "/sign-in"} replace />}
+            element={
+              <Navigate
+                to={isAuthenticated ? "/dashboard" : "/sign-in"}
+                replace
+              />
+            }
           />
-          <Route exact path='/add-primarymember' element={<AddPrimaryMemberPage />} />
-          <Route exact path='/edit-primarymember/:id' element={<AddPrimaryMemberPage />} />
+          <Route
+            exact
+            path="/add-primarymember"
+            element={<AddPrimaryMemberPage />}
+          />
+          <Route
+            exact
+            path="/edit-primarymember/:id"
+            element={<AddPrimaryMemberPage />}
+          />
 
-          <Route exact path='/chapterwise' element={<ChapterwisePage />} />
+          <Route exact path="/chapterwise" element={<ChapterwisePage />} />
+          <Route exact path="/chapterpin" element={<ChapterpinPage />} />
 
-          <Route exact path='/chapter-view/:id?' element={<ChapterViewPage />} />
-          <Route exact path='/chapter-view' element={<ChapterViewPage />} />
+          <Route
+            exact
+            path="/chapter-view/:id?"
+            element={<ChapterViewPage />}
+          />
+          <Route exact path="/chapter-view" element={<ChapterViewPage />} />
 
+          <Route
+            exact
+            path="/referral-list/:id?"
+            element={<ReferralListPage />}
+          />
 
-          <Route exact path='/referral-list/:id?' element={<ReferralListPage />} />
+          <Route
+            exact
+            path="/transaction-list/:id?"
+            element={<TransactionListPage />}
+          />
+          <Route
+            exact
+            path="/attedense-list/:id?"
+            element={<AttedenseMemberListPage />}
+          />
 
-          <Route exact path='/transaction-list/:id?' element={<TransactionListPage />} />
-          <Route exact path='/attedense-list/:id?' element={<AttedenseMemberListPage />} />
+          <Route
+            exact
+            path="/visitors-list/:id?"
+            element={<VisitorsListPage />}
+          />
 
+          <Route exact path="/powerdate" element={<PowerDatePage />} />
 
+          <Route exact path="/members-grid" element={<UsersGridPage />} />
 
-          <Route exact path='/visitors-list/:id?' element={<VisitorsListPage />} />
+          <Route
+            exact
+            path="/thankyou-slip/:id?"
+            element={<ThankyouNotePage />}
+          />
 
-          <Route exact path='/powerdate' element={<PowerDatePage />} />
+          <Route exact path="/121-list" element={<OnetoOnePage />} />
 
-          <Route exact path='/members-grid' element={<UsersGridPage />} />
+          <Route exact path="/referral" element={<ReferralOverallpage />} />
 
-          <Route exact path='/thankyou-slip/:id?' element={<ThankyouNotePage />} />
+          <Route exact path="/enquiries" element={<EnquiryListPage />} />
 
-          <Route exact path='/121-list' element={<OnetoOnePage />} />
+          <Route exact path="/thankyou" element={<ThankyouOverallPage />} />
 
-          <Route exact path='/referral' element={<ReferralOverallpage />} />
+          <Route
+            exact
+            path="/chapterone-list/:id?"
+            element={<ChapterOnePage />}
+          />
 
+          <Route
+            exact
+            path="/testimonial-list/:id?"
+            element={<TestimonialPage />}
+          />
 
-          <Route exact path='/enquiries' element={<EnquiryListPage />} />
+          <Route exact path="/visitor" element={<VisitorOverallpage />} />
 
+          <Route
+            exact
+            path="/testimoniall"
+            element={<TestimonialOverallPage />}
+          />
 
-          <Route exact path='/thankyou' element={<ThankyouOverallPage />} />
+          <Route exact path="/member-list/:id?" element={<MemberListPage />} />
+          <Route
+            exact
+            path="/user-member-list"
+            element={<UserRegisterMemberListLayer />}
+          />
 
-          <Route exact path='/chapterone-list/:id?' element={<ChapterOnePage />} />
+          <Route
+            exact
+            path="/primarymember-list"
+            element={<PrimaryMemberListPage />}
+          />
 
+          <Route exact path="/payment-list" element={<PaymentListPage />} />
+          <Route exact path="/attedence-list" element={<AttedenceListPage />} />
 
-          <Route exact path='/testimonial-list/:id?' element={<TestimonialPage />} />
+          <Route
+            exact
+            path="/primarymember-list"
+            element={<PrimaryMemberListPage />}
+          />
 
-          <Route exact path='/visitor' element={<VisitorOverallpage />} />
+          <Route exact path="/roles-list" element={<RoleListPage />} />
 
+          {/* ✅ Pin list page */}
+          <Route path="/pin-list" element={<PinListPage />} />
 
-          <Route exact path='/testimoniall' element={<TestimonialOverallPage />} />
+          {/* ✅ Add new pin */}
+          <Route path="/pins/add" element={<AddPinLayer />} />
 
+          {/* ✅ Edit pin */}
+          <Route path="/pins/edit/:id" element={<AddPinLayer />} />
 
-          <Route exact path='/member-list/:id?' element={<MemberListPage />} />
-          <Route exact path='/user-member-list' element={<UserRegisterMemberListLayer />} />
+          {/* existing routes */}
+          <Route exact path="/roles-access/:id?" element={<RoleAcessPage />} />
 
-
-          <Route exact path='/primarymember-list' element={<PrimaryMemberListPage />} />
-
-          <Route exact path='/payment-list' element={<PaymentListPage />} />
-          <Route exact path='/attedence-list' element={<AttedenceListPage />} />
-
-
-          <Route exact path='/primarymember-list' element={<PrimaryMemberListPage />} />
-
-          <Route exact path='/roles-list' element={<RoleListPage />} />
-
-          <Route exact path='/roles-access/:id?' element={<RoleAcessPage />} />
+          <Route exact path="/roles-access/:id?" element={<RoleAcessPage />} />
 
           {/* SL */}
-          <Route exact path='/add-user/:id?' element={<AddUserPage />} />
-          <Route exact path='/alert' element={<AlertPage />} />
-          <Route exact path='/assign-role' element={<AssignRolePage />} />
-          <Route exact path='/avatar' element={<AvatarPage />} />
-          <Route exact path='/badges' element={<BadgesPage />} />
-          <Route exact path='/button' element={<ButtonPage />} />
-          <Route exact path='/calendar-main' element={<CalendarMainPage />} />
-          <Route exact path='/calendar' element={<CalendarMainPage />} />
-          <Route exact path='/card' element={<CardPage />} />
-          <Route exact path='/carousel' element={<CarouselPage />} />
-          <Route exact path='/chat-empty' element={<ChatEmptyPage />} />
-          <Route exact path='/chat-message' element={<ChatMessagePage />} />
-          <Route exact path='/chat-profile' element={<ChatProfilePage />} />
-          <Route exact path='/code-generator' element={<CodeGeneratorPage />} />
+          <Route exact path="/add-user/:id?" element={<AddUserPage />} />
+          <Route exact path="/add-pin/:id?" element={<AddPinPage />} />
+          <Route exact path="/alert" element={<AlertPage />} />
+          <Route exact path="/assign-role" element={<AssignRolePage />} />
+          <Route exact path="/avatar" element={<AvatarPage />} />
+          <Route exact path="/badges" element={<BadgesPage />} />
+          <Route exact path="/button" element={<ButtonPage />} />
+          <Route exact path="/calendar-main" element={<CalendarMainPage />} />
+          <Route exact path="/calendar" element={<CalendarMainPage />} />
+          <Route exact path="/card" element={<CardPage />} />
+          <Route exact path="/carousel" element={<CarouselPage />} />
+          <Route exact path="/chat-empty" element={<ChatEmptyPage />} />
+          <Route exact path="/chat-message" element={<ChatMessagePage />} />
+          <Route exact path="/chat-profile" element={<ChatProfilePage />} />
+          <Route exact path="/code-generator" element={<CodeGeneratorPage />} />
           <Route
             exact
-            path='/code-generator-new'
+            path="/code-generator-new"
             element={<CodeGeneratorNewPage />}
           />
-          <Route exact path='/colors' element={<ColorsPage />} />
-          <Route exact path='/column-chart' element={<ColumnChartPage />} />
-          <Route exact path='/company' element={<CompanyPage />} />
-          <Route exact path='/currencies' element={<CurrenciesPage />} />
-          <Route exact path='/dropdown' element={<DropdownPage />} />
-          <Route exact path='/email' element={<EmailPage />} />
-          <Route exact path='/faq' element={<FaqPage />} />
-          <Route exact path='/forgot-password' element={<ForgotPasswordPage />} />
-          <Route exact path='/form-layout' element={<FormLayoutPage />} />
-          <Route exact path='/add-member/:id?' element={<FormValidationPage />} />
-          <Route exact path='/form' element={<FormPage />} />
-
-          <Route exact path='/gallery' element={<GalleryPage />} />
-          <Route exact path='/gallery-grid' element={<GalleryGridPage />} />
-          <Route exact path='/gallery-masonry' element={<GalleryMasonryPage />} />
-          <Route exact path='/gallery-hover' element={<GalleryHoverPage />} />
-
-          <Route exact path='/blog' element={<BlogPage />} />
-          <Route exact path='/blog-details' element={<BlogDetailsPage />} />
-          <Route exact path='/add-blog' element={<AddBlogPage />} />
-
-          <Route exact path='/testimonials' element={<TestimonialsPage />} />
-          <Route exact path='/coming-soon' element={<ComingSoonPage />} />
-          <Route exact path='/access-denied' element={<AccessDeniedPage />} />
-          <Route exact path='/maintenance' element={<MaintenancePage />} />
-          <Route exact path='/blank-page' element={<BlankPagePage />} />
-
-          <Route exact path='/image-generator' element={<ImageGeneratorPage />} />
-          <Route exact path='/image-upload' element={<ImageUploadPage />} />
-          <Route exact path='/invoice-add' element={<InvoiceAddPage />} />
-          <Route exact path='/invoice-edit' element={<InvoiceEditPage />} />
-          <Route exact path='/invoice-list' element={<InvoiceListPage />} />
-          <Route exact path='/invoice-preview' element={<InvoicePreviewPage />} />
-          <Route exact path='/kanban' element={<KanbanPage />} />
-          <Route exact path='/language' element={<LanguagePage />} />
-          <Route exact path='/line-chart' element={<LineChartPage />} />
-          <Route exact path='/list' element={<ListPage />} />
+          <Route exact path="/colors" element={<ColorsPage />} />
+          <Route exact path="/column-chart" element={<ColumnChartPage />} />
+          <Route exact path="/company" element={<CompanyPage />} />
+          <Route exact path="/currencies" element={<CurrenciesPage />} />
+          <Route exact path="/dropdown" element={<DropdownPage />} />
+          <Route exact path="/email" element={<EmailPage />} />
+          <Route exact path="/faq" element={<FaqPage />} />
           <Route
             exact
-            path='/marketplace-details'
+            path="/forgot-password"
+            element={<ForgotPasswordPage />}
+          />
+          <Route exact path="/form-layout" element={<FormLayoutPage />} />
+          <Route
+            exact
+            path="/add-member/:id?"
+            element={<FormValidationPage />}
+          />
+          <Route exact path="/form" element={<FormPage />} />
+
+          <Route exact path="/gallery" element={<GalleryPage />} />
+          <Route exact path="/gallery-grid" element={<GalleryGridPage />} />
+          <Route
+            exact
+            path="/gallery-masonry"
+            element={<GalleryMasonryPage />}
+          />
+          <Route exact path="/gallery-hover" element={<GalleryHoverPage />} />
+
+          <Route exact path="/blog" element={<BlogPage />} />
+          <Route exact path="/blog-details" element={<BlogDetailsPage />} />
+          <Route exact path="/add-blog" element={<AddBlogPage />} />
+
+          <Route exact path="/testimonials" element={<TestimonialsPage />} />
+          <Route exact path="/coming-soon" element={<ComingSoonPage />} />
+          <Route exact path="/access-denied" element={<AccessDeniedPage />} />
+          <Route exact path="/maintenance" element={<MaintenancePage />} />
+          <Route exact path="/blank-page" element={<BlankPagePage />} />
+
+          <Route
+            exact
+            path="/image-generator"
+            element={<ImageGeneratorPage />}
+          />
+          <Route exact path="/image-upload" element={<ImageUploadPage />} />
+          <Route exact path="/invoice-add" element={<InvoiceAddPage />} />
+          <Route exact path="/invoice-edit" element={<InvoiceEditPage />} />
+          <Route exact path="/invoice-list" element={<InvoiceListPage />} />
+          <Route
+            exact
+            path="/invoice-preview"
+            element={<InvoicePreviewPage />}
+          />
+          <Route exact path="/kanban" element={<KanbanPage />} />
+          <Route exact path="/language" element={<LanguagePage />} />
+          <Route exact path="/line-chart" element={<LineChartPage />} />
+          <Route exact path="/list" element={<ListPage />} />
+          <Route
+            exact
+            path="/marketplace-details"
             element={<MarketplaceDetailsPage />}
           />
-          <Route exact path='/marketplace' element={<MarketplacePage />} />
+          <Route exact path="/marketplace" element={<MarketplacePage />} />
           <Route
             exact
-            path='/notification-alert'
+            path="/notification-alert"
             element={<NotificationAlertPage />}
           />
-          <Route exact path='/notification' element={<NotificationPage />} />
-          <Route exact path='/pagination' element={<PaginationPage />} />
-          <Route exact path='/payment-gateway' element={<PaymentGatewayPage />} />
-          <Route exact path='/pie-chart' element={<PieChartPage />} />
-          <Route exact path='/portfolio' element={<PortfolioPage />} />
-          <Route exact path='/pricing' element={<PricingPage />} />
-          <Route exact path='/progress' element={<ProgressPage />} />
-          <Route exact path='/radio' element={<RadioPage />} />
-          <Route exact path='/chapter' element={<RoleAccessPage />} />
-          <Route exact path='/sign-in' element={<SignInPage />} />
-          <Route exact path='/sign-up' element={<SignUpPage />} />
-          <Route exact path='/membership-application' element={<MembershipPage />} />
-          <Route exact path='/star-rating' element={<StarRatingPage />} />
-          <Route exact path='/starred' element={<StarredPage />} />
-          <Route exact path='/switch' element={<SwitchPage />} />
-          <Route exact path='/table-basic' element={<TableBasicPage />} />
-          <Route exact path='/table-data' element={<TableDataPage />} />
-          <Route exact path='/tabs' element={<TabsPage />} />
-          <Route exact path='/tags' element={<TagsPage />} />
-          <Route exact path='/terms-condition' element={<TermsConditionPage />} />
+          <Route exact path="/notification" element={<NotificationPage />} />
+          <Route exact path="/pagination" element={<PaginationPage />} />
           <Route
             exact
-            path='/text-generator-new'
+            path="/payment-gateway"
+            element={<PaymentGatewayPage />}
+          />
+          <Route exact path="/pie-chart" element={<PieChartPage />} />
+          <Route exact path="/portfolio" element={<PortfolioPage />} />
+          <Route exact path="/pricing" element={<PricingPage />} />
+          <Route exact path="/progress" element={<ProgressPage />} />
+          <Route exact path="/radio" element={<RadioPage />} />
+          <Route exact path="/chapter" element={<RoleAccessPage />} />
+          <Route exact path="/sign-in" element={<SignInPage />} />
+          <Route exact path="/sign-up" element={<SignUpPage />} />
+          <Route
+            exact
+            path="/membership-application"
+            element={<MembershipPage />}
+          />
+          <Route exact path="/star-rating" element={<StarRatingPage />} />
+          <Route exact path="/starred" element={<StarredPage />} />
+          <Route exact path="/switch" element={<SwitchPage />} />
+          <Route exact path="/table-basic" element={<TableBasicPage />} />
+          <Route exact path="/table-data" element={<TableDataPage />} />
+          <Route exact path="/tabs" element={<TabsPage />} />
+          <Route exact path="/tags" element={<TagsPage />} />
+          <Route
+            exact
+            path="/terms-condition"
+            element={<TermsConditionPage />}
+          />
+          <Route
+            exact
+            path="/text-generator-new"
             element={<TextGeneratorNewPage />}
           />
-          <Route exact path='/text-generator' element={<TextGeneratorPage />} />
-          <Route exact path='/theme' element={<ThemePage />} />
-          <Route exact path='/tooltip' element={<TooltipPage />} />
-          <Route exact path='/typography' element={<TypographyPage />} />
+          <Route exact path="/text-generator" element={<TextGeneratorPage />} />
+          <Route exact path="/theme" element={<ThemePage />} />
+          <Route exact path="/tooltip" element={<TooltipPage />} />
+          <Route exact path="/typography" element={<TypographyPage />} />
 
-          <Route exact path='/users-list' element={<UsersListPage />} />
-          <Route exact path='/view-details' element={<ViewDetailsPage />} />
-          <Route exact path='/video-generator' element={<VideoGeneratorPage />} />
-          <Route exact path='/videos' element={<VideosPage />} />
-          <Route exact path='/view-profile' element={<ViewProfilePage />} />
-          <Route exact path='/voice-generator' element={<VoiceGeneratorPage />} />
-          <Route exact path='/wallet' element={<WalletPage />} />
-          <Route exact path='/widgets' element={<WidgetsPage />} />
-          <Route exact path='/wizard' element={<WizardPage />} />
+          <Route exact path="/users-list" element={<UsersListPage />} />
+          <Route exact path="/view-details" element={<ViewDetailsPage />} />
+          <Route
+            exact
+            path="/video-generator"
+            element={<VideoGeneratorPage />}
+          />
+          <Route exact path="/videos" element={<VideosPage />} />
+          <Route exact path="/view-profile" element={<ViewProfilePage />} />
+          <Route
+            exact
+            path="/voice-generator"
+            element={<VoiceGeneratorPage />}
+          />
+          <Route exact path="/wallet" element={<WalletPage />} />
+          <Route exact path="/widgets" element={<WidgetsPage />} />
+          <Route exact path="/wizard" element={<WizardPage />} />
 
-          <Route exact path='*' element={<ErrorPage />} />
+          <Route exact path="*" element={<ErrorPage />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );

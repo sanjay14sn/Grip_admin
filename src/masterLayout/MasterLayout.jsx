@@ -260,6 +260,17 @@ const MasterLayout = ({ children }) => {
                       Chapter Report
                     </NavLink>
                   </li>
+                  <li>
+                    <NavLink
+                      to="/pin-list"
+                      className={(navData) =>
+                        navData.isActive ? "active-page" : ""
+                      }
+                    >
+                      <Icon icon="mdi:pin" className="menu-icon" />
+                      Pins
+                    </NavLink>
+                  </li>
                 </ul>
               </li>
             )}

@@ -5,6 +5,7 @@ export const BASE_URL = config.apiUrl;
 export const IMAGE_BASE_URL = config.imageBaseUrl;
 export const IMAGE_URL = config.imageBaseUrl;
 
+
 export const apiClient = axios.create({
   baseURL: BASE_URL,
 });
