@@ -5,6 +5,7 @@ import memberApiProvider from "../apiProvider/memberApi";
 import { Country, State } from "country-state-city";
 import chapterApiProvider from "../apiProvider/chapterApi";
 import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import pinApiProvider from "../apiProvider/pinApi";
 
 const AddPrimaryMemberLayer = () => {
@@ -20,17 +21,15 @@ const AddPrimaryMemberLayer = () => {
   const [loadingChapters, setLoadingChapters] = useState(false);
   const [cids, setCids] = useState([]);
   const [errors, setErrors] = useState({});
-
   const [pinData, setPinData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const [selectedPins, setSelectedPins] = useState([]);
 
   // Convert API data to { value, label } for react-select
   const pinOptions = pinData.map((pin) => ({
     value: pin._id,
     label: pin.name || pin.title || pin.image?.originalName || "Unnamed Pin",
+    data: pin, // ✅ keep full pin info here
   }));
 
   const [formData, setFormData] = useState({
@@ -376,56 +375,34 @@ const AddPrimaryMemberLayer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = {};
-    let isValid = true;
 
-    // Chapter Information Validation
     if (!formData.chapterInfo.countryName) {
-      newErrors.chapterInfo = {
-        ...newErrors.chapterInfo,
-        countryName: "Country is required",
-      };
-      setErrors(newErrors);
+      toast.error("Country is required");
       return false;
     }
+
     if (!formData.chapterInfo.stateName) {
-      newErrors.chapterInfo = {
-        ...newErrors.chapterInfo,
-        stateName: "State is required",
-      };
-      setErrors(newErrors);
+      toast.error("State is required");
       return false;
     }
+
     if (!formData.chapterInfo.zoneId) {
-      newErrors.chapterInfo = {
-        ...newErrors.chapterInfo,
-        zoneId: "Zone is required",
-      };
-      setErrors(newErrors);
+      toast.error("Zone is required");
       return false;
     }
+
     if (!formData.chapterInfo.chapterId) {
-      newErrors.chapterInfo = {
-        ...newErrors.chapterInfo,
-        chapterId: "Chapter is required",
-      };
-      setErrors(newErrors);
+      toast.error("Chapter is required");
       return false;
     }
+
     if (!formData.chapterInfo.whoInvitedYou) {
-      newErrors.chapterInfo = {
-        ...newErrors.chapterInfo,
-        whoInvitedYou: "Who invited you is required",
-      };
-      setErrors(newErrors);
+      toast.error("Who invited you is required");
       return false;
     }
+
     if (!formData.chapterInfo.howDidYouHearAboutGRIP) {
-      newErrors.chapterInfo = {
-        ...newErrors.chapterInfo,
-        howDidYouHearAboutGRIP: "How did you hear about GRIP is required",
-      };
-      setErrors(newErrors);
+      toast.error("How did you hear about GRIP is required");
       return false;
     }
 
@@ -433,235 +410,112 @@ const AddPrimaryMemberLayer = () => {
     const firstName = formData.personalDetails.firstName.trim();
 
     if (!firstName) {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        firstName: "First name is required",
-      };
-      setErrors(newErrors);
+      toast.error("First name is required");
       return false;
     } else if (!/^[a-zA-Z]+(?: [a-zA-Z]+)*$/.test(firstName)) {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        firstName: "Only letters and single spaces allowed",
-      };
-      setErrors(newErrors);
+      toast.error("Only letters and single spaces allowed in First Name");
       return false;
     }
 
     if (!formData.personalDetails.companyName) {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        companyName: "Company name is required",
-      };
-      setErrors(newErrors);
+      toast.error("Company name is required");
       return false;
     }
+
     if (!formData.personalDetails.dob) {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        dob: "Date of Birth is required",
-      };
-      setErrors(newErrors);
+      toast.error("Date of Birth is required");
       return false;
     }
+
     if (!formData.personalDetails.categoryRepresented) {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        categoryRepresented: "category Represented is required",
-      };
-      setErrors(newErrors);
+      toast.error("Category Represented is required");
       return false;
     }
 
     if (formData.personalDetails.previouslyGRIPMember === "") {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        previouslyGRIPMember: "This previous GRIP member field is required",
-      };
-      setErrors(newErrors);
+      toast.error("Previous GRIP Member field is required");
       return false;
     }
 
     if (belongsToOtherOrg === "") {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        isOtherNetworkingOrgs:
-          "Belongs to other organizations field is required",
-      };
-      setErrors(newErrors);
-      return false;
-    }
-
-    if (
-      belongsToOtherOrg === "true" &&
-      !formData.personalDetails.otherNetworkingOrgs
-    ) {
-      newErrors.personalDetails = {
-        ...newErrors.personalDetails,
-        otherNetworkingOrgs: "Please specify organizations",
-      };
-      setErrors(newErrors);
-      return false;
-    }
-    if (!formData.businessAddress.addressLine1) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        addressLine1: "addressLine1 is required",
-      };
-      setErrors(newErrors);
-      return false;
-    }
-    if (!formData.businessAddress.addressLine2) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        addressLine2: "addressLine2 is required",
-      };
-      setErrors(newErrors);
-      return false;
-    }
-    if (!formData.businessAddress.state) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        state: "state is required",
-      };
-      setErrors(newErrors);
-      return false;
-    } else if (!/^[A-Za-z\s]+$/.test(formData.businessAddress.state)) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        state: "State can only contain letters and spaces",
-      };
-      setErrors(newErrors);
-      return false;
-    }
-
-    if (!formData.businessAddress.city) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        city: "city is required",
-      };
-      setErrors(newErrors);
-      return false;
-    } else if (!/^[A-Za-z\s]+$/.test(formData.businessAddress.city)) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        city: "City can only contain letters and spaces",
-      };
-      setErrors(newErrors);
+      toast.error("Belongs to other organizations field is required");
       return false;
     }
 
     // Business Address Validation
-    if (!formData.businessAddress.postalCode) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        postalCode: "Postal code is required",
-      };
-      setErrors(newErrors);
-      return false;
-    } else if (!/^\d{6}$/.test(formData.businessAddress.postalCode)) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        postalCode: "Postal code must be exactly 6 digits",
-      };
-      setErrors(newErrors);
+    const address = formData.businessAddress;
+
+    if (!address.addressLine1) {
+      toast.error("Address Line 1 is required");
       return false;
     }
 
-    if (!/^[A-Za-z\s]+$/.test(formData.businessAddress.state)) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        state: "State can only contain letters and spaces",
-      };
-      setErrors(newErrors);
+    if (!address.addressLine2) {
+      toast.error("Address Line 2 is required");
       return false;
     }
 
-    if (!/^[A-Za-z\s]+$/.test(formData.businessAddress.city)) {
-      newErrors.businessAddress = {
-        ...newErrors.businessAddress,
-        city: "City can only contain letters and spaces",
-      };
-      setErrors(newErrors);
+    if (!address.state) {
+      toast.error("State is required");
+      return false;
+    }
+    if (!/^[A-Za-z\s]+$/.test(address.state)) {
+      toast.error("State can only contain letters and spaces");
+      return false;
+    }
+
+    if (!address.city) {
+      toast.error("City is required");
+      return false;
+    }
+    if (!/^[A-Za-z\s]+$/.test(address.city)) {
+      toast.error("City can only contain letters and spaces");
+      return false;
+    }
+
+    if (!address.postalCode) {
+      toast.error("Postal Code is required");
+      return false;
+    }
+    if (!/^\d{6}$/.test(address.postalCode)) {
+      toast.error("Postal Code must be exactly 6 digits");
       return false;
     }
 
     // Contact Details Validation
-    if (!formData.contactDetails.email) {
-      newErrors.contactDetails = {
-        ...newErrors.contactDetails,
-        email: "Email is required",
-      };
-      setErrors(newErrors);
+    const contact = formData.contactDetails;
+
+    if (!contact.email) {
+      toast.error("Email is required");
       return false;
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactDetails.email)
-    ) {
-      newErrors.contactDetails = {
-        ...newErrors.contactDetails,
-        email: "Invalid email format",
-      };
-      setErrors(newErrors);
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
+      toast.error("Invalid email format");
       return false;
     }
 
-    if (!formData.contactDetails.mobileNumber) {
-      newErrors.contactDetails = {
-        ...newErrors.contactDetails,
-        mobileNumber: "Mobile number is required",
-      };
-      setErrors(newErrors);
-      return false;
-    } else if (!/^\d{10}$/.test(formData.contactDetails.mobileNumber)) {
-      newErrors.contactDetails = {
-        ...newErrors.contactDetails,
-        mobileNumber: "Must be 10 digits",
-      };
-      setErrors(newErrors);
+    if (!contact.mobileNumber) {
+      toast.error("Mobile number is required");
       return false;
     }
+    if (!/^\d{10}$/.test(contact.mobileNumber)) {
+      toast.error("Mobile number must be exactly 10 digits");
+      return false;
+    }
+
+    // Business Details Validation
+    const business = formData.businessDetails;
 
     if (
-      formData.contactDetails.secondaryPhone &&
-      !/^\d{10}$/.test(formData.contactDetails.secondaryPhone)
+      !business.businessDescription ||
+      business.businessDescription.trim() === ""
     ) {
-      newErrors.contactDetails = {
-        ...newErrors.contactDetails,
-        secondaryPhone: "Only 10 digits numbers allowed",
-      };
-      setErrors(newErrors);
+      toast.error("Please describe your business details");
       return false;
     }
 
-    // Website URL validation (optional but must be valid URL if provided)
-    if (
-      formData.contactDetails.website &&
-      !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(
-        formData.contactDetails.website
-      )
-    ) {
-      newErrors.contactDetails = {
-        ...newErrors.contactDetails,
-        website: "Please enter a valid URL (e.g., https://example.com)",
-      };
-      setErrors(newErrors);
-      return false;
-    }
-
-    // Business References Validation - Phone number is optional but must be 10 digits if provided
-    formData.businessReferences.forEach((ref, index) => {
-      if (ref.phoneNumber && !/^\d{10}$/.test(ref.phoneNumber)) {
-        newErrors.businessReferences = newErrors.businessReferences || [];
-        newErrors.businessReferences[index] = {
-          ...newErrors.businessReferences[index],
-          phoneNumber: "Phone number must be 10 digits",
-        };
-        isValid = false;
-      }
-    });
-
-    if (!isValid) {
-      setErrors(newErrors);
+    if (!business.yearsInBusiness || business.yearsInBusiness.trim() === "") {
+      toast.error("Please select how many years you are in business");
       return false;
     }
 
@@ -670,9 +524,16 @@ const AddPrimaryMemberLayer = () => {
         ...formData,
         personalDetails: {
           ...formData.personalDetails,
-           pins: Array.isArray(formData.personalDetails.pins)
-          ? formData.personalDetails.pins.map((p) => p.value)
-          : [],
+          pins: Array.isArray(formData.personalDetails.pins)
+            ? formData.personalDetails.pins.map((p) => ({
+                _id: p._id,
+                name: p.name,
+                image:
+                  typeof p.image === "object"
+                    ? p.image.docName || ""
+                    : p.image || "",
+              }))
+            : [],
           isOtherNetworkingOrgs: belongsToOtherOrg === "true",
           otherNetworkingOrgs:
             belongsToOtherOrg === "true"
@@ -689,13 +550,13 @@ const AddPrimaryMemberLayer = () => {
         response = await memberApiProvider.createMember(memberData);
       }
 
+      console.log("Response from API:", response);
       if (response.status) {
-        toast.success(response.data.message);
-        setTimeout(() => {
-          navigate("/primarymember-list");
-        }, 3000);
+        toast.success(response.message || "Operation successful!");
+        setTimeout(() => navigate("/primarymember-list"), 3000);
       } else {
-        toast.error(response.data?.message || "Operation failed");
+        console.log("response.message", response.message); // ✅ fix here
+        toast.error(response.message || "Operation failed!"); // ✅ fix here
       }
     } catch (err) {
       console.error("Error submitting form:", err);
@@ -1276,26 +1137,28 @@ const AddPrimaryMemberLayer = () => {
                   className="react-select-container"
                   options={pinOptions}
                   isLoading={loading}
-                  value={pinOptions.filter((pin) =>
-                    selectedPins.includes(pin.value)
-                  )}
+                  value={
+                    Array.isArray(formData.personalDetails.pins)
+                      ? pinOptions.filter((opt) =>
+                          formData.personalDetails.pins.some(
+                            (p) => String(p._id) === String(opt.value)
+                          )
+                        )
+                      : []
+                  }
                   onChange={(selectedOptions) => {
-                    const selectedValues = selectedOptions
-                      ? selectedOptions.map((opt) => ({
-                          value: opt.value,
-                          label: opt.label,
-                        }))
-                      : [];
+                    const selectedPinsData =
+                      selectedOptions?.map((opt) => ({
+                        _id: opt.value,
+                        name: opt.label,
+                        image: opt.data?.image || null,
+                      })) ?? [];
 
-                    // Update local state (optional, if needed elsewhere)
-                    setSelectedPins(selectedValues.map((v) => v.value));
-
-                    // ✅ Update formData directly
                     setFormData((prev) => ({
                       ...prev,
                       personalDetails: {
                         ...prev.personalDetails,
-                        pins: selectedValues, // ✅ store array of objects here
+                        pins: selectedPinsData,
                       },
                     }));
                   }}
@@ -1534,6 +1397,7 @@ const AddPrimaryMemberLayer = () => {
               <div className="col-lg-6">
                 <label className="form-label">
                   Describe Your Business Details
+                  <span className="text-danger">*</span>
                 </label>
                 <textarea
                   className="form-control"
@@ -1558,6 +1422,7 @@ const AddPrimaryMemberLayer = () => {
               <div className="col-6">
                 <label className="form-label">
                   How many years are you in the business?
+                  <span className="text-danger">*</span>
                 </label>
                 <select
                   className="form-control form-select"

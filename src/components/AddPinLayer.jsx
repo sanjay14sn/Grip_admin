@@ -187,13 +187,12 @@ const AddPinLayer = () => {
                         ></Icon>
                       </label>
                     </div>
-                    <div className="avatar-preview square-preview">
+                    <div className="avatar-preview">
                       <div
                         id="imagePreview"
                         style={{
                           width: "150px", // adjust as needed
                           height: "150px", // same value = square
-                          borderRadius: "8px", // small corner rounding
                           overflow: "hidden",
                           backgroundImage: imagePreviewUrl
                             ? `url(${imagePreviewUrl})`
