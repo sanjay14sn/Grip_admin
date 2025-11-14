@@ -6,13 +6,27 @@ import { toast } from 'react-toastify'
 
 const VisitorsListLayer = () => {
 
-  const [chapterMembers, setchapterMembers] = useState([])
+   const [chapterMembers, setChapterMembers] = useState([]);
+  const [chapterInfo, setChapterInfo] = useState({});
   const { id } = useParams();
   const fetchChapters = async (id) => {
     try {
-      const response = await chapterApiProvider.refferalListMember(id);
-      console.log(response, "responce-chapterApiProvider");
-      setchapterMembers(response?.response?.data)
+      const response = await chapterApiProvider.visitorsSlipListMember(id);
+      console.log(response, "response - visitorsListMember");
+
+      const data = response?.response?.data;
+      if (data) {
+        setChapterInfo(data.chapter || {});
+        // handle both formats: sometimes may include 'records'
+        if (Array.isArray(data.records)) {
+          setChapterMembers(data.records);
+        } else if (Array.isArray(data.visitors)) {
+          setChapterMembers(data.visitors);
+        } else {
+          // if visitor data directly inside data (flat array)
+          setChapterMembers(data.members || []);
+        }
+      }
       // You can set the response to state here if needed
     } catch (error) {
       console.error("Error fetching chapters:", error);
@@ -22,6 +36,7 @@ const VisitorsListLayer = () => {
   useEffect(() => {
     fetchChapters(id);
   }, [id]);
+
   const handleStatusChange = async (status, recordId) => {
     console.log(status, "status", recordId, "recordId")
     if (!status) return;
@@ -50,30 +65,9 @@ const VisitorsListLayer = () => {
     }
   };
 
-  return (
-
+ return (
     <div className="col-xxl-12 col-xl-12">
       <div className="card h-100 p-0 radius-12">
-        {/* <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-          <div className="d-flex align-items-center flex-wrap gap-3">
-          </div>
-
-          <div className="d-flex align-items-center flex-wrap gap-3">
-
-            <select className="form-select form-select-sm w-auto" defaultValue="Select Number">
-              <option value="Select Number" >
-                This Week
-              </option>
-              <option value="10">This Month</option>
-              <option value="15">Last Week</option>
-              <option value="20">Last Month</option>
-              <option value="20">This Term</option>
-
-
-            </select>
-
-          </div>
-        </div> */}
         <div className="card-body p-24">
           <div className="table-responsive scroll-sm">
             <table className="table bordered-table sm-table mb-0">
@@ -81,51 +75,55 @@ const VisitorsListLayer = () => {
                 <tr>
                   <th scope="col">S.No</th>
                   <th scope="col">Date</th>
-                  <th scope="col">Member</th>
                   <th scope="col">Chapter</th>
                   <th scope="col">Visitor Name</th>
-                  <th scope="col">Visitor Mobile</th>
-                  {/* <th scope="col">Email</th> */}
+                  <th scope="col">Category</th>
+                  <th scope="col">Company</th>
+                  <th scope="col">Mobile</th>
+                  <th scope="col">Email</th>
                   <th scope="col">Address</th>
                   <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {chapterMembers?.records?.map((item, index) => (
-                  <tr key={item._id}>
-                    <td>{index + 1}.</td>
-                    <td>{new Date(item.createdAt).toLocaleDateString('en-IN')}</td>
-                    <td>
-                      {item.fromMember.name}
-                    </td>
-                    <td>
-                      {chapterMembers && chapterMembers?.chapter?.chapterName}
-                    </td>
-                    <td>{item.referalDetails.name}</td>
-                    <td>{item.referalDetails.mobileNumber}</td>
-                    {/* <td>{item.referalDetails.email || '-'}</td> */}
-                    <td>{item.referalDetails.address}</td>
-
-                    <td>
-                      <select
-                        className="form-select form-select-sm w-auto"
-                        onChange={(e) => handleStatusChange(e.target.value, item._id)}
-                        value={item.status || ""}
-                      >
-                        <option value="">Select Action</option>
-                        <option value="approve">Approve</option>
-                        <option value="reject">Reject</option>
-                      </select>
+                {chapterMembers?.length > 0 ? (
+                  chapterMembers.map((item, index) => (
+                    <tr key={item._id}>
+                      <td>{index + 1}.</td>
+                      <td>{new Date(item.createdAt).toLocaleDateString('en-IN')}</td>
+                      <td>{chapterInfo?.chapterName || '-'}</td>
+                      <td>{item.name}</td>
+                      <td>{item.category}</td>
+                      <td>{item.company}</td>
+                      <td>{item.mobile}</td>
+                      <td>{item.email}</td>
+                      <td>{item.address}</td>
+                      <td>
+                        <select
+                          className="form-select form-select-sm w-auto"
+                          onChange={(e) => handleStatusChange(e.target.value, item._id)}
+                          value={item.status || ""}
+                        >
+                          <option value="">Select Action</option>
+                          <option value="approve">Approve</option>
+                          <option value="reject">Reject</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="10" className="text-center text-muted">
+                      No visitors found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
-
   )
 }
 

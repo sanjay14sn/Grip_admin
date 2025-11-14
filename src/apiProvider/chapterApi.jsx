@@ -395,7 +395,6 @@ class ChapterApiProvider {
 }
 
 
-
     async refferalListMember(input) {
         console.log(input, "input")
         try {
