@@ -132,6 +132,45 @@ async updateMember(id, memberData) {
   }
 }
 
+async createTopAchiver(chapterId, payload) {
+  try {
+    const response = await apiClient.post(`topachivers/${chapterId}`, payload);
+
+    return {
+      status: response.data.success ?? true,
+      message: response.data.message,
+      data: response.data.data,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error.message || "API error",
+      data: null,
+    };
+  }
+}
+
+async getTopAchiver(chapterId) {
+  try {
+    const response = await apiClient.get(`topachivers/${chapterId}`);
+
+    return {
+      status: response.data.success ?? true,
+      message: response.data.message,
+      data: response.data.data,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error.message || "API error",
+      data: null,
+    };
+  }
+}
+
+
+
+
 
   async deleteMember(id) {
     try {

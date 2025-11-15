@@ -946,7 +946,7 @@ const EventListLayer = () => {
                                                     className="form-check-label"
                                                     htmlFor="paymentOptional"
                                                 >
-                                                    Optional
+                                                    Not Required
                                                 </label>
                                             </div>
                                             <div className="form-check">

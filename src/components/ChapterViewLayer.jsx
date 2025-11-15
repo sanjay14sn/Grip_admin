@@ -3,9 +3,38 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import chapterApiProvider from "../apiProvider/chapterApi";
+import memberApiProvider from "../apiProvider/memberApi";
 import { IMAGE_BASE_URL } from "../network/apiClient";
 import { hasPermission } from "../utils/auth";
 import { formatCurrencyValue } from "../utils/dateFormatter";
+import Select from "react-select";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const DisabledSelect = ({ value }) => (
+  <Select
+    value={value}
+    isDisabled={true}
+    styles={{
+      control: (styles) => ({
+        ...styles,
+        backgroundColor: "#e6e6e6",
+        border: "none",
+        minHeight: "2.5rem",
+        borderRadius: "6px",
+        opacity: 1,
+      }),
+      singleValue: (styles) => ({
+        ...styles,
+        color: "#000",
+      }),
+      placeholder: (styles) => ({
+        ...styles,
+        color: "#000",
+      }),
+    }}
+  />
+);
 
 const ChapterViewLayer = () => {
   const CHART_OPTIONS = {
@@ -42,7 +71,7 @@ const ChapterViewLayer = () => {
       enabled: true,
       x: { show: true },
       y: {
-        formatter: formatCurrencyValue, 
+        formatter: formatCurrencyValue,
       },
     },
     grid: {
@@ -79,7 +108,8 @@ const ChapterViewLayer = () => {
   const [chapterData, setChapterData] = useState("");
   const [monthlyRevenueData, setMonthlyRevenueData] = useState([]);
   const [gradientLineChartSeries, setGradientLineChartSeries] = useState([]);
-  const [gradientLineChartOptions, setGradientLineChartOptions] = useState(CHART_OPTIONS);
+  const [gradientLineChartOptions, setGradientLineChartOptions] =
+    useState(CHART_OPTIONS);
   const [cardsCount, setCardCount] = useState([]);
   const [headTableMembersData, setHeadTableMembersData] = useState([]);
   const [headTableUsersData, setHeadTableUsersData] = useState([]);
@@ -90,6 +120,13 @@ const ChapterViewLayer = () => {
     visitors: { totalCount: 0, topMembers: [] },
     referralSlips: { totalCount: 0, topReceivers: [] },
   });
+  const [openDropdown, setOpenDropdown] = useState();
+  const [members, setMembers] = useState([]);
+  const [referralMember, setReferralMember] = useState(null);
+  const [businessMember, setBusinessMember] = useState(null);
+  const [visitorMember, setVisitorMember] = useState(null);
+
+  console.log("members", members);
 
   useEffect(() => {
     if (id) {
@@ -104,6 +141,76 @@ const ChapterViewLayer = () => {
       // Handle no ID case
     }
   }, [id]);
+
+  const handleSubmit = async () => {
+    if (!referralMember?.value) {
+      toast.error("Referral member is required");
+      return;
+    }
+
+    if (!businessMember?.value) {
+      toast.error("Business member is required");
+      return;
+    }
+
+    if (!visitorMember?.value) {
+      toast.error("Visitor member is required");
+      return;
+    }
+
+    const payload = {
+      referrals: referralMember.value,
+      business: businessMember.value,
+      visitors: visitorMember.value,
+    };
+
+    try {
+      const res = await memberApiProvider.createTopAchiver(id, payload);
+
+      if (res.status) {
+        toast.success(res.message || "Top achievers submitted successfully!");
+        // 🔥 CLEAR DROPDOWNS AFTER SUCCESS
+        // setReferralMember(null);
+        // setBusinessMember(null);
+        // setVisitorMember(null);
+        // setOpenDropdown(null);
+      } else {
+        toast.error(res.message || "Backend error");
+      }
+    } catch (err) {
+      toast.error(err?.message || "Unexpected error occurred");
+    }
+  };
+
+  useEffect(() => {
+  if (id && members.length > 0) {
+    fetchSavedAchievers(id, members);
+  }
+}, [id, members]);
+
+  const fetchSavedAchievers = async (chapterId, members) => {
+  const res = await memberApiProvider.getTopAchiver(chapterId);
+
+  console.log("res123",   res)
+
+  if (res.status && res.data) {
+
+    // referrals
+    const refMem = members.find(m => m.id === res.data.referrals);
+    if (refMem) setReferralMember({ value: refMem.id, label: refMem.name });
+
+    // business
+    const bizMem = members.find(m => m.id === res.data.business);
+    if (bizMem) setBusinessMember({ value: bizMem.id, label: bizMem.name });
+
+    // visitors
+    const visMem = members.find(m => m.id === res.data.visitors);
+    if (visMem) setVisitorMember({ value: visMem.id, label: visMem.name });
+  }
+};
+
+console.log("fetchSavedAchievers",  fetchSavedAchievers)
+
   const fetchMonthlyRevenueforChapter = async (id) => {
     if (!id) {
       console.error("No chapter ID provided for fetching revenue data");
@@ -111,27 +218,32 @@ const ChapterViewLayer = () => {
     }
 
     try {
-      const response = await chapterApiProvider.monthlyRevenueBasedonChapter(id);
+      const response = await chapterApiProvider.monthlyRevenueBasedonChapter(
+        id
+      );
       if (response?.status && response?.response?.data) {
         const monthlyRevenueData = response.response.data;
         setMonthlyRevenueData(monthlyRevenueData);
 
-        const monthlyAmounts = monthlyRevenueData.data.map(item => item.amount);
-        const monthlyLabels = monthlyRevenueData.data.map(item => item.month);
+        const monthlyAmounts = monthlyRevenueData.data.map(
+          (item) => item.amount
+        );
+        const monthlyLabels = monthlyRevenueData.data.map((item) => item.month);
 
-        setGradientLineChartSeries([{
-          name: "Thank You Slip Amount",
-          data: monthlyAmounts,
-        }]);
+        setGradientLineChartSeries([
+          {
+            name: "Thank You Slip Amount",
+            data: monthlyAmounts,
+          },
+        ]);
 
-        setGradientLineChartOptions(prevOptions => ({
+        setGradientLineChartOptions((prevOptions) => ({
           ...prevOptions,
           xaxis: {
             ...prevOptions.xaxis,
             categories: monthlyLabels,
           },
         }));
-
       } else {
         console.error(
           response?.response?.message || "Failed to fetch chapter revenue data"
@@ -149,6 +261,7 @@ const ChapterViewLayer = () => {
       console.log(chapters, "chapters");
       if (chapters) {
         setChapterData(chapters);
+        setMembers(chapters.members || []); // slider part
       }
     }
   };
@@ -220,7 +333,9 @@ const ChapterViewLayer = () => {
   };
 
   const fetchHeadTableMembers = async (id) => {
-    const response = await chapterApiProvider.getHeadTableMembersByChapterId(id);
+    const response = await chapterApiProvider.getHeadTableMembersByChapterId(
+      id
+    );
     console.log(
       response,
       "response-chapterApiProvider-getHeadTableMembersByChapterId"
@@ -350,7 +465,6 @@ const ChapterViewLayer = () => {
       ),
     },
   ].filter((chapter) => chapter?.members?.length > 0); // Only show categories with data
-
 
   return (
     <>
@@ -488,7 +602,10 @@ const ChapterViewLayer = () => {
           ) : (
             <div className="row g-4 justify-content-evenly">
               {headTableUsersData.map((user, index) => (
-                <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-3 user-grid-card">
+                <div
+                  key={index}
+                  className="col-12 col-sm-6 col-md-4 col-lg-3 user-grid-card"
+                >
                   <div className="position-relative border radius-16 bg-overlay overflow-hidden p-3">
                     <div className="text-center">
                       <img
@@ -503,7 +620,9 @@ const ChapterViewLayer = () => {
                           e.target.src = "/assets/images/avatar/avatar1.png";
                         }}
                       />
-                      <h6 className="text-lg mb-1 mt-3 text-white">{user.name}</h6>
+                      <h6 className="text-lg mb-1 mt-3 text-white">
+                        {user.name}
+                      </h6>
                       <span className="text-secondary-light text-white mb-16">
                         {user.roleName}
                       </span>
@@ -539,10 +658,12 @@ const ChapterViewLayer = () => {
         </div>
 
         <div className="card-body p-24">
-
           <div className="row g-4 justify-content-evenly">
             {headTableMembersData.map((member, index) => (
-              <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-3 user-grid-card">
+              <div
+                key={index}
+                className="col-12 col-sm-6 col-md-4 col-lg-3 user-grid-card"
+              >
                 <div className="position-relative border radius-16 bg-overlay overflow-hidden p-3">
                   <div className="text-center">
                     <img
@@ -557,7 +678,9 @@ const ChapterViewLayer = () => {
                         e.target.src = "/assets/images/avatar/avatar1.png";
                       }}
                     />
-                    <h6 className="text-lg mb-1 mt-3 text-white">{member.name}</h6>
+                    <h6 className="text-lg mb-1 mt-3 text-white">
+                      {member.name}
+                    </h6>
                     <span className="text-secondary-light text-white mb-16">
                       {member.roleName}
                     </span>
@@ -599,13 +722,18 @@ const ChapterViewLayer = () => {
             <div className="col-md-4">
               <div className="card h-100 rounded-0 border-0">
                 <div className="card-header border-bottom bg-base py-16 px-24">
-                  <h6 className="text-lg fw-semibold mb-0">Business Achieved</h6>
+                  <h6 className="text-lg fw-semibold mb-0">
+                    Business Achieved
+                  </h6>
                 </div>
                 <div className="card-body p-24 d-flex flex-column justify-content-center align-items-center">
                   {monthlyRevenueData ? (
                     <>
                       <h2 className="text-success display-6 fw-bold mb-0">
-                        ₹{formatCurrencyValue(monthlyRevenueData?.totalAmount || 0)}
+                        ₹
+                        {formatCurrencyValue(
+                          monthlyRevenueData?.totalAmount || 0
+                        )}
                       </h2>
                       <p className="text-muted mt-2">Total Revenue</p>
                       <p className="text-sm text-muted mt-1">
@@ -614,7 +742,10 @@ const ChapterViewLayer = () => {
                     </>
                   ) : (
                     <div className="d-flex align-items-center gap-2">
-                      <div className="spinner-border spinner-border-sm text-primary" role="status">
+                      <div
+                        className="spinner-border spinner-border-sm text-primary"
+                        role="status"
+                      >
                         <span className="visually-hidden">Loading...</span>
                       </div>
                       <span>Loading revenue data...</span>
@@ -627,7 +758,10 @@ const ChapterViewLayer = () => {
             {/* Chart Section */}
             <div className="col-md-8">
               <div className="card h-100 rounded-0 border-0">
-                <div className="card-body p-24 position-relative" style={{ minHeight: '300px' }}>
+                <div
+                  className="card-body p-24 position-relative"
+                  style={{ minHeight: "300px" }}
+                >
                   {gradientLineChartSeries.length > 0 ? (
                     <ReactApexChart
                       id="gradientLineChart"
@@ -640,12 +774,20 @@ const ChapterViewLayer = () => {
                     <div className="d-flex flex-column justify-content-center align-items-center h-100">
                       {monthlyRevenueData?.data?.length === 0 ? (
                         <div className="text-center">
-                          <Icon icon="mdi:chart-line" className="text-muted" width={48} height={48} />
+                          <Icon
+                            icon="mdi:chart-line"
+                            className="text-muted"
+                            width={48}
+                            height={48}
+                          />
                           <p className="mt-2">No revenue data available</p>
                         </div>
                       ) : (
                         <div className="d-flex align-items-center gap-2">
-                          <div className="spinner-border spinner-border-sm text-primary" role="status">
+                          <div
+                            className="spinner-border spinner-border-sm text-primary"
+                            role="status"
+                          >
                             <span className="visually-hidden">Loading...</span>
                           </div>
                           <span>Loading chart data...</span>
@@ -660,6 +802,223 @@ const ChapterViewLayer = () => {
         </div>
       </div>
 
+      {/* slider part og */}
+      <div className="card h-100 p-0 radius-12 mb-5">
+        <div className="card-header border-bottom bg-base py-16 px-24">
+          <h6 className="text-lg fw-semibold mb-0">Slider</h6>
+        </div>
+
+        <div className="card-body p-24">
+          <div className="row">
+            {/* LEFT SIDE */}
+            <div className="col-md-6">
+              <h6 className="text-lg fw-semibold mb-20">
+                Top Achivers of the month
+              </h6>
+
+              {/* Item 1 */}
+              <div
+                onClick={() => setOpenDropdown("referrals")}
+                onMouseEnter={(e) => (e.target.style.color = "#000")}
+                onMouseLeave={(e) =>
+                  (e.target.style.color =
+                    openDropdown === "referrals" ? "#000" : "#2c2c2c")
+                }
+                style={{
+                  fontSize: "1rem", // ≈ 16px
+                  fontWeight: openDropdown === "referrals" ? 600 : 500,
+                  padding: "0.75rem 0",
+                  cursor: "pointer",
+                  color: openDropdown === "referrals" ? "#000" : "#2c2c2c",
+                  borderLeft:
+                    openDropdown === "referrals"
+                      ? "3px solid #000"
+                      : "3px solid transparent",
+                  paddingLeft: openDropdown === "referrals" ? "0.5rem" : "0rem",
+                  transition: "0.2s",
+                }}
+              >
+                Maximum Referrals Contributed
+              </div>
+
+              {/* Item 2 */}
+              <div
+                onClick={() => setOpenDropdown("business")}
+                onMouseEnter={(e) => (e.target.style.color = "#000")}
+                onMouseLeave={(e) =>
+                  (e.target.style.color =
+                    openDropdown === "business" ? "#000" : "#2c2c2c")
+                }
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: openDropdown === "business" ? 600 : 500,
+                  padding: "0.75rem 0",
+                  cursor: "pointer",
+                  color: openDropdown === "business" ? "#000" : "#2c2c2c",
+                  borderLeft:
+                    openDropdown === "business"
+                      ? "3px solid #000"
+                      : "3px solid transparent",
+                  paddingLeft: openDropdown === "business" ? "0.5rem" : "0rem",
+                  transition: "0.2s",
+                }}
+              >
+                Maximum Business Contributed
+              </div>
+
+              {/* Item 3 */}
+              <div
+                onClick={() => setOpenDropdown("visitors")}
+                onMouseEnter={(e) => (e.target.style.color = "#000")}
+                onMouseLeave={(e) =>
+                  (e.target.style.color =
+                    openDropdown === "visitors" ? "#000" : "#2c2c2c")
+                }
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: openDropdown === "visitors" ? 600 : 500,
+                  padding: "0.75rem 0",
+                  cursor: "pointer",
+                  color: openDropdown === "visitors" ? "#000" : "#2c2c2c",
+                  borderLeft:
+                    openDropdown === "visitors"
+                      ? "3px solid #000"
+                      : "3px solid transparent",
+                  paddingLeft: openDropdown === "visitors" ? "0.5rem" : "0rem",
+                  transition: "0.2s",
+                }}
+              >
+                Maximum Visitors Invited
+              </div>
+            </div>
+
+            {/* RIGHT SIDE */}
+            <div className="col-md-6">
+              <h6 className="text-lg fw-semibold mb-20">Associates</h6>
+
+              {/* Referrals */}
+
+              <div className="mb-4">
+                {openDropdown === "referrals" ? (
+                  <Select
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
+                    options={members.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    value={referralMember}
+                    onChange={(selected) => setReferralMember(selected)}
+                    placeholder="Select Member for Referrals"
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (styles) => ({
+                        ...styles,
+                        backgroundColor: "#e6e6e6",
+                        border: "none",
+                        minHeight: "2.5rem",
+                        borderRadius: "6px",
+                      }),
+                    }}
+                  />
+                ) : (
+                  <DisabledSelect value={referralMember} />
+                )}
+              </div>
+
+              {/* Business */}
+              <div className="mb-4">
+                {openDropdown === "business" ? (
+                  <Select
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
+                    options={members.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    value={businessMember}
+                    onChange={(selected) => setBusinessMember(selected)}
+                    placeholder="Select Member for Business"
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (styles) => ({
+                        ...styles,
+                        backgroundColor: "#e6e6e6",
+                        border: "none",
+                        minHeight: "2.5rem",
+                        borderRadius: "6px",
+                      }),
+                    }}
+                  />
+                ) : (
+                  <DisabledSelect value={businessMember} />
+                )}
+              </div>
+
+              {/* Visitors */}
+              <div className="mb-4">
+                {openDropdown === "visitors" ? (
+                  <Select
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
+                    options={members.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    value={visitorMember}
+                    onChange={(selected) => setVisitorMember(selected)}
+                    placeholder="Select Member for Visitors"
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (styles) => ({
+                        ...styles,
+                        backgroundColor: "#e6e6e6",
+                        border: "none",
+                        minHeight: "2.5rem",
+                        borderRadius: "6px",
+                      }),
+                    }}
+                  />
+                ) : (
+                  <DisabledSelect value={visitorMember} />
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="text-end mt-4 px-32">
+            {/* {(hasPermission("admin-create") ||
+              hasPermission("president-create") ||
+              hasPermission("vice-president-create") ||
+              hasPermission("cid-create")
+            ) 
+              && (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
+              >
+                Submit
+              </button>
+            )} */}
+            {hasPermission("topachievers-create") && (
+            <button
+                type="button"
+                onClick={handleSubmit}
+                className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
+              >
+                Submit
+              </button>
+)}
+          </div>
+
+        </div>
+      </div>
+
+      {/* Top Achievers */}
       <div className="card h-100 p-0 radius-12">
         <div className="card-header border-bottom bg-base py-16 px-24">
           <h6 className="text-lg fw-semibold mb-0">Top Achievers</h6>
@@ -683,8 +1042,9 @@ const ChapterViewLayer = () => {
                       <div className="mt-0">
                         {chapter?.members?.map((member, index) => (
                           <div
-                            className={`d-flex align-items-center justify-content-between gap-3 ${index < chapter.members?.length - 1 ? "mb-32" : ""
-                              }`}
+                            className={`d-flex align-items-center justify-content-between gap-3 ${
+                              index < chapter.members?.length - 1 ? "mb-32" : ""
+                            }`}
                             key={member.id}
                           >
                             <div className="d-flex align-items-center">
@@ -696,10 +1056,10 @@ const ChapterViewLayer = () => {
                                 }
                                 alt={member.name}
                                 className="w-40-px h-40-px rounded-circle flex-shrink-0 me-10 overflow-hidden"
-                              // onError={(e) => {
-                              //   e.target.onerror = null;
-                              //   e.target.src = '/assets/images/users/default-user.png';
-                              // }}
+                                // onError={(e) => {
+                                //   e.target.onerror = null;
+                                //   e.target.src = '/assets/images/users/default-user.png';
+                                // }}
                               />
                               <div className="flex-grow-1">
                                 <h6 className="text-md mb-0">{member.name}</h6>
@@ -980,6 +1340,9 @@ const ChapterViewLayer = () => {
         </div>
       </div>
       {/* Modal End */}
+
+      {/* REQUIRED!! */}
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 };
