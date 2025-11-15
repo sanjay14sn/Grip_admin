@@ -170,10 +170,7 @@ const ChapterViewLayer = () => {
       if (res.status) {
         toast.success(res.message || "Top achievers submitted successfully!");
         // 🔥 CLEAR DROPDOWNS AFTER SUCCESS
-        // setReferralMember(null);
-        // setBusinessMember(null);
-        // setVisitorMember(null);
-        // setOpenDropdown(null);
+        setOpenDropdown(null);
       } else {
         toast.error(res.message || "Backend error");
       }
