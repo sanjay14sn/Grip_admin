@@ -809,7 +809,15 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
           <div className="row">
             {/* LEFT SIDE */}
             <div className="col-md-6">
-              <h6 className="text-lg fw-semibold mb-20">
+              <h6
+                className="text-lg fw-semibold mb-20"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
+                  color: "#fff",
+                  padding: "8px 12px",
+                }}
+              >
                 Top Achivers of the month
               </h6>
 
@@ -891,7 +899,17 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
 
             {/* RIGHT SIDE */}
             <div className="col-md-6">
-              <h6 className="text-lg fw-semibold mb-20">Associates</h6>
+              <h6
+                className="text-lg fw-semibold mb-20"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
+                  color: "#fff",
+                  padding: "8px 12px",
+                }}
+              >
+                Associates
+              </h6>
 
               {/* Referrals */}
 
@@ -987,22 +1005,8 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
           </div>
 
           <div className="text-end mt-4 px-32">
-            {/* {(hasPermission("admin-create") ||
-              hasPermission("president-create") ||
-              hasPermission("vice-president-create") ||
-              hasPermission("cid-create")
-            ) 
-              && (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
-              >
-                Submit
-              </button>
-            )} */}
             {hasPermission("topachievers-create") && (
-            <button
+              <button
                 type="button"
                 onClick={handleSubmit}
                 className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
