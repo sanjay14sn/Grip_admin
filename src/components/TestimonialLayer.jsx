@@ -23,32 +23,51 @@ const TestimonialLayer = () => {
         setSelectedDoc('');
     };
 
-    const [chapterMembers, setchapterMembers] = useState([])
-    const isImage = (url) => {
-        if (!url) return false;
-        return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
-    };
+    const [chapterMembers, setchapterMembers] = useState([]);
 
-    const isPdf = (url) => {
-        if (!url) return false;
-        return /\.(pdf)$/i.test(url);
-    };
+    const isImage = (url) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url || '');
+    const isPdf = (url) => /\.(pdf)$/i.test(url || '');
+
     const { id } = useParams();
+
+    // ------------------ PAGINATION STATE ------------------
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1,
+    });
+
+    // ------------------ FETCH WITH PAGINATION ------------------
     const fetchChapters = async (id) => {
         try {
-            const response = await chapterApiProvider.testimonialSlipListMember(id);
-            console.log(response, "responce-chapterApiProvider");
-            setchapterMembers(response?.response?.data)
-            // You can set the response to state here if needed
+            const input = {
+                page: pagination.page,
+                limit: pagination.limit
+            };
+
+            const response = await chapterApiProvider.testimonialSlipListMember(id, input);
+
+            const mainData = response?.response?.data;
+            const paginationData = mainData?.pagination || {};
+
+            // your original state setter
+            setchapterMembers(mainData);
+
+            // update pagination
+            setPagination((prev) => ({
+                ...prev,
+                total: paginationData.total || 0,
+                totalPages: Math.ceil((paginationData.total || 0) / pagination.limit),
+            }));
         } catch (error) {
             console.error("Error fetching chapters:", error);
-            // Handle the error (e.g., show error message to user)
         }
     };
+
     useEffect(() => {
         fetchChapters(id);
-    }, [id]);
-    console.log(chapterMembers.chapter, "chapterMembers")
+    }, [id, pagination.page]);
 
     const deleteTestimonial = async (testimonialId) => {
         const result = await Swal.fire({
@@ -72,7 +91,6 @@ const TestimonialLayer = () => {
 
         if (result.isConfirmed) {
             try {
-                // Make backend API call
                 const response = await chapterApiProvider.deleteTestimonialById(testimonialId);
 
                 if (response && response.status) {
@@ -81,8 +99,6 @@ const TestimonialLayer = () => {
                         `The testimonial has been deleted successfully.`,
                         "success"
                     );
-
-                    // Refresh the list after successful deletion
                     fetchChapters(id);
                 } else {
                     throw new Error(response?.response?.message || "Failed to delete testimonial record.");
@@ -98,78 +114,32 @@ const TestimonialLayer = () => {
     };
 
     const handleStatusChange = async (status, recordId) => {
-        console.log(status, "status", recordId, "recordId")
         if (!status) return;
         try {
             let input = {
                 status: status,
                 id: recordId,
                 formName: "testimonialslips"
-            }
+            };
             const response = await chapterApiProvider.changeStatus(input);
-            console.log(response, "responce-chapterApiProvider");
-            // Handle success
-            if (response) {
-                toast("status updated successfully")
-                fetchChapters(id);
-            }
-            else {
-                toast("failed to update status")
-                fetchChapters(id);
-            }
 
+            if (response) {
+                toast("status updated successfully");
+                fetchChapters(id);
+            } else {
+                toast("failed to update status");
+                fetchChapters(id);
+            }
         } catch (error) {
             console.error('Error updating status:', error);
             alert('Failed to update status');
-        } finally {
         }
     };
+
     return (
         <div className="col-xxl-12 col-xl-12">
             <div className="card h-100 p-0 radius-12">
-                {/* <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-                    <div className="d-flex align-items-center flex-wrap gap-3">
-                        <form className="navbar-search">
-                            <input
-                                type="text"
-                                className="bg-base h-40-px w-auto"
-                                name="search"
-                                placeholder="Search"
-                            />
-                            <Icon icon="ion:search-outline" className="icon" />
-                        </form>
 
-
-                    </div>
-
-                    <div className="d-flex align-items-center flex-wrap gap-3"> */}
-
-                {/* <select className="form-select form-select-sm w-auto" defaultValue="Select Number">
-                            <option value="Select Number" disabled>
-                                Select Chapter
-                            </option>
-                            <option value="10">GRIP Aram</option>
-                            <option value="15">GRIP Virutcham</option>
-                            <option value="20">GRIP Madhuram</option>
-                            <option value="20">GRIP Kireedam</option>
-                            <option value="20">GRIP Amudham</option>
-
-                        </select> */}
-
-                {/* <select className="form-select form-select-sm w-auto" defaultValue="Select Number">
-                            <option value="Select Number" >
-                                This Week
-                            </option>
-                            <option value="10">This Month</option>
-                            <option value="15">Last Week</option>
-                            <option value="20">Last Month</option>
-                            <option value="20">This Term</option>
-
-
-                        </select>
-
-                    </div>
-                </div> */}
                 <div className="card-body p-24">
                     <div className="table-responsive scroll-sm">
                         <table className="table bordered-table sm-table mb-0">
@@ -181,38 +151,48 @@ const TestimonialLayer = () => {
                                     <th>Testimonial to</th>
                                     <th>Chapter</th>
                                     <th>Comments</th>
-                                    <th>Uploaded Doc </th>
+                                    <th>Uploaded Doc</th>
                                     <th>Approval</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 {chapterMembers?.records?.map((item, index) => (
                                     <tr key={item._id}>
                                         <td>{index + 1}.</td>
                                         <td>{new Date(item.createdAt).toLocaleDateString('en-IN')}</td>
+
                                         <td>
                                             <div className="d-flex flex-column">
                                                 <span>{item.fromMember.name}</span>
                                             </div>
                                         </td>
+
                                         <td>
                                             <div className="d-flex flex-column">
                                                 <span>{item.toMember.name}</span>
                                             </div>
                                         </td>
+
                                         <td>
                                             <div className="d-flex flex-column">
                                                 <span>{chapterMembers?.chapter?.chapterName}</span>
                                                 <small className="text-muted">{chapterMembers?.chapter?.zoneName}</small>
                                             </div>
                                         </td>
+
                                         <td>{item.comments || '-'}</td>
+
                                         <td>
                                             {item.images?.length > 0 ? (
                                                 <button
                                                     className="btn btn-sm btn-outline-info"
-                                                    onClick={() => handleShowDoc(`${IMAGE_BASE_URL}/${item.images[0].docPath}/${item.images[0].docName}`)}
+                                                    onClick={() =>
+                                                        handleShowDoc(
+                                                            `${IMAGE_BASE_URL}/${item.images[0].docPath}/${item.images[0].docName}`
+                                                        )
+                                                    }
                                                 >
                                                     View
                                                 </button>
@@ -220,17 +200,19 @@ const TestimonialLayer = () => {
                                                 <span className="text-muted">No document</span>
                                             )}
                                         </td>
+
                                         <td>
                                             <select
                                                 className="form-select form-select-sm w-auto"
                                                 onChange={(e) => handleStatusChange(e.target.value, item._id)}
-                                                value={item.status || ""} // Set default to empty or current status
+                                                value={item.status || ""}
                                             >
                                                 <option value="">Select Action</option>
                                                 <option value="approve">Approve</option>
                                                 <option value="reject">Reject</option>
                                             </select>
                                         </td>
+
                                         <td>
                                             {hasDeletePermission("delete") && (
                                                 <button
@@ -238,10 +220,7 @@ const TestimonialLayer = () => {
                                                     className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                                                     onClick={() => deleteTestimonial(item._id)}
                                                 >
-                                                    <Icon
-                                                        icon="mdi:trash-can-outline"
-                                                        className="menu-icon"
-                                                    />
+                                                    <Icon icon="mdi:trash-can-outline" className="menu-icon" />
                                                 </button>
                                             )}
                                         </td>
@@ -251,15 +230,39 @@ const TestimonialLayer = () => {
                         </table>
                     </div>
 
+                    {/* 🔥 PAGINATION UI */}
+                    <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
+
+                        <button
+                            className="btn btn-outline-primary"
+                            disabled={pagination.page === 1}
+                            onClick={() =>
+                                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                            }
+                        >
+                            Previous
+                        </button>
+
+                        <span className="badge bg-danger text-white px-3 py-2">
+                            {pagination.page}
+                        </span>
+
+                        <button
+                            className="btn btn-outline-primary"
+                            disabled={pagination.page === pagination.totalPages}
+                            onClick={() =>
+                                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                            }
+                        >
+                            Next
+                        </button>
+                    </div>
+
                     {/* Document Modal */}
                     <Modal show={showModal} onHide={handleClose} size="m" centered>
                         <Modal.Body className="text-center p-0">
                             {isImage(selectedDoc) ? (
-                                <img
-                                    src={selectedDoc}
-                                    alt="Document"
-                                    className="img-fluid"
-                                />
+                                <img src={selectedDoc} alt="Document" className="img-fluid" />
                             ) : (
                                 (() => {
                                     if (selectedDoc) {

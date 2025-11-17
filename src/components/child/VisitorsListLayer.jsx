@@ -1,71 +1,108 @@
-import { Icon } from '@iconify/react/dist/iconify.js'
-import React, { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import chapterApiProvider from '../../apiProvider/chapterApi'
-import { toast } from 'react-toastify'
+import { Icon } from '@iconify/react/dist/iconify.js';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import chapterApiProvider from '../../apiProvider/chapterApi';
+import { toast } from 'react-toastify';
+import { hasDeletePermission } from '../../utils/auth';
+import Swal from 'sweetalert2';
 
 const VisitorsListLayer = () => {
-
-   const [chapterMembers, setChapterMembers] = useState([]);
+  const [chapterMembers, setChapterMembers] = useState([]);
   const [chapterInfo, setChapterInfo] = useState({});
   const { id } = useParams();
+
+  // 🔥 PAGINATION STATE
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
+
   const fetchChapters = async (id) => {
     try {
-      const response = await chapterApiProvider.visitorsSlipListMember(id);
-      console.log(response, "response - visitorsListMember");
+      const input = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
 
-      const data = response?.response?.data;
-      if (data) {
-        setChapterInfo(data.chapter || {});
-        // handle both formats: sometimes may include 'records'
-        if (Array.isArray(data.records)) {
-          setChapterMembers(data.records);
-        } else if (Array.isArray(data.visitors)) {
-          setChapterMembers(data.visitors);
-        } else {
-          // if visitor data directly inside data (flat array)
-          setChapterMembers(data.members || []);
-        }
-      }
-      // You can set the response to state here if needed
+      const response = await chapterApiProvider.visitorsSlipListMember(id, input);
+
+      const data = response?.response?.data || {};
+      setChapterInfo(data.chapter || {});
+
+      const listData = Array.isArray(data.records)
+        ? data.records
+        : Array.isArray(data.visitors)
+        ? data.visitors
+        : data.members || [];
+
+      setChapterMembers(listData);
+
+      // 🔥 SET PAGINATION TOTAL
+      const total = data.pagination?.total || listData.length;
+      setPagination((prev) => ({
+        ...prev,
+        total,
+        totalPages: Math.ceil(total / prev.limit),
+      }));
     } catch (error) {
-      console.error("Error fetching chapters:", error);
-      // Handle the error (e.g., show error message to user)
+      console.error('Error fetching chapters:', error);
     }
   };
-  useEffect(() => {
-    fetchChapters(id);
-  }, [id]);
+
+  const deleteVisitor = async (visitorId) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'You are about to delete this Visitor. This action cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+      width: '400px',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await chapterApiProvider.deleteVisitorById(visitorId);
+        if (response && response.status) {
+          await Swal.fire('Deleted!', 'The visitor has been deleted successfully.', 'success');
+          fetchChapters(id);
+        } else {
+          throw new Error(response?.response?.message || 'Failed to delete visitor record.');
+        }
+      } catch (error) {
+        await Swal.fire('Error!', error.message || 'Something went wrong.', 'error');
+      }
+    }
+  };
 
   const handleStatusChange = async (status, recordId) => {
-    console.log(status, "status", recordId, "recordId")
     if (!status) return;
     try {
-      let input = {
-        status: status,
-        id: recordId,
-        formName: "visitors"
-      }
+      const input = { status, id: recordId, formName: 'visitors' };
       const response = await chapterApiProvider.changeStatus(input);
-      console.log(response, "responce-chapterApiProvider");
-      // Handle success
       if (response) {
-        toast("status updated successfully")
+        toast('Status updated successfully');
+        fetchChapters(id);
+      } else {
+        toast('Failed to update status');
         fetchChapters(id);
       }
-      else {
-        toast("failed to update status")
-        fetchChapters(id);
-      }
-
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');
-    } finally {
     }
   };
 
- return (
+  // 🔥 REFRESH DATA ON PAGE CHANGE
+  useEffect(() => {
+    fetchChapters(id);
+  }, [id, pagination.page]);
+
+  return (
     <div className="col-xxl-12 col-xl-12">
       <div className="card h-100 p-0 radius-12">
         <div className="card-body p-24">
@@ -73,23 +110,25 @@ const VisitorsListLayer = () => {
             <table className="table bordered-table sm-table mb-0">
               <thead>
                 <tr>
-                  <th scope="col">S.No</th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Chapter</th>
-                  <th scope="col">Visitor Name</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Company</th>
-                  <th scope="col">Mobile</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">Address</th>
-                  <th scope="col">Actions</th>
+                  <th>S.No</th>
+                  <th>Date</th>
+                  <th>Chapter</th>
+                  <th>Visitor Name</th>
+                  <th>Category</th>
+                  <th>Company</th>
+                  <th>Mobile</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Who Invited - FED</th>
+                  <th>Approval</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {chapterMembers?.length > 0 ? (
                   chapterMembers.map((item, index) => (
                     <tr key={item._id}>
-                      <td>{index + 1}.</td>
+                      <td>{(pagination.page - 1) * pagination.limit + index + 1}.</td>
                       <td>{new Date(item.createdAt).toLocaleDateString('en-IN')}</td>
                       <td>{chapterInfo?.chapterName || '-'}</td>
                       <td>{item.name}</td>
@@ -98,22 +137,34 @@ const VisitorsListLayer = () => {
                       <td>{item.mobile}</td>
                       <td>{item.email}</td>
                       <td>{item.address}</td>
+                      <td>{item.invited_by_member || '-'}</td>
                       <td>
                         <select
                           className="form-select form-select-sm w-auto"
                           onChange={(e) => handleStatusChange(e.target.value, item._id)}
-                          value={item.status || ""}
+                          value={item.status || ''}
                         >
                           <option value="">Select Action</option>
                           <option value="approve">Approve</option>
                           <option value="reject">Reject</option>
                         </select>
                       </td>
+                      <td>
+                        {hasDeletePermission('delete') && (
+                          <button
+                            type="button"
+                            className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                            onClick={() => deleteVisitor(item._id)}
+                          >
+                            <Icon icon="mdi:trash-can-outline" className="menu-icon" />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="text-center text-muted">
+                    <td colSpan="12" className="text-center text-muted">
                       No visitors found
                     </td>
                   </tr>
@@ -121,10 +172,33 @@ const VisitorsListLayer = () => {
               </tbody>
             </table>
           </div>
+
+          {/* 🔥 PAGINATION BUTTONS */}
+          <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
+            <button
+              className="btn btn-outline-primary"
+              disabled={pagination.page === 1}
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+            >
+              Previous
+            </button>
+
+            <span className="badge bg-danger text-white px-3 py-2">
+              {pagination.page}
+            </span>
+
+            <button
+              className="btn btn-outline-primary"
+              disabled={pagination.page === pagination.totalPages}
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default VisitorsListLayer
+export default VisitorsListLayer;

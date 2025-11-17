@@ -9,22 +9,52 @@ import { hasDeletePermission } from '../../utils/auth';
 import Swal from 'sweetalert2';
 
 const ReferralListLayer = () => {
-    const [chapterMembers, setchapterMembers] = useState([])
+
+    const [chapterMembers, setchapterMembers] = useState([]);
+    const [chapterName, setChapterName] = useState("");
+
     const { id } = useParams();
+
+    // ✅ PAGINATION STATE
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1
+    });
+
+    // ✅ UPDATED API CALL WITH PAGE + LIMIT
     const fetchChapters = async (id) => {
         try {
-            const response = await chapterApiProvider.refferalListMember(id);
-            console.log(response, "responce-chapterApiProvider");
-            setchapterMembers(response?.response?.data)
-            // You can set the response to state here if needed
+            const input = {
+                page: pagination.page,
+                limit: pagination.limit
+            };
+
+            const response = await chapterApiProvider.refferalListMember(id, input);
+
+            const listData = response?.response?.data?.records || [];
+            const paginationData = response?.response?.data?.pagination || {};
+            const chapter = response?.response?.data?.chapter;
+
+            setchapterMembers(listData);
+            setChapterName(chapter?.chapterName || "-");
+
+            setPagination((prev) => ({
+                ...prev,
+                total: paginationData.total || 0,
+                totalPages: Math.ceil((paginationData.total || 0) / prev.limit),
+            }));
+
         } catch (error) {
             console.error("Error fetching chapters:", error);
-            // Handle the error (e.g., show error message to user)
         }
     };
+
     useEffect(() => {
         fetchChapters(id);
-    }, [id]);
+    }, [id, pagination.page]);
+
     const [showModal, setShowModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState('');
 
@@ -38,13 +68,6 @@ const ReferralListLayer = () => {
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes, delete it!",
             cancelButtonText: "Cancel",
-            customClass: {
-                popup: "small-swal-popup",
-                title: "small-swal-title",
-                htmlContainer: "small-swal-text",
-                confirmButton: "small-swal-confirm-btn",
-                cancelButton: "small-swal-cancel-btn",
-            },
             width: "400px",
         });
 
@@ -55,24 +78,24 @@ const ReferralListLayer = () => {
                 if (response && response.status) {
                     await Swal.fire(
                         "Deleted!",
-                        `The referral slip  has been deleted successfully.`,
+                        `The referral slip has been deleted successfully.`,
                         "success"
                     );
 
-                    // Refresh the list after successful deletion
-                    fetchChapters(id); // replace with your actual function
+                    fetchChapters(id);
                 } else {
                     throw new Error(response?.response?.message || "Failed to delete referral slip record.");
                 }
             } catch (error) {
                 await Swal.fire(
                     "Error!",
-                    error.message || "Something went wrong while deleting the referral slip record.",
+                    error.message || "Something went wrong while deleting.",
                     "error"
                 );
             }
         }
     };
+
     const handleShowImage = (image) => {
         setSelectedImage(image);
         setShowModal(true);
@@ -82,8 +105,8 @@ const ReferralListLayer = () => {
         setShowModal(false);
         setSelectedImage('');
     };
+
     const handleStatusChange = async (status, recordId) => {
-        console.log(status, "status", recordId, "recordId")
         if (!status) return;
         try {
             let input = {
@@ -92,71 +115,21 @@ const ReferralListLayer = () => {
                 formName: "referralslip"
             }
             const response = await chapterApiProvider.changeStatus(input);
-            console.log(response, "responce-chapterApiProvider");
-            // Handle success
+
             if (response) {
                 toast("status updated successfully")
                 fetchChapters(id);
-            }
-            else {
+            } else {
                 toast("failed to update status")
-                fetchChapters(id);
             }
-
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Failed to update status');
-        } finally {
         }
     };
-
 
     return (
         <div className="col-xxl-12 col-xl-12">
             <div className="card h-100 p-0 radius-12">
-                {/* <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between"> */}
-                {/* <div className="d-flex align-items-center flex-wrap gap-3"> */}
-                {/* <form className="navbar-search">
-                            <input
-                                type="text"
-                                className="bg-base h-40-px w-auto"
-                                name="search"
-                                placeholder="Search"
-                            />
-                            <Icon icon="ion:search-outline" className="icon" />
-                        </form> */}
-
-
-                {/* </div> */}
-
-                {/* <div className="d-flex align-items-center flex-wrap gap-3"> */}
-
-                {/* <select className="form-select form-select-sm w-auto" defaultValue="Select Number">
-                            <option value="Select Number" disabled>
-                                Select Chapter
-                            </option>
-                            <option value="10">GRIP Aram</option>
-                            <option value="15">GRIP Virutcham</option>
-                            <option value="20">GRIP Madhuram</option>
-                            <option value="20">GRIP Kireedam</option>
-                            <option value="20">GRIP Amudham</option>
-
-                        </select> */}
-
-                {/* <select className="form-select form-select-sm w-auto" defaultValue="Select Number">
-                            <option value="Select Number" >
-                                This Week
-                            </option>
-                            <option value="10">This Month</option>
-                            <option value="15">Last Week</option>
-                            <option value="20">Last Month</option>
-                            <option value="20">This Term</option>
-
-
-                        </select> */}
-
-                {/* </div> */}
-                {/* </div> */}
                 <div className="card-body p-24">
                     <div className="table-responsive scroll-sm">
                         <table className="table bordered-table sm-table mb-0">
@@ -169,41 +142,39 @@ const ReferralListLayer = () => {
                                     <th>Chapter Name</th>
                                     <th>Referral Name</th>
                                     <th>Referral Number</th>
-                                    {/* <th>Email</th> */}
                                     <th>Comments</th>
                                     <th>Approval</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
+
                             <tbody>
-                                {chapterMembers?.records?.map((referral, index) => (
+                                {chapterMembers?.map((referral, index) => (
                                     <tr key={referral._id}>
-                                        <td>{index + 1}.</td>
+                                        <td>{(pagination.page - 1) * pagination.limit + index + 1}.</td>
                                         <td>{new Date(referral.createdAt).toLocaleDateString()}</td>
-                                        <td>
-                                            {referral.fromMember.name}
-                                        </td>
-                                        <td>
-                                            {referral.toMember.name}
-                                        </td>
-                                        <td>
-                                            {chapterMembers && chapterMembers.chapter.chapterName}
-                                        </td>
+
+                                        <td>{referral.fromMember.name}</td>
+                                        <td>{referral.toMember.name}</td>
+
+                                        <td>{chapterName}</td>
+
                                         <td>{referral.referalDetails.name}</td>
                                         <td>{referral.referalDetails.mobileNumber}</td>
-                                        {/* <td>{referral.referalDetails.email || 'N/A'}</td> */}
                                         <td>{referral.referalDetails.comments}</td>
+
                                         <td>
                                             <select
                                                 className="form-select form-select-sm w-auto"
                                                 onChange={(e) => handleStatusChange(e.target.value, referral._id)}
-                                                value={referral.status || ""}  // Set default to empty or current status
+                                                value={referral.status || ""}
                                             >
                                                 <option value="">Select Action</option>
                                                 <option value="approve">Approve</option>
                                                 <option value="reject">Reject</option>
                                             </select>
                                         </td>
+
                                         <td>
                                             {hasDeletePermission("delete") && (
                                                 <button
@@ -211,10 +182,7 @@ const ReferralListLayer = () => {
                                                     className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                                                     onClick={() => deleteReferralSlip(referral._id)}
                                                 >
-                                                    <Icon
-                                                        icon="mdi:trash-can-outline"
-                                                        className="menu-icon"
-                                                    />
+                                                    <Icon icon="mdi:trash-can-outline" className="menu-icon" />
                                                 </button>
                                             )}
                                         </td>
@@ -222,7 +190,36 @@ const ReferralListLayer = () => {
                                 ))}
                             </tbody>
                         </table>
+
                         <ToastContainer />
+                    </div>
+
+                    {/* ✅ PAGINATION UI */}
+                    <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
+
+                        <button
+                            className="btn btn-outline-primary"
+                            disabled={pagination.page === 1}
+                            onClick={() =>
+                                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                            }
+                        >
+                            Previous
+                        </button>
+
+                        <span className="badge bg-danger text-white px-3 py-2">
+                            {pagination.page}
+                        </span>
+
+                        <button
+                            className="btn btn-outline-primary"
+                            disabled={pagination.page === pagination.totalPages}
+                            onClick={() =>
+                                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                            }
+                        >
+                            Next
+                        </button>
                     </div>
 
                     {/* Image Modal */}
@@ -236,6 +233,7 @@ const ReferralListLayer = () => {
                             </Button>
                         </Modal.Footer>
                     </Modal>
+
                 </div>
             </div>
         </div>
