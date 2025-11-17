@@ -126,7 +126,6 @@ const ChapterViewLayer = () => {
   const [businessMember, setBusinessMember] = useState(null);
   const [visitorMember, setVisitorMember] = useState(null);
 
-  console.log("members", members);
 
   useEffect(() => {
     if (id) {
@@ -141,6 +140,77 @@ const ChapterViewLayer = () => {
       // Handle no ID case
     }
   }, [id]);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [membersData, setMembersData] = useState([]);
+  const [attendanceCounts, setAttendanceCounts] = useState({});
+  const [oneToOneCounts, setOneToOneCounts] = useState({}); // <-- add this line
+  const [referralCounts, setReferralCounts] = useState({});
+
+
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (id) {
+      fetchMembersWithAttendance(id);
+    }
+  }, [id, search, pagination.page, pagination.limit]);
+
+  // Fetch members and their attendance counts
+  const fetchMembersWithAttendance = async (chapterId) => {
+    try {
+      // 1️⃣ Fetch members
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: search.trim() || undefined,
+      };
+      const response = await memberApiProvider.getMemberByChapterId(params, chapterId);
+      const members = response?.data?.data?.members || [];
+      setMembersData(members);
+
+      // Update pagination
+      const total = response?.data?.data?.pagination?.total || 0;
+      setPagination((prev) => ({
+        ...prev,
+        total,
+        totalPages: Math.ceil(total / prev.limit),
+      }));
+
+      if (members.length === 0) {
+        setAttendanceCounts({});
+        setOneToOneCounts({});
+        setReferralCounts({});
+        return;
+      }
+
+      // 2️⃣ Fetch attendance counts via provider function
+      const memberIds = members.map((m) => m._id);
+      const countsRes = await chapterApiProvider.getMembersAttendanceCount(memberIds);
+      const oneToOne = await chapterApiProvider.getOneToOneCounts(memberIds);
+      const referralRes = await chapterApiProvider.getReferralCounts(memberIds);
+
+      // Fetch one-to-one counts for all members at once
+      if (oneToOne.success) {
+        setOneToOneCounts(oneToOne.data);
+      }
+
+      if (countsRes.success) {
+        setAttendanceCounts(countsRes.data);
+      }
+      if (referralRes.success) {
+        setReferralCounts(referralRes.data);
+      }
+    } catch (error) {
+      console.error("Error fetching members or attendance counts:", error);
+    }
+  };
+
 
   const handleSubmit = async () => {
     if (!referralMember?.value) {
@@ -180,33 +250,33 @@ const ChapterViewLayer = () => {
   };
 
   useEffect(() => {
-  if (id && members.length > 0) {
-    fetchSavedAchievers(id, members);
-  }
-}, [id, members]);
+    if (id && members.length > 0) {
+      fetchSavedAchievers(id, members);
+    }
+  }, [id, members]);
 
   const fetchSavedAchievers = async (chapterId, members) => {
-  const res = await memberApiProvider.getTopAchiver(chapterId);
+    const res = await memberApiProvider.getTopAchiver(chapterId);
 
-  console.log("res123",   res)
+    console.log("res123", res)
 
-  if (res.status && res.data) {
+    if (res.status && res.data) {
 
-    // referrals
-    const refMem = members.find(m => m.id === res.data.referrals);
-    if (refMem) setReferralMember({ value: refMem.id, label: refMem.name });
+      // referrals
+      const refMem = members.find(m => m.id === res.data.referrals);
+      if (refMem) setReferralMember({ value: refMem.id, label: refMem.name });
 
-    // business
-    const bizMem = members.find(m => m.id === res.data.business);
-    if (bizMem) setBusinessMember({ value: bizMem.id, label: bizMem.name });
+      // business
+      const bizMem = members.find(m => m.id === res.data.business);
+      if (bizMem) setBusinessMember({ value: bizMem.id, label: bizMem.name });
 
-    // visitors
-    const visMem = members.find(m => m.id === res.data.visitors);
-    if (visMem) setVisitorMember({ value: visMem.id, label: visMem.name });
-  }
-};
+      // visitors
+      const visMem = members.find(m => m.id === res.data.visitors);
+      if (visMem) setVisitorMember({ value: visMem.id, label: visMem.name });
+    }
+  };
 
-console.log("fetchSavedAchievers",  fetchSavedAchievers)
+  console.log("fetchSavedAchievers", fetchSavedAchievers)
 
   const fetchMonthlyRevenueforChapter = async (id) => {
     if (!id) {
@@ -826,8 +896,8 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
                 onClick={() => setOpenDropdown("referrals")}
                 onMouseEnter={(e) => (e.target.style.color = "#000")}
                 onMouseLeave={(e) =>
-                  (e.target.style.color =
-                    openDropdown === "referrals" ? "#000" : "#2c2c2c")
+                (e.target.style.color =
+                  openDropdown === "referrals" ? "#000" : "#2c2c2c")
                 }
                 style={{
                   fontSize: "1rem", // ≈ 16px
@@ -851,8 +921,8 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
                 onClick={() => setOpenDropdown("business")}
                 onMouseEnter={(e) => (e.target.style.color = "#000")}
                 onMouseLeave={(e) =>
-                  (e.target.style.color =
-                    openDropdown === "business" ? "#000" : "#2c2c2c")
+                (e.target.style.color =
+                  openDropdown === "business" ? "#000" : "#2c2c2c")
                 }
                 style={{
                   fontSize: "1rem",
@@ -876,8 +946,8 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
                 onClick={() => setOpenDropdown("visitors")}
                 onMouseEnter={(e) => (e.target.style.color = "#000")}
                 onMouseLeave={(e) =>
-                  (e.target.style.color =
-                    openDropdown === "visitors" ? "#000" : "#2c2c2c")
+                (e.target.style.color =
+                  openDropdown === "visitors" ? "#000" : "#2c2c2c")
                 }
                 style={{
                   fontSize: "1rem",
@@ -1013,7 +1083,7 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
               >
                 Submit
               </button>
-)}
+            )}
           </div>
 
         </div>
@@ -1043,9 +1113,8 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
                       <div className="mt-0">
                         {chapter?.members?.map((member, index) => (
                           <div
-                            className={`d-flex align-items-center justify-content-between gap-3 ${
-                              index < chapter.members?.length - 1 ? "mb-32" : ""
-                            }`}
+                            className={`d-flex align-items-center justify-content-between gap-3 ${index < chapter.members?.length - 1 ? "mb-32" : ""
+                              }`}
                             key={member.id}
                           >
                             <div className="d-flex align-items-center">
@@ -1057,10 +1126,10 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
                                 }
                                 alt={member.name}
                                 className="w-40-px h-40-px rounded-circle flex-shrink-0 me-10 overflow-hidden"
-                                // onError={(e) => {
-                                //   e.target.onerror = null;
-                                //   e.target.src = '/assets/images/users/default-user.png';
-                                // }}
+                              // onError={(e) => {
+                              //   e.target.onerror = null;
+                              //   e.target.src = '/assets/images/users/default-user.png';
+                              // }}
                               />
                               <div className="flex-grow-1">
                                 <h6 className="text-md mb-0">{member.name}</h6>
@@ -1080,6 +1149,85 @@ console.log("fetchSavedAchievers",  fetchSavedAchievers)
           ) : (
             <div className="text-center py-4">
               <p>No top achievers data available</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PALMS REPORT */}
+      <div className="cardd h-100 p-0 radius-12">
+        <div className="card-header border-bottom bg-base py-16 px-24">
+          <h6 className="text-lg fw-semibold mb-0">PALMS REPORT</h6>
+        </div>
+        <div className="card-body chapterwisebox p-24">
+          {membersData?.length > 0 ? (
+            <div className="table-responsive" style={{ overflowX: "auto" }}>
+              <table className="table table-bordered align-middle">
+                <thead className="bg-light">
+                  <tr>
+                    <th>S.NO</th>
+                    <th>Associate Name</th>
+                    <th>Meetings</th>
+                    <th>P</th>
+                    <th>A</th>
+                    <th>L</th>
+                    <th>M</th>
+                    <th>S</th>
+                    <th>One-to-One</th>
+                    <th>Referral Given</th>
+                    <th>Referral Received</th>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <th key={i}>Column {i + 12}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {membersData.map((member, index) => {
+                    const counts = attendanceCounts[member._id] || {
+                      totalMeetings: 0,
+                      present: 0,
+                      absent: 0,
+                      late: 0,
+                      managed: 0,
+                      substitute: 0,
+                    };
+
+                    const oneToOneCount = oneToOneCounts[member._id]?.total || 0;
+                    const referralGiven = referralCounts[member._id]?.given || 0;
+                    const referralReceived = referralCounts[member._id]?.received || 0;
+
+                    return (
+                      <tr key={member._id}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <div className="d-flex align-items-center gap-3">
+                            <div>
+                              <h6 className="text-md mb-0">{member.name}</h6>
+                              <small className="text-xs text-muted">{member.category}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{counts.totalMeetings}</td>
+                        <td>{counts.present}</td>
+                        <td>{counts.absent}</td>
+                        <td>{counts.late}</td>
+                        <td>{counts.managed}</td>
+                        <td>{counts.substitute}</td>
+                        <td>{oneToOneCount}</td>
+                        <td>{referralGiven}</td>
+                        <td>{referralReceived}</td>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <td key={i}>--</td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted">
+              <p>No members found</p>
             </div>
           )}
         </div>

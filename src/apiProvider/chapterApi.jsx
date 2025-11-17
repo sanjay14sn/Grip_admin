@@ -367,32 +367,32 @@ class ChapterApiProvider {
     }
 
     async deleteVisitorById(visitorId) {
-    try {
-        console.log("Deleting Visitor ID:", visitorId);
+        try {
+            console.log("Deleting Visitor ID:", visitorId);
 
-        // Call the backend PATCH endpoint
-        const response = await apiClient.patch(`/visitors/delete/${visitorId}`);
+            // Call the backend PATCH endpoint
+            const response = await apiClient.patch(`/visitors/delete/${visitorId}`);
 
-        if (response.status === 200 || response.status === 201) {
-            return { status: true, response: response.data };
-        } else {
-            console.error(
-                "Failed to delete Visitor record:",
-                response.data?.message ?? "Something went wrong"
-            );
-            return { status: false, response: response.data };
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error(
+                    "Failed to delete Visitor record:",
+                    response.data?.message ?? "Something went wrong"
+                );
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error deleting Visitor record:", error);
+
+            if (error.response && error.response.status === 401) {
+                console.error("Unauthorized access - check your token.");
+                console.error("Error Response:", error.response.data);
+            }
+
+            return { status: false, response: error.response?.data ?? null };
         }
-    } catch (error) {
-        console.error("Error deleting Visitor record:", error);
-
-        if (error.response && error.response.status === 401) {
-            console.error("Unauthorized access - check your token.");
-            console.error("Error Response:", error.response.data);
-        }
-
-        return { status: false, response: error.response?.data ?? null };
     }
-}
 
 
     async refferalListMember(input) {
@@ -484,6 +484,8 @@ class ChapterApiProvider {
             return { status: false, response: error.response?.data ?? null };
         }
     }
+
+
 
     async visitorsSlipListMember(input) {
         try {
@@ -703,6 +705,62 @@ class ChapterApiProvider {
             return { status: false, response: error.response?.data ?? null };
         }
     }
+
+    async getMembersAttendanceCount(memberIds) {
+        try {
+            const response = await apiClient.post('/members/meetings-attendance-count', {
+                memberIds, // send array directly in body
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch attendance counts:", response.data?.message ?? "Something went wrong");
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching attendance counts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
+    // memberApiProvider.ts
+    async getOneToOneCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/one-to-one-count', {
+                memberIds,
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch one-to-one counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching one-to-one counts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
+    // memberApiProvider.ts
+async getReferralCounts(memberIds) {
+    try {
+        const response = await apiClient.post('/members/referral-count', {
+            memberIds,
+        });
+
+        if (response.status === 200 || response.status === 201) {
+            return { success: true, data: response.data.data };
+        } else {
+            console.error("Failed to fetch referral counts:", response.data?.message);
+            return { success: false, data: {} };
+        }
+    } catch (error) {
+        console.error("Error fetching referral counts:", error);
+        return { success: false, data: {} };
+    }
+}
 }
 const chapterApiProvider = new ChapterApiProvider()
 export default chapterApiProvider
