@@ -743,24 +743,76 @@ class ChapterApiProvider {
         }
     }
 
-    // memberApiProvider.ts
-async getReferralCounts(memberIds) {
-    try {
-        const response = await apiClient.post('/members/referral-count', {
-            memberIds,
-        });
 
-        if (response.status === 200 || response.status === 201) {
-            return { success: true, data: response.data.data };
-        } else {
-            console.error("Failed to fetch referral counts:", response.data?.message);
+    async getReferralCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/referral-count', {
+                memberIds,
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch referral counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching referral counts:", error);
             return { success: false, data: {} };
         }
-    } catch (error) {
-        console.error("Error fetching referral counts:", error);
-        return { success: false, data: {} };
     }
-}
+
+    async getThankYouSlipAmounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/thank-you-slip-amounts', { memberIds });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch ThankYouSlip amounts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching ThankYouSlip amounts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
+    // memberApiProvider.ts
+    async getVisitorCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/visitor-count', { memberIds });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch visitor counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching visitor counts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
+    // memberApiProvider.ts
+    async getTestimonialCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/testimonial-counts', {
+                memberIds,
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch testimonial counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching testimonial counts:", error);
+            return { success: false, data: {} };
+        }
+    }
 }
 const chapterApiProvider = new ChapterApiProvider()
 export default chapterApiProvider

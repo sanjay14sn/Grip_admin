@@ -141,41 +141,50 @@ const ChapterViewLayer = () => {
     }
   }, [id]);
 
+  // ---------------- STATE ----------------
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 1,
   });
+
   const [membersData, setMembersData] = useState([]);
+  const paginatedMembers = membersData;   // ✅ FIX HERE
+
   const [attendanceCounts, setAttendanceCounts] = useState({});
-  const [oneToOneCounts, setOneToOneCounts] = useState({}); // <-- add this line
+  const [oneToOneCounts, setOneToOneCounts] = useState({});
   const [referralCounts, setReferralCounts] = useState({});
-
-
+  const [thankYouAmounts, setThankYouAmounts] = useState({});
+  const [visitorCounts, setVisitorCounts] = useState({});
+  const [testimonialCounts, setTestimonialCounts] = useState({});
   const [search, setSearch] = useState("");
 
+
+  // ---------------- USE EFFECT ----------------
   useEffect(() => {
     if (id) {
       fetchMembersWithAttendance(id);
     }
   }, [id, search, pagination.page, pagination.limit]);
 
-  // Fetch members and their attendance counts
+
+  // ---------------- MAIN FUNCTION ----------------
   const fetchMembersWithAttendance = async (chapterId) => {
     try {
-      // 1️⃣ Fetch members
       const params = {
         page: pagination.page,
         limit: pagination.limit,
         search: search.trim() || undefined,
       };
+
       const response = await memberApiProvider.getMemberByChapterId(params, chapterId);
       const members = response?.data?.data?.members || [];
+
       setMembersData(members);
 
-      // Update pagination
       const total = response?.data?.data?.pagination?.total || 0;
+
       setPagination((prev) => ({
         ...prev,
         total,
@@ -186,30 +195,42 @@ const ChapterViewLayer = () => {
         setAttendanceCounts({});
         setOneToOneCounts({});
         setReferralCounts({});
+        setThankYouAmounts({});
+        setVisitorCounts({});
+        setTestimonialCounts({});
         return;
       }
 
-      // 2️⃣ Fetch attendance counts via provider function
       const memberIds = members.map((m) => m._id);
-      const countsRes = await chapterApiProvider.getMembersAttendanceCount(memberIds);
-      const oneToOne = await chapterApiProvider.getOneToOneCounts(memberIds);
-      const referralRes = await chapterApiProvider.getReferralCounts(memberIds);
 
-      // Fetch one-to-one counts for all members at once
-      if (oneToOne.success) {
-        setOneToOneCounts(oneToOne.data);
-      }
+      const [
+        attendanceRes,
+        oneToOneRes,
+        referralRes,
+        thankYouRes,
+        visitorRes,
+        testimonialRes,
+      ] = await Promise.all([
+        chapterApiProvider.getMembersAttendanceCount(memberIds),
+        chapterApiProvider.getOneToOneCounts(memberIds),
+        chapterApiProvider.getReferralCounts(memberIds),
+        chapterApiProvider.getThankYouSlipAmounts(memberIds),
+        chapterApiProvider.getVisitorCounts(memberIds),
+        chapterApiProvider.getTestimonialCounts(memberIds),
+      ]);
 
-      if (countsRes.success) {
-        setAttendanceCounts(countsRes.data);
-      }
-      if (referralRes.success) {
-        setReferralCounts(referralRes.data);
-      }
+      if (attendanceRes?.success) setAttendanceCounts(attendanceRes.data);
+      if (oneToOneRes?.success) setOneToOneCounts(oneToOneRes.data);
+      if (referralRes?.success) setReferralCounts(referralRes.data);
+      if (thankYouRes?.success) setThankYouAmounts(thankYouRes.data);
+      if (visitorRes?.success) setVisitorCounts(visitorRes.data);
+      if (testimonialRes?.success) setTestimonialCounts(testimonialRes.data);
+
     } catch (error) {
-      console.error("Error fetching members or attendance counts:", error);
+      console.error("Error fetching members and PALMS data:", error);
     }
   };
+
 
 
   const handleSubmit = async () => {
@@ -1090,7 +1111,7 @@ const ChapterViewLayer = () => {
       </div>
 
       {/* Top Achievers */}
-      <div className="card h-100 p-0 radius-12">
+      <div className="card h-100 p-0 radius-12 mb-5">
         <div className="card-header border-bottom bg-base py-16 px-24">
           <h6 className="text-lg fw-semibold mb-0">Top Achievers</h6>
         </div>
@@ -1155,83 +1176,125 @@ const ChapterViewLayer = () => {
       </div>
 
       {/* PALMS REPORT */}
-      <div className="cardd h-100 p-0 radius-12">
+      <div className="card h-100 p-0 radius-12">
         <div className="card-header border-bottom bg-base py-16 px-24">
-          <h6 className="text-lg fw-semibold mb-0">PALMS REPORT</h6>
+          <h6 className="text-lg fw-semibold mb-0">PALMS Report</h6>
         </div>
+
         <div className="card-body chapterwisebox p-24">
           {membersData?.length > 0 ? (
-            <div className="table-responsive" style={{ overflowX: "auto" }}>
-              <table className="table table-bordered align-middle">
-                <thead className="bg-light">
-                  <tr>
-                    <th>S.NO</th>
-                    <th>Associate Name</th>
-                    <th>Meetings</th>
-                    <th>P</th>
-                    <th>A</th>
-                    <th>L</th>
-                    <th>M</th>
-                    <th>S</th>
-                    <th>One-to-One</th>
-                    <th>Referral Given</th>
-                    <th>Referral Received</th>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <th key={i}>Column {i + 12}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {membersData.map((member, index) => {
-                    const counts = attendanceCounts[member._id] || {
-                      totalMeetings: 0,
-                      present: 0,
-                      absent: 0,
-                      late: 0,
-                      managed: 0,
-                      substitute: 0,
-                    };
+            <>
+              {/* TABLE */}
+              <div className="table-responsive" style={{ overflowX: "auto" }}>
+                <table className="table table-bordered align-middle">
+                  <thead className="bg-light">
+                    <tr>
+                      <th>S.NO</th>
+                      <th>Associate Name</th>
+                      <th>Meetings</th>
+                      <th>P</th>
+                      <th>A</th>
+                      <th>L</th>
+                      <th>M</th>
+                      <th>S</th>
+                      <th>One-to-One</th>
+                      <th>Referral Given</th>
+                      <th>Referral Received</th>
+                      <th>ThankYou Given</th>
+                      <th>ThankYou Received</th>
+                      <th>Visitors</th>
+                      <th>Testimonial Given</th>
+                      <th>Testimonial Received</th>
+                    </tr>
+                  </thead>
 
-                    const oneToOneCount = oneToOneCounts[member._id]?.total || 0;
-                    const referralGiven = referralCounts[member._id]?.given || 0;
-                    const referralReceived = referralCounts[member._id]?.received || 0;
+                  <tbody>
+                    {paginatedMembers.map((member, index) => {
+                      const counts = attendanceCounts[member._id] || {
+                        totalMeetings: 0,
+                        present: 0,
+                        absent: 0,
+                        late: 0,
+                        managed: 0,
+                        substitute: 0,
+                      };
 
-                    return (
-                      <tr key={member._id}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="d-flex align-items-center gap-3">
-                            <div>
-                              <h6 className="text-md mb-0">{member.name}</h6>
-                              <small className="text-xs text-muted">{member.category}</small>
+                      return (
+                        <tr key={member._id}>
+                          {/* Backend-based serial number */}
+                          <td>
+                            {(pagination.page - 1) * pagination.limit + (index + 1)}
+                          </td>
+
+                          <td>
+                            <div className="d-flex align-items-center gap-3">
+                              <div>
+                                <h6 className="text-md mb-0">{member.name}</h6>
+                                <small className="text-xs text-muted">
+                                  {member.category}
+                                </small>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>{counts.totalMeetings}</td>
-                        <td>{counts.present}</td>
-                        <td>{counts.absent}</td>
-                        <td>{counts.late}</td>
-                        <td>{counts.managed}</td>
-                        <td>{counts.substitute}</td>
-                        <td>{oneToOneCount}</td>
-                        <td>{referralGiven}</td>
-                        <td>{referralReceived}</td>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <td key={i}>--</td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+
+                          <td>{counts.totalMeetings}</td>
+                          <td>{counts.present}</td>
+                          <td>{counts.absent}</td>
+                          <td>{counts.late}</td>
+                          <td>{counts.managed}</td>
+                          <td>{counts.substitute}</td>
+                          <td>{oneToOneCounts[member._id]?.total || 0}</td>
+                          <td>{referralCounts[member._id]?.given || 0}</td>
+                          <td>{referralCounts[member._id]?.received || 0}</td>
+                          <td>{thankYouAmounts[member._id]?.given || 0}</td>
+                          <td>{thankYouAmounts[member._id]?.received || 0}</td>
+                          <td>{visitorCounts[member._id] || 0}</td>
+                          <td>{testimonialCounts[member._id]?.given || 0}</td>
+                          <td>{testimonialCounts[member._id]?.received || 0}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINATION */}
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                {/* Prev */}
+                <button
+                  className="btn btn-primary"
+                  disabled={pagination.page === 1}
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                  }
+                >
+                  Prev
+                </button>
+
+                {/* Page Info */}
+                <div>
+                  Page <strong>{pagination.page}</strong> of{" "}
+                  <strong>{pagination.totalPages}</strong>
+                </div>
+
+                {/* Next */}
+                <button
+                  className="btn btn-primary"
+                  disabled={pagination.page === pagination.totalPages}
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                  }
+                >
+                  Next
+                </button>
+              </div>
+            </>
           ) : (
-            <div className="text-center py-4 text-muted">
-              <p>No members found</p>
-            </div>
+            <p>No members found.</p>
           )}
         </div>
       </div>
+
 
       {/* Modal Start */}
       <div
