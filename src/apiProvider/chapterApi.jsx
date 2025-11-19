@@ -156,6 +156,7 @@ class ChapterApiProvider {
         try {
             const data = {
                 isActive: input.isActive,
+                weekday: input.weekday 
             };
             console.log(data, "ertyuiy345tyu");
             const response = await apiClient.patch(`/chapters/${id}/status`, data);

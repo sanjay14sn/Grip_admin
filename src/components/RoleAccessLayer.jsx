@@ -33,6 +33,7 @@ const ChapterAccessLayer = () => {
     chapterCreatedDate: "",
     meetingDayAndTime: "",
     meetingType: "In Person",
+    weekday: ""
   });
 
   // Selected Chapter for Edit
@@ -100,7 +101,7 @@ const ChapterAccessLayer = () => {
   };
 
   const fetchMentors = async () => {
-    const response = await userApiProvider.getUsersByRole({ role: "mentor" });
+    const response = await userApiProvider.getUsersByRole({ role: "Chapter Mentor" });
     if (response && response.status) {
       const mentorOptions = response.response.data.map((user) => ({
         value: user._id,
@@ -250,6 +251,11 @@ const ChapterAccessLayer = () => {
     setChapterFormData({ ...chapterFormData, [name]: value });
   };
 
+  function getTodayWeekday() {
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  return days[new Date().getDay()];
+}
+
   const handleChapterSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
@@ -293,6 +299,10 @@ const ChapterAccessLayer = () => {
 
     if (!chapterFormData.meetingDayAndTime) {
       newErrors.meetingDayAndTime = "Meeting date and time is required";
+    }
+
+    if (!chapterFormData.weekday || chapterFormData.weekday.trim() === "") {
+      newErrors.weekday = "Weekday is required";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -937,6 +947,32 @@ const ChapterAccessLayer = () => {
                       <div className="text-danger mt-1">{chaptererror.meetingType}</div>
                     )}
                   </div>
+
+                  {/* Weekday */}
+                  <div className="col-md-6 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Weekday <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      className={`form-control form-select ${chaptererror.weekday ? "is-invalid" : ""}`}
+                      name="weekday"
+                      value={chapterFormData.weekday}
+                      onChange={handleChapterInputChange}
+                    >
+                      <option value=""> Weekday</option>
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                      <option value="Sunday">Sunday</option>
+                    </select>
+
+                    {chaptererror.weekday && (
+                      <div className="text-danger mt-1">{chaptererror.weekday}</div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Buttons - Full Width */}
@@ -964,7 +1000,6 @@ const ChapterAccessLayer = () => {
 
 
       {/* Edit Chapter Modal */}
-      {/* Edit Chapter Modal */}
       <div
         className="modal fade"
         id="exampleModalOne"
@@ -986,21 +1021,29 @@ const ChapterAccessLayer = () => {
                 id="closeEditModal"
               />
             </div>
+
             <div className="modal-body p-24">
               {selectedChapter && (
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
+                    console.log("🚀 Sending update:", {
+                      isActive: selectedChapter.isActive,
+                      weekday: selectedChapter.weekday,
+                    });
                     try {
-                      const response =
-                        await chapterApiProvider.updateChapterStatus(
-                          selectedChapter._id,
-                          { isActive: selectedChapter.isActive }
-                        );
+                      const response = await chapterApiProvider.updateChapterStatus(
+                        selectedChapter._id,
+                        {
+                          isActive: selectedChapter.isActive,
+                          weekday: selectedChapter.weekday   // ★ NEW
+                        }
+                      );
+
                       if (response && response.status) {
                         Swal.fire({
                           title: "Success!",
-                          text: "Chapter status updated successfully",
+                          text: "Chapter updated successfully",
                           icon: "success",
                           customClass: {
                             popup: "small-swal-popup",
@@ -1009,14 +1052,14 @@ const ChapterAccessLayer = () => {
                           },
                           width: "400px",
                         });
+
                         document.getElementById("closeEditModal").click();
                         fetchChapters();
                       }
                     } catch (error) {
                       Swal.fire({
                         title: "Error!",
-                        text:
-                          error.message || "Failed to update chapter status",
+                        text: error.message || "Failed to update chapter",
                         icon: "error",
                         customClass: {
                           popup: "small-swal-popup",
@@ -1030,12 +1073,9 @@ const ChapterAccessLayer = () => {
                 >
                   <table style={{ borderCollapse: "collapse", width: "100%" }}>
                     <tbody>
-                      <tr
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          padding: "8px 0",
-                        }}
-                      >
+
+                      {/* Chapter Name */}
+                      <tr style={{ borderBottom: "1px solid #eee", padding: "8px 0" }}>
                         <td style={{ padding: "8px 0" }}>
                           <strong>Chapter Name:</strong>
                         </td>
@@ -1046,12 +1086,44 @@ const ChapterAccessLayer = () => {
                           </span>
                         </td>
                       </tr>
-                      <tr
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          padding: "8px 0",
-                        }}
-                      >
+
+                      {/* Weekday Row (NEW) */}
+                      <tr style={{ borderBottom: "1px solid #eee", padding: "8px 0" }}>
+                        <td style={{ padding: "8px 0" }}>
+                          <strong>Weekday:</strong>
+                        </td>
+                        <td style={{ padding: "8px 0" }}>
+                          <select
+                            className="form-control form-select"
+                            value={selectedChapter.weekday}
+                            onChange={(e) =>
+                              setSelectedChapter({
+                                ...selectedChapter,
+                                weekday: e.target.value,
+                              })
+                            }
+                            style={{
+                              width: "150px",
+                              padding: "8px 8px",
+                              border: "1px solid #ccc",
+                              borderRadius: "4px",
+                              backgroundColor: "#fff",
+                            }}
+                          >
+                            <option value=""> Weekday</option>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                          </select>
+                        </td>
+                      </tr>
+
+                      {/* Zone */}
+                      <tr style={{ borderBottom: "1px solid #eee", padding: "8px 0" }}>
                         <td style={{ padding: "8px 0" }}>
                           <strong>Zone:</strong>
                         </td>
@@ -1059,12 +1131,9 @@ const ChapterAccessLayer = () => {
                           {selectedChapter.zoneId?.zoneName || "N/A"}
                         </td>
                       </tr>
-                      <tr
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          padding: "8px 0",
-                        }}
-                      >
+
+                      {/* CID */}
+                      <tr style={{ borderBottom: "1px solid #eee", padding: "8px 0" }}>
                         <td style={{ padding: "8px 0" }}>
                           <strong>CID:</strong>
                         </td>
@@ -1077,15 +1146,18 @@ const ChapterAccessLayer = () => {
                                 <Tooltip
                                   title={selectedChapter.cidId
                                     .slice(1)
-                                    .map(cid => cid.name)
+                                    .map((cid) => cid.name)
                                     .join(", ")}
                                 >
-                                  <Tag color="#c02222">+{selectedChapter.cidId.length - 1}</Tag>
+                                  <Tag color="#c02222">
+                                    +{selectedChapter.cidId.length - 1}
+                                  </Tag>
                                 </Tooltip>
                               ) : (
-                                // If exactly 2, show the second tag normally
                                 selectedChapter.cidId[1] && (
-                                  <Tag color="#c02222">{selectedChapter.cidId[1]?.name}</Tag>
+                                  <Tag color="#c02222">
+                                    {selectedChapter.cidId[1]?.name}
+                                  </Tag>
                                 )
                               )}
                             </>
@@ -1094,12 +1166,9 @@ const ChapterAccessLayer = () => {
                           )}
                         </td>
                       </tr>
-                      <tr
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          padding: "8px 0",
-                        }}
-                      >
+
+                      {/* Location */}
+                      <tr style={{ borderBottom: "1px solid #eee", padding: "8px 0" }}>
                         <td style={{ padding: "8px 0" }}>
                           <strong>Location:</strong>
                         </td>
@@ -1107,12 +1176,9 @@ const ChapterAccessLayer = () => {
                           {selectedChapter.meetingVenue}
                         </td>
                       </tr>
-                      <tr
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          padding: "8px 0",
-                        }}
-                      >
+
+                      {/* Status */}
+                      <tr style={{ borderBottom: "1px solid #eee", padding: "8px 0" }}>
                         <td style={{ padding: "8px 0" }}>
                           <strong>Status:</strong>
                         </td>
@@ -1139,6 +1205,7 @@ const ChapterAccessLayer = () => {
                           </select>
                         </td>
                       </tr>
+
                     </tbody>
                   </table>
 
@@ -1150,6 +1217,7 @@ const ChapterAccessLayer = () => {
                     >
                       Cancel
                     </button>
+
                     <button
                       type="submit"
                       className="btn btn-primary grip border border-primary-600 text-md px-48 py-12 radius-8"

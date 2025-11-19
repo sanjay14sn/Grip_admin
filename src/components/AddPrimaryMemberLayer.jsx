@@ -54,6 +54,7 @@ const AddPrimaryMemberLayer = () => {
       otherNetworkingOrgs: "",
       education: "",
       pins: [],
+      renewalDate:""
     },
     businessAddress: {
       addressLine1: "",
@@ -186,6 +187,7 @@ const AddPrimaryMemberLayer = () => {
             dob: data.personalDetails.dob
               ? data.personalDetails.dob.split("T")[0]
               : "",
+            renewalDate: data.personalDetails.renewalDate?.split("T")[0] || "",
             previouslyGRIPMember: data.personalDetails.previouslyGRIPMember,
           },
           chapterInfo: {
@@ -324,6 +326,30 @@ const AddPrimaryMemberLayer = () => {
           },
         }));
       }
+    }
+    if (section === "personalDetails" && field === "renewalDate") {
+      const selectedDate = new Date(newValue);
+
+      // Optional rule: renewal date must be today or in future
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate < today) {
+        setErrors({
+          renewalDate: "Renewal date cannot be in the past",
+        });
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        personalDetails: {
+          ...prev.personalDetails,
+          renewalDate: newValue,
+        },
+      }));
+
+      return;
     }
     // Normal handling for other fields
     else {
@@ -526,13 +552,13 @@ const AddPrimaryMemberLayer = () => {
           ...formData.personalDetails,
           pins: Array.isArray(formData.personalDetails.pins)
             ? formData.personalDetails.pins.map((p) => ({
-                _id: p._id,
-                name: p.name,
-                image:
-                  typeof p.image === "object"
-                    ? p.image.docName || ""
-                    : p.image || "",
-              }))
+              _id: p._id,
+              name: p.name,
+              image:
+                typeof p.image === "object"
+                  ? p.image.docName || ""
+                  : p.image || "",
+            }))
             : [],
           isOtherNetworkingOrgs: belongsToOtherOrg === "true",
           otherNetworkingOrgs:
@@ -1024,8 +1050,8 @@ const AddPrimaryMemberLayer = () => {
                             e.target.value === "true"
                               ? true
                               : e.target.value === "false"
-                              ? false
-                              : "",
+                                ? false
+                                : "",
                         },
                       },
                       "personalDetails",
@@ -1140,10 +1166,10 @@ const AddPrimaryMemberLayer = () => {
                   value={
                     Array.isArray(formData.personalDetails.pins)
                       ? pinOptions.filter((opt) =>
-                          formData.personalDetails.pins.some(
-                            (p) => String(p._id) === String(opt.value)
-                          )
+                        formData.personalDetails.pins.some(
+                          (p) => String(p._id) === String(opt.value)
                         )
+                      )
                       : []
                   }
                   onChange={(selectedOptions) => {
@@ -1166,6 +1192,26 @@ const AddPrimaryMemberLayer = () => {
                 />
 
                 {error && <div className="text-danger mt-1">{error}</div>}
+              </div>
+              <div className="col-4">
+                <label className="form-label">
+                  Renewal Date <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.personalDetails.renewalDate}
+                  onChange={(e) =>
+                    handleInputChange(e, "personalDetails", "renewalDate")
+                  }
+                />
+                {errors.personalDetails?.renewalDate && (
+                  <div className="">
+                    <span className="text-danger">
+                      {errors.personalDetails.renewalDate}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1599,15 +1645,15 @@ const AddPrimaryMemberLayer = () => {
                     </div>
                     {errors.businessReferences?.[index]
                       ?.contactSharingGRIPReferences && (
-                      <div className="">
-                        <span className="text-danger">
-                          {
-                            errors.businessReferences[index]
-                              .contactSharingGRIPReferences
-                          }
-                        </span>
-                      </div>
-                    )}
+                        <div className="">
+                          <span className="text-danger">
+                            {
+                              errors.businessReferences[index]
+                                .contactSharingGRIPReferences
+                            }
+                          </span>
+                        </div>
+                      )}
                   </div>
                 </React.Fragment>
               ))}
