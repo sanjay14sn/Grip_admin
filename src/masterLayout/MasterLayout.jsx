@@ -352,6 +352,17 @@ const MasterLayout = ({ children }) => {
                       Visitor /Guest
                     </NavLink>
                   </li>
+                  <li>
+                    <NavLink
+                      to="/expected-visitors"
+                      className={(navData) =>
+                        navData.isActive ? "active-page" : ""
+                      }
+                    >
+                      <Icon icon="mdi:account-clock-outline" className="menu-icon" />
+                      Expected Visitors
+                    </NavLink>
+                  </li>
                 </ul>
               </li>
             )}
