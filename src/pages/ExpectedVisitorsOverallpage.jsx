@@ -2,7 +2,7 @@ import React from "react";
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
 
-import ExpectedVisitorsLayer from "../components/ExpectedVisitorsLayer";
+import ExpectedVisitorsOverallLayer from "../components/ExpectedVistorsOverallLayer"
 
 const ExpectedVisitorsPage = () => {
   return (
@@ -12,7 +12,7 @@ const ExpectedVisitorsPage = () => {
         <Breadcrumb title="Expected Visitors" name="Performance" />
 
         {/* Expected Visitors Layer */}
-        <ExpectedVisitorsLayer />
+        <ExpectedVisitorsOverallLayer />
       </MasterLayout>
     </>
   );

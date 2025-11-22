@@ -114,7 +114,7 @@ import ChapterOnePage from "./pages/chapterOnePage";
 import ChapterViewPage from "./pages/ChapterViewPage";
 import ReferralListPage from "./pages/ReferralListPage";
 import VisitorsListPage from "./pages/VisitorsListPage";
-import ExpectedVisitorsPage from "./pages/ExpectedVisitorsPage";
+import ExpectedVisitorsListPage from "./pages/ExpectedVisitorsListPage";
 import PowerDatePage from "./pages/PowerDatePage";
 import ThankyouNotePage from "./pages/ThankyouNotePage";
 import TestimonialPage from "./pages/TestimonialPage";
@@ -122,6 +122,7 @@ import ReferralOverallpage from "./pages/ReferralOverallPage";
 import ThankyouOverallPage from "./pages/ThankyouOverallPage";
 import TestimonialOverallPage from "./pages/TestimonialOverallPage";
 import VisitorOverallpage from "./pages/VisitorOverallpage";
+import ExpectedVisitorsOverallPage from "./pages/ExpectedVisitorsOverallpage";
 import EnquiryListPage from "./pages/EnquiryListPage";
 import PaymentListPage from "./pages/PaymentListPage";
 import TransactionListPage from "./pages/TransactionListPage";
@@ -284,10 +285,11 @@ function App() {
           />
 
           <Route exact path="/visitor" element={<VisitorOverallpage />} />
+          <Route exact path="/expected-visitors" element={<ExpectedVisitorsOverallPage />} />
           <Route
   exact
-  path="/expected-visitors"
-  element={<ExpectedVisitorsPage />}
+  path="/expected-visitors/:chapterId"
+  element={<ExpectedVisitorsListPage />}
 />
 
           <Route
