@@ -11,6 +11,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { hasPermission } from "../utils/auth";
 import { formatDate } from "../utils/dateFormatter";
 import config from "../config/config";
+import TrainingApi from "../apiProvider/TrainingApi";
 import { Modal } from "bootstrap/dist/js/bootstrap.bundle.min";
 
 const libraries = ['places'];
@@ -29,8 +30,9 @@ const defaultCenter = {
 const EventListLayer = () => {
     const [paymentDetails, setPaymentDetails] = useState([]);
     const [chapterList, setChapterList] = useState([]);
-    const [existingImage, setExistingImage] = useState(null); // Track existing image URL
     const [formData, setFormData] = useState({
+        zone: "",
+        trainingType:"",
         topic: "",
         amount: "",
         chapters: [],
@@ -42,6 +44,7 @@ const EventListLayer = () => {
         longitude: "",
         paymentRequirement: "optional",
     });
+    const [zones, setZones] = useState([]);
 
     const [mapCenter, setMapCenter] = useState(defaultCenter);
     const [markerPosition, setMarkerPosition] = useState(null);
@@ -69,6 +72,20 @@ const EventListLayer = () => {
     });
     const [searchQuery, setSearchQuery] = useState("");
     const [searchInput, setSearchInput] = useState("");
+
+    useEffect(() => {
+        async function fetchZones() {
+            try {
+                const response = await TrainingApi.getPublicZones();
+                if (response.status && response.response.success) {
+                    setZones(response.response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch zones:", error);
+            }
+        }
+        fetchZones();
+    }, []);
 
     // Debounce search input
     useEffect(() => {
@@ -98,9 +115,9 @@ const EventListLayer = () => {
                 types: ['geocode', 'establishment'],
                 componentRestrictions: { country: 'IN' }
             });
-            
+
             placeAutocompleteRef.current.autocomplete = autocomplete;
-            
+
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
                 if (place.geometry) {
@@ -137,7 +154,7 @@ const EventListLayer = () => {
                 page: pagination.page,
                 limit: pagination.limit,
                 search: searchQuery,
-                purpose: "event",
+                purpose: "training",
             };
 
             const response = await paymentApiProvider.getPaymentDetails(input);
@@ -165,36 +182,8 @@ const EventListLayer = () => {
         if (paymentToEdit) {
             console.log("Payment to edit:", paymentToEdit); // Debug log
             setCurrentPaymentId(paymentId);
-            setIsEditMode(true);
-            
-            // Handle image URL construction
-            let imageUrl = null;
-            
-            // Check for different possible image field names
-            const imageField = paymentToEdit.image || paymentToEdit.eventImage || paymentToEdit.images;
-            
-            if (imageField) {
-                // If image is a string (direct URL)
-                if (typeof imageField === 'string') {
-                    imageUrl = imageField;
-                }
-                // If image is an object with docPath and docName
-                else if (imageField.docPath && imageField.docName) {
-                    imageUrl = `${config.imageBaseUrl}${imageField.docPath}/${imageField.docName}`;
-                }
-                // If image is an array, take the first one
-                else if (Array.isArray(imageField) && imageField.length > 0) {
-                    const firstImage = imageField[0];
-                    if (typeof firstImage === 'string') {
-                        imageUrl = firstImage;
-                    } else if (firstImage.docPath && firstImage.docName) {
-                        imageUrl = `${config.imageBaseUrl}${firstImage.docPath}/${firstImage.docName}`;
-                    }
-                }
-            }
-            
-            console.log("Constructed image URL:", imageUrl); // Debug log
-            setExistingImage(imageUrl);
+            setIsEditMode(true)
+
 
             // Format chapters for react-select
             const selectedChapters = paymentToEdit.chapterId.map((chapter) => ({
@@ -283,12 +272,7 @@ const EventListLayer = () => {
             return false;
         }
 
-        // Event Image validation (only for new events)
-        if (!isEditMode && (!formData.images || formData.images.length === 0)) {
-            newErrors.images = "Event image is required";
-            setErrors(newErrors);
-            return false;
-        }
+
 
         // Date & Time validation
         if (!formData.startDate) {
@@ -323,14 +307,12 @@ const EventListLayer = () => {
         try {
             setIsSubmitting(true);
             const submissionData = new FormData();
-            submissionData.append("purpose", "event");
+            submissionData.append("purpose", "training");
             submissionData.append("topic", formData.topic);
-            
-            // Only append image if it exists (for new events or when updating image)
-            if (formData.images) {
-                submissionData.append("image", formData.images);
-            }
-            
+            submissionData.append("trainingType", formData.trainingType);
+
+
+
             submissionData.append("amount", formData.amount);
 
             // Create array of chapter IDs
@@ -420,13 +402,12 @@ const EventListLayer = () => {
             longitude: "",
             paymentRequirement: "optional",
         });
-        setExistingImage(null); // Clear existing image
         setMapCenter(defaultCenter);
         setMarkerPosition(null);
         setIsEditMode(false);
         setCurrentPaymentId(null);
         setErrors({});
-        
+
         if (isLoaded) {
             setMapCenter(defaultCenter);
             setMarkerPosition(null);
@@ -613,7 +594,7 @@ const EventListLayer = () => {
 
     const onMapClick = useCallback((e) => {
         if (!isLoaded || !window.google || !window.google.maps) return;
-        
+
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
         setMarkerPosition({ lat, lng });
@@ -622,7 +603,7 @@ const EventListLayer = () => {
 
     const handlePlaceSelect = useCallback((place) => {
         if (!isLoaded || !window.google || !window.google.maps) return;
-        
+
         if (place && place.geometry) {
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
@@ -646,7 +627,7 @@ const EventListLayer = () => {
 
     const updateLocationFromCoordinates = async (lat, lng) => {
         if (!isLoaded || !window.google || !window.google.maps) return;
-        
+
         try {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
@@ -692,7 +673,7 @@ const EventListLayer = () => {
                             icon="ic:baseline-plus"
                             className="icon text-xl line-height-1"
                         />
-                        Make Event
+                        Make  Training
                     </Link>
                 )}
             </div>
@@ -859,7 +840,7 @@ const EventListLayer = () => {
                     <div className="modal-content radius-16 bg-base">
                         <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0">
                             <h1 className="modal-title fs-5">
-                                {isEditMode ? "Edit Event" : "Event Creation"}
+                                {isEditMode ? "Edit Training" : "Training Creation"}
                             </h1>
                             <button
                                 type="button"
@@ -969,6 +950,63 @@ const EventListLayer = () => {
                                         </div>
                                     </div>
 
+                                    {/* Zone Field */}
+                                    <div className="col-12 mb-20">
+                                        <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                                            Zone <span className="text-danger">*</span>
+                                        </label>
+
+                                        <select
+                                            name="zone"
+                                            className={`form-control radius-8 ${errors.zone ? "is-invalid" : ""}`}
+                                            value={formData.zone}
+                                            onChange={(e) => {
+                                                handleInputChange(e);
+                                                if (errors.zone) {
+                                                    setErrors((prev) => ({ ...prev, zone: "" }));
+                                                }
+                                            }}
+                                        >
+                                            <option value="">-- Select Zone --</option>
+                                            {zones.map((zone) => (
+                                                <option key={zone._id} value={zone.zoneName}>
+                                                    {zone.zoneName}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {errors.zone && (
+                                            <div className="invalid-feedback">{errors.zone}</div>
+                                        )}
+                                    </div>
+
+                                    {/* Training Type Field */}
+                                    <div className="col-12 mb-20">
+                                        <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                                            Training Type <span className="text-danger">*</span>
+                                        </label>
+
+                                        <select
+                                            name="trainingType"
+                                            className={`form-control radius-8 ${errors.trainingType ? "is-invalid" : ""}`}
+                                            value={formData.trainingType}
+                                            onChange={(e) => {
+                                                handleInputChange(e);
+                                                if (errors.trainingType) {
+                                                    setErrors((prev) => ({ ...prev, trainingType: "" }));
+                                                }
+                                            }}
+                                        >
+                                            <option value="">-- Select Training Type --</option>
+                                            <option value="entire_day">Entire day - lunch and snacks</option>
+                                            <option value="snacks_only">Only snacks</option>
+                                        </select>
+
+                                        {errors.trainingType && (
+                                            <div className="invalid-feedback">{errors.trainingType}</div>
+                                        )}
+                                    </div>
+
                                     {/* Chapter Select with Select All */}
                                     <div className="col-12 mb-20">
                                         <label className="form-label fw-semibold text-primary-light text-sm mb-8">
@@ -1007,56 +1045,8 @@ const EventListLayer = () => {
                                         )}
                                     </div>
 
-                                    {/* Images Field */}
-                                    <div className="col-12 mb-20">
-                                        <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                                            Event Image {!isEditMode && <span className="text-danger">*</span>}
-                                        </label>
-                                        
-                                        {/* Show existing image preview in edit mode */}
-                                        {isEditMode && existingImage && (
-                                            <div className="mb-3">
-                                                <p className="small text-muted">Current Image:</p>
-                                                <img 
-                                                    src={existingImage} 
-                                                    alt="Current event" 
-                                                    style={{ 
-                                                        maxWidth: '60%', 
-                                                        maxHeight: '70px',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid #dee2e6'
-                                                    }} 
-                                                    onError={(e) => {
-                                                        console.error("Image failed to load:", existingImage);
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'block';
-                                                    }}
-                                                />
-                                                <div 
-                                                    className="text-muted small" 
-                                                    style={{ display: 'none' }}
-                                                >
-                                                    Image could not be loaded. Please upload a new image.
-                                                </div>
-                                            </div>
-                                        )}
-                                        
-                                        <input
-                                            type="file"
-                                            name="images"
-                                            className={`form-control ${errors.images ? "is-invalid" : ""}`}
-                                            onChange={handleFileChange}
-                                            accept="image/*"
-                                        />
-                                        {errors.images && (
-                                            <div className="invalid-feedback">{errors.images}</div>
-                                        )}
-                                        {isEditMode && (
-                                            <div className="form-text text-muted small">
-                                                Upload a new image only if you want to replace the existing one.
-                                            </div>
-                                        )}
-                                    </div>
+
+
 
                                     {/* Date and Time Field */}
                                     <div className="col-12 mb-20">
@@ -1134,7 +1124,7 @@ const EventListLayer = () => {
                                                                     e.preventDefault();
                                                                     if (formData.location && isLoaded && window.google && window.google.maps && window.google.maps.places) {
                                                                         const geocoder = new window.google.maps.Geocoder();
-                                                                        geocoder.geocode({ 
+                                                                        geocoder.geocode({
                                                                             address: formData.location,
                                                                             componentRestrictions: { country: 'IN' }
                                                                         }, (results, status) => {
@@ -1156,7 +1146,7 @@ const EventListLayer = () => {
                                                             onClick={() => {
                                                                 if (formData.location && isLoaded && window.google && window.google.maps && window.google.maps.places) {
                                                                     const geocoder = new window.google.maps.Geocoder();
-                                                                    geocoder.geocode({ 
+                                                                    geocoder.geocode({
                                                                         address: formData.location,
                                                                         componentRestrictions: { country: 'IN' }
                                                                     }, (results, status) => {

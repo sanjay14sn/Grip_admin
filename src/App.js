@@ -130,6 +130,7 @@ import { setCurrentUser } from "./utils/auth";
 import AttedenceListPage from "./pages/AttedenceListPage";
 import AttedenseMemberListPage from "./pages/AttedenceMemberPage";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import TrainingListPage from "./pages/TrainingPage";
 
 function App() {
   // Initialize auth state from sessionStorage so we know the value during the first render
@@ -310,6 +311,7 @@ function App() {
 
           <Route exact path="/payment-list" element={<PaymentListPage />} />
           <Route exact path="/attedence-list" element={<AttedenceListPage />} />
+          <Route exact path="/training-list" element={<TrainingListPage />} />
 
           <Route
             exact

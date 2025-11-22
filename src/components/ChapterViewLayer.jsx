@@ -154,9 +154,13 @@ const ChapterViewLayer = () => {
 
   const [attendanceCounts, setAttendanceCounts] = useState({});
   const [oneToOneCounts, setOneToOneCounts] = useState({});
+  const [givenOneToOneCounts, setgivenOneToOneCounts] = useState({});
+  const [givenreferralCounts, setGivenReferralCounts] = useState({});
   const [referralCounts, setReferralCounts] = useState({});
   const [thankYouAmounts, setThankYouAmounts] = useState({});
   const [visitorCounts, setVisitorCounts] = useState({});
+  const [visitorReportCounts, setVisitorReportCounts] = useState({});
+
   const [testimonialCounts, setTestimonialCounts] = useState({});
   const [search, setSearch] = useState("");
 
@@ -198,6 +202,8 @@ const ChapterViewLayer = () => {
         setThankYouAmounts({});
         setVisitorCounts({});
         setTestimonialCounts({});
+        setgivenOneToOneCounts({})
+        setGivenReferralCounts({})
         return;
       }
 
@@ -206,24 +212,33 @@ const ChapterViewLayer = () => {
       const [
         attendanceRes,
         oneToOneRes,
+        givenOneToOneRes,
+        givenReferralRes,
         referralRes,
         thankYouRes,
         visitorRes,
+        visitorReportRes,
         testimonialRes,
       ] = await Promise.all([
         chapterApiProvider.getMembersAttendanceCount(memberIds),
         chapterApiProvider.getOneToOneCounts(memberIds),
+        chapterApiProvider.getOneToOneGivenCounts(memberIds),
+        chapterApiProvider.getReferralGivenCounts(memberIds),
         chapterApiProvider.getReferralCounts(memberIds),
         chapterApiProvider.getThankYouSlipAmounts(memberIds),
         chapterApiProvider.getVisitorCounts(memberIds),
+        chapterApiProvider.getVisitorReportCounts(memberIds),
         chapterApiProvider.getTestimonialCounts(memberIds),
       ]);
 
       if (attendanceRes?.success) setAttendanceCounts(attendanceRes.data);
       if (oneToOneRes?.success) setOneToOneCounts(oneToOneRes.data);
+      if (givenOneToOneRes?.success) setgivenOneToOneCounts(givenOneToOneRes.data);
+      if (givenReferralRes?.success) setGivenReferralCounts(givenReferralRes.data);
       if (referralRes?.success) setReferralCounts(referralRes.data);
       if (thankYouRes?.success) setThankYouAmounts(thankYouRes.data);
       if (visitorRes?.success) setVisitorCounts(visitorRes.data);
+      if (visitorReportRes?.success) setVisitorReportCounts(visitorReportRes.data);
       if (testimonialRes?.success) setTestimonialCounts(testimonialRes.data);
 
     } catch (error) {
@@ -1197,6 +1212,8 @@ const ChapterViewLayer = () => {
                       <th>L</th>
                       <th>M</th>
                       <th>S</th>
+                      <th>Events</th>      {/* NEW */}
+                      <th>Training</th>    {/* NEW */}
                       <th>One-to-One</th>
                       <th>Referral Given</th>
                       <th>Referral Received</th>
@@ -1210,40 +1227,67 @@ const ChapterViewLayer = () => {
 
                   <tbody>
                     {paginatedMembers.map((member, index) => {
-                      const counts = attendanceCounts[member._id] || {
-                        totalMeetings: 0,
+                      const defaultCounts = {
                         present: 0,
                         absent: 0,
                         late: 0,
                         managed: 0,
                         substitute: 0,
                       };
+                      console.log(attendanceCounts,"attendace")
+
+
+                      // FIX: read correctly from backend structure
+                      const meetings = attendanceCounts?.[member._id]?.meeting || defaultCounts;
+                      const events = attendanceCounts?.[member._id]?.event|| 0;
+                      const training = attendanceCounts?.[member._id]?.training || 0;
+
+                      const totalMeetings =
+                        meetings.present +
+                        meetings.absent +
+                        meetings.late +
+                        meetings.managed +
+                        meetings.substitute;
+
+                      const totalEvents =
+                        events.present +
+                        events.absent +
+                        events.late +
+                        events.managed +
+                        events.substitute;
+
+                      const totalTraining =
+                        training.present +
+                        training.absent +
+                        training.late +
+                        training.managed +
+                        training.substitute;
+
 
                       return (
                         <tr key={member._id}>
-                          {/* Backend-based serial number */}
-                          <td>
-                            {(pagination.page - 1) * pagination.limit + (index + 1)}
-                          </td>
+                          <td>{(pagination.page - 1) * pagination.limit + index + 1}</td>
 
                           <td>
-                            <div className="d-flex align-items-center gap-3">
-                              <div>
-                                <h6 className="text-md mb-0">{member.name}</h6>
-                                <small className="text-xs text-muted">
-                                  {member.category}
-                                </small>
-                              </div>
-                            </div>
+                            <h6 className="text-md mb-0">{member.name}</h6>
+                            <small className="text-xs text-muted">{member.category}</small>
                           </td>
 
-                          <td>{counts.totalMeetings}</td>
-                          <td>{counts.present}</td>
-                          <td>{counts.absent}</td>
-                          <td>{counts.late}</td>
-                          <td>{counts.managed}</td>
-                          <td>{counts.substitute}</td>
-                          <td>{oneToOneCounts[member._id]?.total || 0}</td>
+                          {/* Meetings */}
+                          <td>{totalMeetings}</td>
+                          <td>{meetings.present}</td>
+                          <td>{meetings.absent}</td>
+                          <td>{meetings.late}</td>
+                          <td>{meetings.managed}</td>
+                          <td>{meetings.substitute}</td>
+
+                          {/* Events */}
+                          <td>{totalEvents}</td>
+
+                          {/* Training */}
+                          <td>{totalTraining}</td>
+
+                          <td>{oneToOneCounts[member._id]?.fromCount || 0}</td>
                           <td>{referralCounts[member._id]?.given || 0}</td>
                           <td>{referralCounts[member._id]?.received || 0}</td>
                           <td>{thankYouAmounts[member._id]?.given || 0}</td>
@@ -1278,6 +1322,123 @@ const ChapterViewLayer = () => {
                 </div>
 
                 {/* Next */}
+                <button
+                  className="btn btn-primary"
+                  disabled={pagination.page === pagination.totalPages}
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                  }
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          ) : (
+            <p>No members found.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ASSOCIATE PERFORMANCE REPORT */}
+      <div className="card h-100 p-0 radius-12">
+        <div className="card-header border-bottom bg-base py-16 px-24">
+          <h6 className="text-lg fw-semibold mb-0">Associate Performance Report</h6>
+        </div>
+
+        <div className="card-body chapterwisebox p-24">
+          {membersData?.length > 0 ? (
+            <>
+              {/* TABLE */}
+              <div className="table-responsive" style={{ overflowX: "auto" }}>
+                <table className="table table-bordered align-middle">
+                  <thead className="bg-light">
+                    <tr>
+                      <th>S.NO</th>
+                      <th>Associate Name</th>
+
+                      {/* Updated column name */}
+                      <th>One-to-One</th>
+
+                      {/* Remaining dummy columns */}
+                      <th>Referral</th>
+                      <th>Visitor</th>
+                      <th>Column 5</th>
+                      <th>Column 6</th>
+                      <th>Column 7</th>
+                      <th>Column 8</th>
+                      <th>Column 9</th>
+                      <th>Column 10</th>
+                      <th>Column 11</th>
+                      <th>Column 12</th>
+                      <th>Column 13</th>
+                      <th>Column 14</th>
+                      <th>Column 15</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {paginatedMembers.map((member, index) => (
+                      <tr key={member._id}>
+                        <td>{(pagination.page - 1) * pagination.limit + (index + 1)}</td>
+
+                        <td>
+                          <div className="d-flex align-items-center gap-3">
+                            <div>
+                              <h6 className="text-md mb-0">{member.name}</h6>
+                              <small className="text-xs text-muted">{member.category}</small>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Column 2 → One-to-One Given Count */}
+                        <td>
+                          {givenOneToOneCounts?.[member._id]?.points ?? 0}
+                        </td>
+                        {/* Column 2 → referral Given Count */}
+                        <td>
+                          {givenreferralCounts?.[member._id]?.points ?? 0}
+                        </td>
+                        <td>
+                          {visitorReportCounts?.[member._id]?.points ?? 0}
+                        </td>
+
+                        {/* Dummy columns */}
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINATION */}
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <button
+                  className="btn btn-primary"
+                  disabled={pagination.page === 1}
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                  }
+                >
+                  Prev
+                </button>
+
+                <div>
+                  Page <strong>{pagination.page}</strong> of{" "}
+                  <strong>{pagination.totalPages}</strong>
+                </div>
+
                 <button
                   className="btn btn-primary"
                   disabled={pagination.page === pagination.totalPages}

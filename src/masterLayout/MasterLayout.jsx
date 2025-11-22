@@ -443,36 +443,50 @@ const MasterLayout = ({ children }) => {
             {/* Invoice Dropdown */}
             {hasPermission("payments-list") && (
               <>
-             
-                  <li>
-                    <NavLink
-                      to="/payment-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="mdi:credit-card-plus-outline"
-                        className="menu-icon"
-                      />
-                      Meeting
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/attedence-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="mdi:credit-card-plus-outline"
-                        className="menu-icon"
-                      />
-                      Events
-                    </NavLink>
-                  </li>
-                  </>
+
+                <li>
+                  <NavLink
+                    to="/payment-list"
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon
+                      icon="mdi:credit-card-plus-outline"
+                      className="menu-icon"
+                    />
+                    Meeting
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/attedence-list"
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon
+                      icon="mdi:credit-card-plus-outline"
+                      className="menu-icon"
+                    />
+                    Events
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/training-list"
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon
+                      icon="mdi:book-open-variant"
+                      className="menu-icon"
+                    />
+                    Training
+                  </NavLink>
+                </li>
+              </>
             )}
           </ul>
         </div>

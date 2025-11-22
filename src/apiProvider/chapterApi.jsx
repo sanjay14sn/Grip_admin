@@ -156,7 +156,7 @@ class ChapterApiProvider {
         try {
             const data = {
                 isActive: input.isActive,
-                weekday: input.weekday 
+                weekday: input.weekday
             };
             console.log(data, "ertyuiy345tyu");
             const response = await apiClient.patch(`/chapters/${id}/status`, data);
@@ -744,10 +744,46 @@ class ChapterApiProvider {
         }
     }
 
+    async getOneToOneGivenCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/one-to-one-given-count', {
+                memberIds,
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch one-to-one counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching one-to-one counts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
 
     async getReferralCounts(memberIds) {
         try {
             const response = await apiClient.post('/members/referral-count', {
+                memberIds,
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch referral counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching referral counts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
+    async getReferralGivenCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/referral-given-count', {
                 memberIds,
             });
 
@@ -783,6 +819,22 @@ class ChapterApiProvider {
     async getVisitorCounts(memberIds) {
         try {
             const response = await apiClient.post('/members/visitor-count', { memberIds });
+
+            if (response.status === 200 || response.status === 201) {
+                return { success: true, data: response.data.data };
+            } else {
+                console.error("Failed to fetch visitor counts:", response.data?.message);
+                return { success: false, data: {} };
+            }
+        } catch (error) {
+            console.error("Error fetching visitor counts:", error);
+            return { success: false, data: {} };
+        }
+    }
+
+        async getVisitorReportCounts(memberIds) {
+        try {
+            const response = await apiClient.post('/members/visitor-report-count', { memberIds });
 
             if (response.status === 200 || response.status === 201) {
                 return { success: true, data: response.data.data };
