@@ -19,7 +19,7 @@ const ExpectedVisitorsLayer = () => {
   const fetchExpectedVisitors = async () => {
     const res = await ExpectedVisitorsApiProvider.getExpectedVisitorsList();
     setExpectedVisitors(res?.response?.data || []);
-    console.log("resArish",  res)
+    console.log("resArish", res);
   };
 
   useEffect(() => {
@@ -27,18 +27,22 @@ const ExpectedVisitorsLayer = () => {
     fetchExpectedVisitors();
   }, []);
 
-  console.log("expectedVisitors",  expectedVisitors)
 
   // 3️⃣ Group visitors by chapterId
   const groupByChapter = chapters.map((chapter) => {
+    // Get ALL visitors for this chapter
     const visitors = expectedVisitors.filter(
       (v) => v.chapterId === chapter._id
     );
 
+    // Filter only active visitors (soft delete = 0)
+    const activeVisitors = visitors.filter((v) => v.isDelete !== 1);
+
     return {
       chapterId: chapter._id,
       chapterName: chapter.chapterName,
-      visitors,
+      visitors, // OPTIONAL — if you still want raw visitors
+      activeVisitors, // FINAL filtered list
     };
   });
 
@@ -47,11 +51,9 @@ const ExpectedVisitorsLayer = () => {
       <div className="cardd h-100 p-0 radius-12">
         <div className="card-body chapterwisebox p-24">
           <div className="row gy-4">
-
             {groupByChapter.map((chapter) => (
               <div className="col-xxl-4" key={chapter.chapterId}>
                 <div className="card">
-
                   {/* Header */}
                   <div className="chapterwiseheading d-flex align-items-center flex-wrap gap-2 justify-content-between">
                     <h6 className="fw-bold text-lg mb-0">
@@ -62,7 +64,7 @@ const ExpectedVisitorsLayer = () => {
                       to={`/expected-visitors/${chapter.chapterId}`}
                       className="onetoonecount text-primary-600 hover-text-primary d-flex align-items-center gap-1"
                     >
-                      {chapter.visitors.length}
+                      {chapter.activeVisitors.length}
                       <Icon
                         icon="solar:alt-arrow-right-linear"
                         className="icon"
@@ -73,13 +75,14 @@ const ExpectedVisitorsLayer = () => {
                   {/* Visitor list */}
                   <div className="card-body">
                     <div className="mt-2">
-
-                      {chapter.visitors.length > 0 ? (
-                        chapter.visitors.map((visitor, index) => (
+                      {chapter.activeVisitors.length > 0 ? (
+                        chapter.activeVisitors.map((visitor, index) => (
                           <div
                             key={visitor._id}
                             className={`d-flex align-items-center justify-content-between gap-3 ${
-                              index < chapter.visitors.length - 1 ? "mb-32" : ""
+                              index < chapter.activeVisitors.length - 1
+                                ? "mb-32"
+                                : ""
                             }`}
                           >
                             <div className="d-flex align-items-center">
@@ -108,14 +111,11 @@ const ExpectedVisitorsLayer = () => {
                           No expected visitors
                         </div>
                       )}
-
                     </div>
                   </div>
-
                 </div>
               </div>
             ))}
-
           </div>
         </div>
       </div>
