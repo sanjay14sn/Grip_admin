@@ -467,6 +467,21 @@ const AddPrimaryMemberLayer = () => {
       toast.error("Belongs to other organizations field is required");
       return false;
     }
+    
+    if (!formData.personalDetails.renewalDate) {
+  toast.error("Renewal Date field is required");
+
+  setErrors(prev => ({
+    ...prev,
+    personalDetails: {
+      ...prev.personalDetails,
+      renewalDate: "Renewal Date is required"
+    }
+  }));
+
+  return false;
+}
+
 
     // Business Address Validation
     const address = formData.businessAddress;
