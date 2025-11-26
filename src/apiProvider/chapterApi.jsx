@@ -709,8 +709,9 @@ class ChapterApiProvider {
 
     async getMembersAttendanceCount(memberIds) {
         try {
+            console.log(memberIds,"memberId")
             const response = await apiClient.post('/members/meetings-attendance-count', {
-                memberIds, // send array directly in body
+              members: memberIds 
             });
 
             if (response.status === 200 || response.status === 201) {

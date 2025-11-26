@@ -220,7 +220,7 @@ const ChapterViewLayer = () => {
         visitorReportRes,
         testimonialRes,
       ] = await Promise.all([
-        chapterApiProvider.getMembersAttendanceCount(memberIds),
+        chapterApiProvider.getMembersAttendanceCount(members),
         chapterApiProvider.getOneToOneCounts(memberIds),
         chapterApiProvider.getOneToOneGivenCounts(memberIds),
         chapterApiProvider.getReferralGivenCounts(memberIds),
@@ -1234,20 +1234,12 @@ const ChapterViewLayer = () => {
                         managed: 0,
                         substitute: 0,
                       };
-                      console.log(attendanceCounts,"attendace")
 
 
                       // FIX: read correctly from backend structure
                       const meetings = attendanceCounts?.[member._id]?.meeting || defaultCounts;
                       const events = attendanceCounts?.[member._id]?.event|| 0;
                       const training = attendanceCounts?.[member._id]?.training || 0;
-
-                      const totalMeetings =
-                        meetings.present +
-                        meetings.absent +
-                        meetings.late +
-                        meetings.managed +
-                        meetings.substitute;
 
                       const totalEvents =
                         events.present +
@@ -1274,7 +1266,7 @@ const ChapterViewLayer = () => {
                           </td>
 
                           {/* Meetings */}
-                          <td>{totalMeetings}</td>
+                          <td>{meetings.totalMeetings}</td>
                           <td>{meetings.present}</td>
                           <td>{meetings.absent}</td>
                           <td>{meetings.late}</td>
@@ -1290,8 +1282,8 @@ const ChapterViewLayer = () => {
                           <td>{oneToOneCounts[member._id]?.fromCount || 0}</td>
                           <td>{referralCounts[member._id]?.given || 0}</td>
                           <td>{referralCounts[member._id]?.received || 0}</td>
-                          <td>{thankYouAmounts[member._id]?.given || 0}</td>
-                          <td>{thankYouAmounts[member._id]?.received || 0}</td>
+                          <td>{thankYouAmounts[member._id]?.givenAmount || 0}</td>
+                          <td>{thankYouAmounts[member._id]?.receivedAmount || 0}</td>
                           <td>{visitorCounts[member._id] || 0}</td>
                           <td>{testimonialCounts[member._id]?.given || 0}</td>
                           <td>{testimonialCounts[member._id]?.received || 0}</td>
