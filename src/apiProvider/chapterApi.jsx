@@ -242,10 +242,11 @@ class ChapterApiProvider {
         }
     }
 
-    async thankYouSlipListMember(input) {
-        console.log(input, "input")
+    async thankYouSlipListMember(input,query) {
         try {
-            const response = await apiClient.get(`/thankyouslips/member/list/${input}`);
+            const response = await apiClient.get(`/thankyouslips/member/list/${input}`,{
+                params: query   // 👈 SEND pagination here
+            });
 
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
@@ -396,10 +397,11 @@ class ChapterApiProvider {
     }
 
 
-    async refferalListMember(input) {
-        console.log(input, "input")
+    async refferalListMember(id,query) {
         try {
-            const response = await apiClient.get(`/referralslip/member/list/${input}`);
+            const response = await apiClient.get(`/referralslip/member/list/${id}`, {
+                params: query   // 👈 SEND pagination here
+            });
 
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
@@ -441,10 +443,11 @@ class ChapterApiProvider {
         }
     }
 
-    async testimonialSlipListMember(input) {
-        console.log(input, "input")
+    async testimonialSlipListMember(id,query) {
         try {
-            const response = await apiClient.get(`/testimonialslips/member/list/${input}`);
+            const response = await apiClient.get(`/testimonialslips/member/list/${id}`,{
+                params: query   // 👈 SEND pagination here
+            });
 
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
@@ -488,9 +491,11 @@ class ChapterApiProvider {
 
 
 
-    async visitorsSlipListMember(input) {
+    async visitorsSlipListMember(input,query) {
         try {
-            const response = await apiClient.get(`/visitors/member/list/${input}`);
+            const response = await apiClient.get(`/visitors/member/list/${input}`,{
+                params: query   // 👈 SEND pagination here
+            });
 
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
@@ -552,9 +557,11 @@ class ChapterApiProvider {
         }
     }
 
-    async onetooneSlipListMember(input) {
+    async onetooneSlipListMember(id, query) {
         try {
-            const response = await apiClient.get(`/onetoone/member/list/${input}`);
+            const response = await apiClient.get(`/onetoone/member/list/${id}`, {
+                params: query   // 👈 SEND pagination here
+            });
 
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
@@ -709,9 +716,9 @@ class ChapterApiProvider {
 
     async getMembersAttendanceCount(memberIds) {
         try {
-            console.log(memberIds,"memberId")
+            console.log(memberIds, "memberId")
             const response = await apiClient.post('/members/meetings-attendance-count', {
-              members: memberIds 
+                members: memberIds
             });
 
             if (response.status === 200 || response.status === 201) {
@@ -833,7 +840,7 @@ class ChapterApiProvider {
         }
     }
 
-        async getVisitorReportCounts(memberIds) {
+    async getVisitorReportCounts(memberIds) {
         try {
             const response = await apiClient.post('/members/visitor-report-count', { memberIds });
 
