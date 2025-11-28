@@ -585,8 +585,7 @@ const ChapterViewLayer = () => {
             <p className="text-muted mb-2">Meeting is only on invite</p>
 
             <div className="mt-2 mb-3 text-sm">
-              {formatMeetingDay(chapterData.meetingDayAndTime)}{" "}
-              {formatMeetingTime(chapterData.meetingDayAndTime)}
+              {chapterData.weekday}
             </div>
             <div
               className="text-sm mb-3"
