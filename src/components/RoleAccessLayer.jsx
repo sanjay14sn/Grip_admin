@@ -443,7 +443,8 @@ const ChapterAccessLayer = () => {
                           <strong>Chapter day:</strong>
                         </td>
                         <td style={{ padding: "8px 0" }}>
-                          {formatDayName(chapter.meetingDayAndTime)}
+                          {/* {formatDayName(chapter.meetingDayAndTime)} */}
+                          {chapter.weekday}
                         </td>
                       </tr>
                       <tr>
@@ -1082,7 +1083,8 @@ const ChapterAccessLayer = () => {
                         <td style={{ padding: "8px 0" }}>
                           {selectedChapter.chapterName}{" "}
                           <span className="chapterday">
-                            ({formatDayName(selectedChapter.meetingDayAndTime)})
+                            {/* ({formatDayName(selectedChapter.meetingDayAndTime)}) */}
+                            ({selectedChapter.weekday})
                           </span>
                         </td>
                       </tr>
