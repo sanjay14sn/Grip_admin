@@ -127,6 +127,86 @@ const ChapterViewLayer = () => {
   const [visitorMember, setVisitorMember] = useState(null);
 
 
+const [presidentMember, setPresidentMember] = useState(null);       
+const [secretaryMember, setSecretaryMember] = useState(null);        
+const [vicePresidentMember, setVicePresidentMember] = useState(null);
+
+
+const handleRoleSubmit = async () => {
+  if (!presidentMember?.value) {
+    toast.error("President member is required");
+    return;
+  }
+
+  if (!secretaryMember?.value) {
+    toast.error("Secretary member is required");
+    return;
+  }
+
+  if (!vicePresidentMember?.value) {
+    toast.error("Vice President member is required");
+    return;
+  }
+
+  // FINAL PAYLOAD
+  const payload = {
+    president: presidentMember.value,
+    secretary: secretaryMember.value,
+    vicePresident: vicePresidentMember.value,
+  };
+
+  try {
+      const res = await chapterApiProvider.submitHeadTableRoles(id, payload);
+
+
+    if (res.status) {
+      toast.success(res.message || "Head table roles saved!");
+      setOpenDropdown(null);
+    } else {
+      toast.error(res.message || "Backend error");
+    }
+  } catch (err) {
+    toast.error(err?.message || "Unexpected error occurred");
+  }
+};
+
+useEffect(() => {
+  fetchHeadTableData();
+}, []);
+
+
+const fetchHeadTableData = async () => {
+  try {
+    const res = await chapterApiProvider.getHeadTableRoles(id);
+
+    if (!res?.data) return;
+
+    const data = res.data;
+
+    if (data.president) {
+      setPresidentMember({
+        label: data.president.name,
+        value: data.president.id
+      });
+    }
+
+    if (data.secretary) {
+      setSecretaryMember({
+        label: data.secretary.name,
+        value: data.secretary.id
+      });
+    }
+
+    if (data.vicePresident) {
+      setVicePresidentMember({
+        label: data.vicePresident.name,
+        value: data.vicePresident.id
+      });
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
   useEffect(() => {
     if (id) {
       fetchData(id);
@@ -435,23 +515,62 @@ const ChapterViewLayer = () => {
     setCardCount(transformedCards);
   };
 
+  // const fetchHeadTableMembers = async (id) => {
+  //   const response = await chapterApiProvider.getHeadTableMembersByChapterId(
+  //     id
+  //   );
+  //   console.log(
+  //     response,
+  //     "response-chapterApiProvider-getHeadTableMembersByChapterId"
+  //   );
+  //   if (response && response.status) {
+  //     const headTableMembersData = response?.response?.data || [];
+  //     setHeadTableMembersData(headTableMembersData);
+  //   } else {
+  //     console.error(
+  //       response?.response?.message || "Failed to fetch head table members data"
+  //     );
+  //   }
+  // };
+ 
   const fetchHeadTableMembers = async (id) => {
-    const response = await chapterApiProvider.getHeadTableMembersByChapterId(
-      id
+  const response = await chapterApiProvider.getHeadTableMembersByChapterId(id);
+
+  if (response && response.status) {
+    const data = response?.response?.data || [];
+    setHeadTableMembersData(data);
+
+    // 🟩 Auto-select the 3 roles
+    const president = data.find((x) => x.roleName === "President");
+    const secretary = data.find((x) => x.roleName === "Secretary");
+    const vicePresident = data.find((x) => x.roleName === "Vice President");
+
+    setPresidentMember(
+      president
+        ? { label: president.name, value: president.id }
+        : null
     );
-    console.log(
-      response,
-      "response-chapterApiProvider-getHeadTableMembersByChapterId"
+
+    setSecretaryMember(
+      secretary
+        ? { label: secretary.name, value: secretary.id }
+        : null
     );
-    if (response && response.status) {
-      const headTableMembersData = response?.response?.data || [];
-      setHeadTableMembersData(headTableMembersData);
-    } else {
-      console.error(
-        response?.response?.message || "Failed to fetch head table members data"
-      );
-    }
-  };
+
+    setVicePresidentMember(
+      vicePresident
+        ? { label: vicePresident.name, value: vicePresident.id }
+        : null
+    );
+
+  } else {
+    console.error(
+      response?.response?.message ||
+        "Failed to fetch head table members data"
+    );
+  }
+};
+
   const fetchHeadTableUsers = async (id) => {
     const response = await chapterApiProvider.getHeadTableUsersByChapterId(id);
     console.log(
@@ -1124,6 +1243,221 @@ const ChapterViewLayer = () => {
         </div>
       </div>
 
+      {/* Roles section */}
+      <div className="card h-100 p-0 radius-12 mb-5">
+  <div className="card-header border-bottom bg-base py-16 px-24">
+    <h6 className="text-lg fw-semibold mb-0">Head Table Roles</h6>
+  </div>
+
+  <div className="card-body p-24">
+    <div className="row">
+
+      {/* LEFT SIDE */}
+      <div className="col-md-6">
+        <h6
+          className="text-lg fw-semibold mb-20"
+          style={{
+            background:
+              "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
+            color: "#fff",
+            padding: "8px 12px",
+          }}
+        >
+          Select Roles
+        </h6>
+
+        {/* Item 1 — President */}
+        <div
+          onClick={() => setOpenDropdown("president")}
+          onMouseEnter={(e) => (e.target.style.color = "#000")}
+          onMouseLeave={(e) =>
+            (e.target.style.color =
+              openDropdown === "president" ? "#000" : "#2c2c2c")
+          }
+          style={{
+            fontSize: "1rem",
+            fontWeight: openDropdown === "president" ? 600 : 500,
+            padding: "0.75rem 0",
+            cursor: "pointer",
+            color: openDropdown === "president" ? "#000" : "#2c2c2c",
+            borderLeft:
+              openDropdown === "president"
+                ? "3px solid #000"
+                : "3px solid transparent",
+            paddingLeft: openDropdown === "president" ? "0.5rem" : "0rem",
+            transition: "0.2s",
+          }}
+        >
+          President
+        </div>
+
+        {/* Item 2 — Secretary */}
+        <div
+          onClick={() => setOpenDropdown("secretary")}
+          onMouseEnter={(e) => (e.target.style.color = "#000")}
+          onMouseLeave={(e) =>
+            (e.target.style.color =
+              openDropdown === "secretary" ? "#000" : "#2c2c2c")
+          }
+          style={{
+            fontSize: "1rem",
+            fontWeight: openDropdown === "secretary" ? 600 : 500,
+            padding: "0.75rem 0",
+            cursor: "pointer",
+            color: openDropdown === "secretary" ? "#000" : "#2c2c2c",
+            borderLeft:
+              openDropdown === "secretary"
+                ? "3px solid #000"
+                : "3px solid transparent",
+            paddingLeft: openDropdown === "secretary" ? "0.5rem" : "0rem",
+            transition: "0.2s",
+          }}
+        >
+          Secretary
+        </div>
+
+        {/* Item 3 — Vice President */}
+        <div
+          onClick={() => setOpenDropdown("vicepresident")}
+          onMouseEnter={(e) => (e.target.style.color = "#000")}
+          onMouseLeave={(e) =>
+            (e.target.style.color =
+              openDropdown === "vicepresident" ? "#000" : "#2c2c2c")
+          }
+          style={{
+            fontSize: "1rem",
+            fontWeight: openDropdown === "vicepresident" ? 600 : 500,
+            padding: "0.75rem 0",
+            cursor: "pointer",
+            color: openDropdown === "vicepresident" ? "#000" : "#2c2c2c",
+            borderLeft:
+              openDropdown === "vicepresident"
+                ? "3px solid #000"
+                : "3px solid transparent",
+            paddingLeft: openDropdown === "vicepresident" ? "0.5rem" : "0rem",
+            transition: "0.2s",
+          }}
+        >
+          Vice President
+        </div>
+      </div>
+
+      {/* RIGHT SIDE */}
+      <div className="col-md-6">
+        <h6
+          className="text-lg fw-semibold mb-20"
+          style={{
+            background:
+              "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
+            color: "#fff",
+            padding: "8px 12px",
+          }}
+        >
+          Assign Members
+        </h6>
+
+        {/* PRESIDENT DROPDOWN */}
+        <div className="mb-4">
+          {openDropdown === "president" ? (
+            <Select
+              menuPortalTarget={document.body}
+              menuPosition="fixed"
+              options={members.map((m) => ({
+                label: m.name,
+                value: m.id,
+              }))}
+              value={presidentMember}
+              onChange={(selected) => setPresidentMember(selected)}
+              placeholder="Select President"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                control: (styles) => ({
+                  ...styles,
+                  backgroundColor: "#e6e6e6",
+                  border: "none",
+                  minHeight: "2.5rem",
+                  borderRadius: "6px",
+                }),
+              }}
+            />
+          ) : (
+            <DisabledSelect value={presidentMember} />
+          )}
+        </div>
+
+        {/* SECRETARY DROPDOWN */}
+        <div className="mb-4">
+          {openDropdown === "secretary" ? (
+            <Select
+              menuPortalTarget={document.body}
+              menuPosition="fixed"
+              options={members.map((m) => ({
+                label: m.name,
+                value: m.id,
+              }))}
+              value={secretaryMember}
+              onChange={(selected) => setSecretaryMember(selected)}
+              placeholder="Select Secretary"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                control: (styles) => ({
+                  ...styles,
+                  backgroundColor: "#e6e6e6",
+                  border: "none",
+                  minHeight: "2.5rem",
+                  borderRadius: "6px",
+                }),
+              }}
+            />
+          ) : (
+            <DisabledSelect value={secretaryMember} />
+          )}
+        </div>
+
+        {/* VICE PRESIDENT DROPDOWN */}
+        <div className="mb-4">
+          {openDropdown === "vicepresident" ? (
+            <Select
+              menuPortalTarget={document.body}
+              menuPosition="fixed"
+              options={members.map((m) => ({
+                label: m.name,
+                value: m.id,
+              }))}
+              value={vicePresidentMember}
+              onChange={(selected) => setVicePresidentMember(selected)}
+              placeholder="Select Vice President"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                control: (styles) => ({
+                  ...styles,
+                  backgroundColor: "#e6e6e6",
+                  border: "none",
+                  minHeight: "2.5rem",
+                  borderRadius: "6px",
+                }),
+              }}
+            />
+          ) : (
+            <DisabledSelect value={vicePresidentMember} />
+          )}
+        </div>
+
+      </div>
+    </div>
+
+    <div className="text-end mt-4 px-32">
+      <button
+        type="button"
+        onClick={handleRoleSubmit}
+        className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
+      >
+        Submit
+      </button>
+    </div>
+
+  </div>
+      </div>
       {/* Top Achievers */}
       <div className="card h-100 p-0 radius-12 mb-5">
         <div className="card-header border-bottom bg-base py-16 px-24">

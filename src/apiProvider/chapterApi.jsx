@@ -692,6 +692,33 @@ class ChapterApiProvider {
             return { status: false, response: error.response?.data ?? null };
         }
     }
+async submitHeadTableRoles(chapterId, payload) {
+  try {
+    const token = sessionStorage.getItem("authToken"); // OR localStorage
+
+    const response = await apiClient.post(
+      `/chapters/headTableMembers/${chapterId}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      return { status: true, message: response.data.message };
+    }
+
+    return { status: false, message: response.data.message };
+
+  } catch (error) {
+    return {
+      status: false,
+      message: error.response?.data?.message ?? "Error"
+    };
+  }
+}
     async getTopAchieversById(input) {
         try {
             const response = await apiClient.get(`/chapters/topPerformersofChapter/${input}`);
