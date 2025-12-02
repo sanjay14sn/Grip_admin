@@ -2,8 +2,11 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ExpectedVisitorsApiProvider from "../../apiProvider/ExpectedVisitorsApiProvider";
+import { hasDeletePermission } from "../../utils/auth";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Swal from 'sweetalert2';
+
 
 
 const ExpectedVisitorsListLayer = () => {
@@ -49,34 +52,55 @@ const ExpectedVisitorsListLayer = () => {
     }
   };
 
-const deleteExpectedVisitor = async (id) => {
-  try {
-    const res = await ExpectedVisitorsApiProvider.deleteExpectedVisitor(id);
+ const deleteExpectedVisitor = async (id) => {
+  // Show confirmation popup
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "You are about to delete this expected visitor. This action cannot be undone!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    width: "400px",
+  });
 
-    if (res.status) {
-      // success toast
-      toast.success("Expected Visitor deleted successfully!");
+  // If user confirms delete
+  if (result.isConfirmed) {
+    try {
+      const res = await ExpectedVisitorsApiProvider.deleteExpectedVisitor(id);
 
-      // Remove / disable the item locally (NO refresh)
-      setExpectedVisitors((prev) =>
-        prev.filter((item) => item._id !== id)
-      );
+      if (res.status) {
+        // Success popup
+        await Swal.fire(
+          "Deleted!",
+          "Expected Visitor deleted successfully.",
+          "success"
+        );
 
-      // Update pagination count
-      setPagination((prev) => ({
-        ...prev,
-        total: prev.total - 1,
-        totalPages: Math.ceil((prev.total - 1) / prev.limit),
-      }));
+        // Remove item from state (no refresh)
+        setExpectedVisitors((prev) =>
+          prev.filter((item) => item._id !== id)
+        );
 
-    } else {
-      toast.error("Failed to delete visitor!");
+        // Update pagination count
+        setPagination((prev) => ({
+          ...prev,
+          total: prev.total - 1,
+          totalPages: Math.ceil((prev.total - 1) / prev.limit),
+        }));
+      } else {
+        await Swal.fire("Error!", "Failed to delete visitor!", "error");
+      }
+
+    } catch (error) {
+      console.error("Delete error:", error);
+      await Swal.fire("Error!", "Something went wrong!", "error");
     }
-  } catch (error) {
-    console.error("Delete error:", error);
-    toast.error("Something went wrong!");
   }
 };
+
 
 
 
@@ -124,13 +148,15 @@ const deleteExpectedVisitor = async (id) => {
                         {item.invite?.mobile || ""}
                       </td>
                       <td>
-  <button
+           {hasDeletePermission("delete") && (
+                                   <button
     type="button"
     className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
     onClick={() => deleteExpectedVisitor(item._id)}
   >
     <Icon icon="mdi:trash-can-outline" className="menu-icon" />
   </button>
+                                        )}
 </td>
 
                     </tr>
