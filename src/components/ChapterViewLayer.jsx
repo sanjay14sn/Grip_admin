@@ -228,21 +228,24 @@ const fetchHeadTableData = async () => {
     total: 0,
     totalPages: 1,
   });
-
   const [membersData, setMembersData] = useState([]);
   const paginatedMembers = membersData;   // ✅ FIX HERE
 
   const [attendanceCounts, setAttendanceCounts] = useState({});
   const [oneToOneCounts, setOneToOneCounts] = useState({});
-  const [givenOneToOneCounts, setgivenOneToOneCounts] = useState({});
-  const [givenreferralCounts, setGivenReferralCounts] = useState({});
   const [referralCounts, setReferralCounts] = useState({});
   const [thankYouAmounts, setThankYouAmounts] = useState({});
   const [visitorCounts, setVisitorCounts] = useState({});
-  const [visitorReportCounts, setVisitorReportCounts] = useState({});
-
   const [testimonialCounts, setTestimonialCounts] = useState({});
   const [search, setSearch] = useState("");
+  const [associatePerformance, setAssociatePerformance] = useState([]);
+
+  const [associatePag, setAssociatePag] = useState({
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    total: 0,
+  });
 
 
   // ---------------- USE EFFECT ----------------
@@ -250,7 +253,7 @@ const fetchHeadTableData = async () => {
     if (id) {
       fetchMembersWithAttendance(id);
     }
-  }, [id, search, pagination.page, pagination.limit]);
+  }, [id, search, pagination.page, pagination.limit, associatePag.page, associatePag.limit]);
 
 
   // ---------------- MAIN FUNCTION ----------------
@@ -262,13 +265,18 @@ const fetchHeadTableData = async () => {
         search: search.trim() || undefined,
       };
 
+      const associationParams = {
+        page: associatePag.page,
+        limit: associatePag.limit,
+      };
+
+      // 1. FETCH MEMBERS
       const response = await memberApiProvider.getMemberByChapterId(params, chapterId);
       const members = response?.data?.data?.members || [];
 
       setMembersData(members);
 
       const total = response?.data?.data?.pagination?.total || 0;
-
       setPagination((prev) => ({
         ...prev,
         total,
@@ -282,47 +290,56 @@ const fetchHeadTableData = async () => {
         setThankYouAmounts({});
         setVisitorCounts({});
         setTestimonialCounts({});
-        setgivenOneToOneCounts({})
-        setGivenReferralCounts({})
+        setAssociatePerformance([]);
         return;
       }
 
       const memberIds = members.map((m) => m._id);
 
+      // 2. PARALLEL FETCH
       const [
         attendanceRes,
         oneToOneRes,
-        givenOneToOneRes,
-        givenReferralRes,
         referralRes,
         thankYouRes,
         visitorRes,
-        visitorReportRes,
         testimonialRes,
+        associatePerformanceRes,
       ] = await Promise.all([
         chapterApiProvider.getMembersAttendanceCount(members),
         chapterApiProvider.getOneToOneCounts(memberIds),
-        chapterApiProvider.getOneToOneGivenCounts(memberIds),
-        chapterApiProvider.getReferralGivenCounts(memberIds),
         chapterApiProvider.getReferralCounts(memberIds),
         chapterApiProvider.getThankYouSlipAmounts(memberIds),
         chapterApiProvider.getVisitorCounts(memberIds),
-        chapterApiProvider.getVisitorReportCounts(memberIds),
         chapterApiProvider.getTestimonialCounts(memberIds),
+
+        // Associate performance report paginated
+        chapterApiProvider.getAssociatePerformanceReport(memberIds, associationParams),
       ]);
 
+
+      // 3. SET PALMS STATES
       if (attendanceRes?.success) setAttendanceCounts(attendanceRes.data);
       if (oneToOneRes?.success) setOneToOneCounts(oneToOneRes.data);
-      if (givenOneToOneRes?.success) setgivenOneToOneCounts(givenOneToOneRes.data);
-      if (givenReferralRes?.success) setGivenReferralCounts(givenReferralRes.data);
       if (referralRes?.success) setReferralCounts(referralRes.data);
       if (thankYouRes?.success) setThankYouAmounts(thankYouRes.data);
       if (visitorRes?.success) setVisitorCounts(visitorRes.data);
-      if (visitorReportRes?.success) setVisitorReportCounts(visitorReportRes.data);
       if (testimonialRes?.success) setTestimonialCounts(testimonialRes.data);
 
+      // 4. ASSOCIATE PERFORMANCE PAGINATION
+      if (associatePerformanceRes?.success) {
+        const { total } = associatePerformanceRes;
+
+        setAssociatePerformance(total || []);
+
+        setAssociatePag((prev) => ({
+          ...prev,
+          total: associatePerformanceRes.total,
+          totalPages: associatePerformanceRes.totalPages
+        }));
+      }
     } catch (error) {
-      console.error("Error fetching members and PALMS data:", error);
+      console.error("Error fetching members and reports:", error);
     }
   };
 
@@ -448,6 +465,24 @@ const fetchHeadTableData = async () => {
       }
     }
   };
+
+  function getPeriodMonthKey(date = new Date()) {
+
+    let year = date.getFullYear();
+    let month = date.getMonth() + 1; // 1–12
+
+    // If date is 1–15 → previous month period
+    if (date.getDate() <= 15) {
+      month = month - 1;
+      if (month === 0) {
+        month = 12;
+        year = year - 1;
+      }
+    }
+
+    return `${year}-${String(month).padStart(2, "0")}`;
+  }
+
 
   const fetchCountData = async (id) => {
     if (id) {
@@ -1571,7 +1606,7 @@ const fetchHeadTableData = async () => {
 
                       // FIX: read correctly from backend structure
                       const meetings = attendanceCounts?.[member._id]?.meeting || defaultCounts;
-                      const events = attendanceCounts?.[member._id]?.event|| 0;
+                      const events = attendanceCounts?.[member._id]?.event || 0;
                       const training = attendanceCounts?.[member._id]?.training || 0;
 
                       const totalEvents =
@@ -1607,10 +1642,10 @@ const fetchHeadTableData = async () => {
                           <td>{meetings.substitute}</td>
 
                           {/* Events */}
-                          <td>{totalEvents}</td>
+                          <td>{totalEvents || 0}</td>
 
                           {/* Training */}
-                          <td>{totalTraining}</td>
+                          <td>{totalTraining || 0}</td>
 
                           <td>{oneToOneCounts[member._id]?.fromCount || 0}</td>
                           <td>{referralCounts[member._id]?.given || 0}</td>
@@ -1666,7 +1701,7 @@ const fetchHeadTableData = async () => {
 
       {/* ASSOCIATE PERFORMANCE REPORT */}
       <div className="card h-100 p-0 radius-12">
-        <div className="card-header border-bottom bg-base py-16 px-24">
+        <div className="card-header border-bottom bg-base py-16 px-24 d-flex justify-content-between align-items-center">
           <h6 className="text-lg fw-semibold mb-0">Associate Performance Report</h6>
         </div>
 
@@ -1678,97 +1713,105 @@ const fetchHeadTableData = async () => {
                 <table className="table table-bordered align-middle">
                   <thead className="bg-light">
                     <tr>
-                      <th>S.NO</th>
-                      <th>Associate Name</th>
-
-                      {/* Updated column name */}
-                      <th>One-to-One</th>
-
-                      {/* Remaining dummy columns */}
-                      <th>Referral</th>
-                      <th>Visitor</th>
-                      <th>Column 5</th>
-                      <th>Column 6</th>
-                      <th>Column 7</th>
-                      <th>Column 8</th>
-                      <th>Column 9</th>
-                      <th>Column 10</th>
-                      <th>Column 11</th>
-                      <th>Column 12</th>
-                      <th>Column 13</th>
-                      <th>Column 14</th>
-                      <th>Column 15</th>
+                      <th>Member</th>
+                      <th>1-to-1</th>
+                      <th>Referrals</th>
+                      <th>Visitors</th>
+                      <th>Trainings</th>
+                      <th>Business</th>
+                      <th>Testimonials</th>
+                      <th>Attendance</th>
+                      <th>On-Time</th>
+                      <th>Total Score</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {paginatedMembers.map((member, index) => (
-                      <tr key={member._id}>
-                        <td>{(pagination.page - 1) * pagination.limit + (index + 1)}</td>
+                    {associatePerformance?.length > 0 ? (
+                      associatePerformance.map((m) => {
+                        const key = getPeriodMonthKey();   // ex → "2025-12"
+                        const monthData = m?.monthlyScore?.[key] || {};  // pick correct month
 
-                        <td>
-                          <div className="d-flex align-items-center gap-3">
-                            <div>
-                              <h6 className="text-md mb-0">{member.name}</h6>
-                              <small className="text-xs text-muted">{member.category}</small>
-                            </div>
-                          </div>
-                        </td>
 
-                        {/* Column 2 → One-to-One Given Count */}
-                        <td>
-                          {givenOneToOneCounts?.[member._id]?.points ?? 0}
-                        </td>
-                        {/* Column 2 → referral Given Count */}
-                        <td>
-                          {givenreferralCounts?.[member._id]?.points ?? 0}
-                        </td>
-                        <td>
-                          {visitorReportCounts?.[member._id]?.points ?? 0}
-                        </td>
+                        const oneToOne = monthData.oneToOne || 0;
+                        const referrals = monthData.referrals || 0;
+                        const visitors = monthData.visitors || 0;
+                        const trainings = monthData.trainings || 0;
+                        const business = monthData.business || 0;
+                        const testimonials = monthData.testimonials || 0;
+                        const attendance = monthData.attendance || 0;
+                        const onTime = monthData.onTime || 0;
 
-                        {/* Dummy columns */}
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
+                        const totalScore =
+                          oneToOne +
+                          referrals +
+                          visitors +
+                          trainings +
+                          business +
+                          testimonials +
+                          attendance +
+                          onTime;
+
+                        return (
+                          <tr key={m._id}>
+                            <td>{m.memberName}</td>
+                            <td>{oneToOne?.toFixed(2) || "0.00"}</td>
+                            <td>{referrals?.toFixed(2) || "0.00"}</td>
+                            <td>{visitors?.toFixed(2) || "0.00"}</td>
+                            <td>{trainings?.toFixed(2) || "0.00"}</td>
+                            <td>{business?.toFixed(2) || "0.00"}</td>
+                            <td>{testimonials?.toFixed(2) || "0.00"}</td>
+                            <td>{attendance?.toFixed(2) || "0.00"}</td>
+                            <td>{onTime?.toFixed(2) || "0.00"}</td>
+
+                            <td>
+                              <div className="fw-bold">{totalScore.toFixed(2)}</div>
+                              <div className="progress" style={{ height: "6px" }}>
+                                <div
+                                  className="progress-bar bg-success"
+                                  style={{ width: `${(totalScore / 50) * 100}%` }}
+                                ></div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="10" className="text-muted fw-bold">
+                          No records found
+                        </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
 
               {/* PAGINATION */}
               <div className="d-flex justify-content-between align-items-center mt-3">
+                {/* Prev */}
                 <button
                   className="btn btn-primary"
-                  disabled={pagination.page === 1}
+                  disabled={associatePag.page === 1}
                   onClick={() =>
-                    setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                    setAssociatePag((prev) => ({ ...prev, page: prev.page - 1 }))
                   }
                 >
                   Prev
                 </button>
 
+                {/* Page Info */}
                 <div>
-                  Page <strong>{pagination.page}</strong> of{" "}
-                  <strong>{pagination.totalPages}</strong>
+                  Page <strong>{associatePag.page}</strong> of{" "}
+                  <strong>{associatePag.totalPages}</strong>
                 </div>
 
+                {/* Next */}
                 <button
                   className="btn btn-primary"
-                  disabled={pagination.page === pagination.totalPages}
+                  disabled={associatePag.page === associatePag.totalPages}
                   onClick={() =>
-                    setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                    setAssociatePag((prev) => ({ ...prev, page: prev.page + 1 }))
                   }
                 >
                   Next
@@ -1780,6 +1823,7 @@ const fetchHeadTableData = async () => {
           )}
         </div>
       </div>
+
 
 
       {/* Modal Start */}

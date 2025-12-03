@@ -242,9 +242,9 @@ class ChapterApiProvider {
         }
     }
 
-    async thankYouSlipListMember(input,query) {
+    async thankYouSlipListMember(input, query) {
         try {
-            const response = await apiClient.get(`/thankyouslips/member/list/${input}`,{
+            const response = await apiClient.get(`/thankyouslips/member/list/${input}`, {
                 params: query   // 👈 SEND pagination here
             });
 
@@ -397,7 +397,7 @@ class ChapterApiProvider {
     }
 
 
-    async refferalListMember(id,query) {
+    async refferalListMember(id, query) {
         try {
             const response = await apiClient.get(`/referralslip/member/list/${id}`, {
                 params: query   // 👈 SEND pagination here
@@ -443,9 +443,9 @@ class ChapterApiProvider {
         }
     }
 
-    async testimonialSlipListMember(id,query) {
+    async testimonialSlipListMember(id, query) {
         try {
-            const response = await apiClient.get(`/testimonialslips/member/list/${id}`,{
+            const response = await apiClient.get(`/testimonialslips/member/list/${id}`, {
                 params: query   // 👈 SEND pagination here
             });
 
@@ -491,9 +491,9 @@ class ChapterApiProvider {
 
 
 
-    async visitorsSlipListMember(input,query) {
+    async visitorsSlipListMember(input, query) {
         try {
-            const response = await apiClient.get(`/visitors/member/list/${input}`,{
+            const response = await apiClient.get(`/visitors/member/list/${input}`, {
                 params: query   // 👈 SEND pagination here
             });
 
@@ -867,21 +867,7 @@ async submitHeadTableRoles(chapterId, payload) {
         }
     }
 
-    async getVisitorReportCounts(memberIds) {
-        try {
-            const response = await apiClient.post('/members/visitor-report-count', { memberIds });
 
-            if (response.status === 200 || response.status === 201) {
-                return { success: true, data: response.data.data };
-            } else {
-                console.error("Failed to fetch visitor counts:", response.data?.message);
-                return { success: false, data: {} };
-            }
-        } catch (error) {
-            console.error("Error fetching visitor counts:", error);
-            return { success: false, data: {} };
-        }
-    }
 
     // memberApiProvider.ts
     async getTestimonialCounts(memberIds) {
@@ -899,6 +885,32 @@ async submitHeadTableRoles(chapterId, payload) {
         } catch (error) {
             console.error("Error fetching testimonial counts:", error);
             return { success: false, data: {} };
+        }
+    }
+
+    async getAssociatePerformanceReport(memberIds, associationParams) {
+        try {
+            const response = await apiClient.post("/period-report/run", {
+                memberIds,
+                page: associationParams.page,
+                limit: associationParams.limit,
+            });
+
+            if (response.status === 200 || response.status === 201) {
+                return {
+                    success: true,
+                    total: response.data.data,  // total count from backend
+                };
+            } else {
+                console.error(
+                    "Failed to fetch associate performance report:",
+                    response.data?.message
+                );
+                return { success: false, data: [], total: 0 };
+            }
+        } catch (error) {
+            console.error("Error fetching associate performance report:", error);
+            return { success: false, data: [], total: 0 };
         }
     }
 }
