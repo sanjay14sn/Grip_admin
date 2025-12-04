@@ -127,86 +127,86 @@ const ChapterViewLayer = () => {
   const [visitorMember, setVisitorMember] = useState(null);
 
 
-const [presidentMember, setPresidentMember] = useState(null);       
-const [secretaryMember, setSecretaryMember] = useState(null);        
-const [vicePresidentMember, setVicePresidentMember] = useState(null);
+  const [presidentMember, setPresidentMember] = useState(null);
+  const [secretaryMember, setSecretaryMember] = useState(null);
+  const [vicePresidentMember, setVicePresidentMember] = useState(null);
 
 
-const handleRoleSubmit = async () => {
-  if (!presidentMember?.value) {
-    toast.error("President member is required");
-    return;
-  }
+  const handleRoleSubmit = async () => {
+    if (!presidentMember?.value) {
+      toast.error("President member is required");
+      return;
+    }
 
-  if (!secretaryMember?.value) {
-    toast.error("Secretary member is required");
-    return;
-  }
+    if (!secretaryMember?.value) {
+      toast.error("Secretary member is required");
+      return;
+    }
 
-  if (!vicePresidentMember?.value) {
-    toast.error("Vice President member is required");
-    return;
-  }
+    if (!vicePresidentMember?.value) {
+      toast.error("Vice President member is required");
+      return;
+    }
 
-  // FINAL PAYLOAD
-  const payload = {
-    president: presidentMember.value,
-    secretary: secretaryMember.value,
-    vicePresident: vicePresidentMember.value,
-  };
+    // FINAL PAYLOAD
+    const payload = {
+      president: presidentMember.value,
+      secretary: secretaryMember.value,
+      vicePresident: vicePresidentMember.value,
+    };
 
-  try {
+    try {
       const res = await chapterApiProvider.submitHeadTableRoles(id, payload);
 
 
-    if (res.status) {
-      toast.success(res.message || "Head table roles saved!");
-      setOpenDropdown(null);
-    } else {
-      toast.error(res.message || "Backend error");
+      if (res.status) {
+        toast.success(res.message || "Head table roles saved!");
+        setOpenDropdown(null);
+      } else {
+        toast.error(res.message || "Backend error");
+      }
+    } catch (err) {
+      toast.error(err?.message || "Unexpected error occurred");
     }
-  } catch (err) {
-    toast.error(err?.message || "Unexpected error occurred");
-  }
-};
+  };
 
-useEffect(() => {
-  fetchHeadTableData();
-}, []);
+  useEffect(() => {
+    fetchHeadTableData();
+  }, []);
 
 
-const fetchHeadTableData = async () => {
-  try {
-    const res = await chapterApiProvider.getHeadTableRoles(id);
+  const fetchHeadTableData = async () => {
+    try {
+      const res = await chapterApiProvider.getHeadTableRoles(id);
 
-    if (!res?.data) return;
+      if (!res?.data) return;
 
-    const data = res.data;
+      const data = res.data;
 
-    if (data.president) {
-      setPresidentMember({
-        label: data.president.name,
-        value: data.president.id
-      });
+      if (data.president) {
+        setPresidentMember({
+          label: data.president.name,
+          value: data.president.id
+        });
+      }
+
+      if (data.secretary) {
+        setSecretaryMember({
+          label: data.secretary.name,
+          value: data.secretary.id
+        });
+      }
+
+      if (data.vicePresident) {
+        setVicePresidentMember({
+          label: data.vicePresident.name,
+          value: data.vicePresident.id
+        });
+      }
+    } catch (err) {
+      console.error(err);
     }
-
-    if (data.secretary) {
-      setSecretaryMember({
-        label: data.secretary.name,
-        value: data.secretary.id
-      });
-    }
-
-    if (data.vicePresident) {
-      setVicePresidentMember({
-        label: data.vicePresident.name,
-        value: data.vicePresident.id
-      });
-    }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
   useEffect(() => {
     if (id) {
       fetchData(id);
@@ -240,20 +240,13 @@ const fetchHeadTableData = async () => {
   const [search, setSearch] = useState("");
   const [associatePerformance, setAssociatePerformance] = useState([]);
 
-  const [associatePag, setAssociatePag] = useState({
-    page: 1,
-    limit: 10,
-    totalPages: 1,
-    total: 0,
-  });
-
 
   // ---------------- USE EFFECT ----------------
   useEffect(() => {
     if (id) {
       fetchMembersWithAttendance(id);
     }
-  }, [id, search, pagination.page, pagination.limit, associatePag.page, associatePag.limit]);
+  }, [id, search, pagination.page, pagination.limit]);
 
 
   // ---------------- MAIN FUNCTION ----------------
@@ -265,10 +258,7 @@ const fetchHeadTableData = async () => {
         search: search.trim() || undefined,
       };
 
-      const associationParams = {
-        page: associatePag.page,
-        limit: associatePag.limit,
-      };
+
 
       // 1. FETCH MEMBERS
       const response = await memberApiProvider.getMemberByChapterId(params, chapterId);
@@ -314,7 +304,7 @@ const fetchHeadTableData = async () => {
         chapterApiProvider.getTestimonialCounts(memberIds),
 
         // Associate performance report paginated
-        chapterApiProvider.getAssociatePerformanceReport(memberIds, associationParams),
+        chapterApiProvider.getAssociatePerformanceReport(memberIds, params),
       ]);
 
 
@@ -328,15 +318,8 @@ const fetchHeadTableData = async () => {
 
       // 4. ASSOCIATE PERFORMANCE PAGINATION
       if (associatePerformanceRes?.success) {
-        const { total } = associatePerformanceRes;
-
-        setAssociatePerformance(total || []);
-
-        setAssociatePag((prev) => ({
-          ...prev,
-          total: associatePerformanceRes.total,
-          totalPages: associatePerformanceRes.totalPages
-        }));
+        const { data } = associatePerformanceRes;
+        setAssociatePerformance(data || []);
       }
     } catch (error) {
       console.error("Error fetching members and reports:", error);
@@ -471,14 +454,6 @@ const fetchHeadTableData = async () => {
     let year = date.getFullYear();
     let month = date.getMonth() + 1; // 1–12
 
-    // If date is 1–15 → previous month period
-    if (date.getDate() <= 15) {
-      month = month - 1;
-      if (month === 0) {
-        month = 12;
-        year = year - 1;
-      }
-    }
 
     return `${year}-${String(month).padStart(2, "0")}`;
   }
@@ -567,44 +542,44 @@ const fetchHeadTableData = async () => {
   //     );
   //   }
   // };
- 
+
   const fetchHeadTableMembers = async (id) => {
-  const response = await chapterApiProvider.getHeadTableMembersByChapterId(id);
+    const response = await chapterApiProvider.getHeadTableMembersByChapterId(id);
 
-  if (response && response.status) {
-    const data = response?.response?.data || [];
-    setHeadTableMembersData(data);
+    if (response && response.status) {
+      const data = response?.response?.data || [];
+      setHeadTableMembersData(data);
 
-    // 🟩 Auto-select the 3 roles
-    const president = data.find((x) => x.roleName === "President");
-    const secretary = data.find((x) => x.roleName === "Secretary");
-    const vicePresident = data.find((x) => x.roleName === "Vice President");
+      // 🟩 Auto-select the 3 roles
+      const president = data.find((x) => x.roleName === "President");
+      const secretary = data.find((x) => x.roleName === "Secretary");
+      const vicePresident = data.find((x) => x.roleName === "Vice President");
 
-    setPresidentMember(
-      president
-        ? { label: president.name, value: president.id }
-        : null
-    );
+      setPresidentMember(
+        president
+          ? { label: president.name, value: president.id }
+          : null
+      );
 
-    setSecretaryMember(
-      secretary
-        ? { label: secretary.name, value: secretary.id }
-        : null
-    );
+      setSecretaryMember(
+        secretary
+          ? { label: secretary.name, value: secretary.id }
+          : null
+      );
 
-    setVicePresidentMember(
-      vicePresident
-        ? { label: vicePresident.name, value: vicePresident.id }
-        : null
-    );
+      setVicePresidentMember(
+        vicePresident
+          ? { label: vicePresident.name, value: vicePresident.id }
+          : null
+      );
 
-  } else {
-    console.error(
-      response?.response?.message ||
+    } else {
+      console.error(
+        response?.response?.message ||
         "Failed to fetch head table members data"
-    );
-  }
-};
+      );
+    }
+  };
 
   const fetchHeadTableUsers = async (id) => {
     const response = await chapterApiProvider.getHeadTableUsersByChapterId(id);
@@ -1280,218 +1255,218 @@ const fetchHeadTableData = async () => {
 
       {/* Roles section */}
       <div className="card h-100 p-0 radius-12 mb-5">
-  <div className="card-header border-bottom bg-base py-16 px-24">
-    <h6 className="text-lg fw-semibold mb-0">Head Table Roles</h6>
-  </div>
-
-  <div className="card-body p-24">
-    <div className="row">
-
-      {/* LEFT SIDE */}
-      <div className="col-md-6">
-        <h6
-          className="text-lg fw-semibold mb-20"
-          style={{
-            background:
-              "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
-            color: "#fff",
-            padding: "8px 12px",
-          }}
-        >
-          Select Roles
-        </h6>
-
-        {/* Item 1 — President */}
-        <div
-          onClick={() => setOpenDropdown("president")}
-          onMouseEnter={(e) => (e.target.style.color = "#000")}
-          onMouseLeave={(e) =>
-            (e.target.style.color =
-              openDropdown === "president" ? "#000" : "#2c2c2c")
-          }
-          style={{
-            fontSize: "1rem",
-            fontWeight: openDropdown === "president" ? 600 : 500,
-            padding: "0.75rem 0",
-            cursor: "pointer",
-            color: openDropdown === "president" ? "#000" : "#2c2c2c",
-            borderLeft:
-              openDropdown === "president"
-                ? "3px solid #000"
-                : "3px solid transparent",
-            paddingLeft: openDropdown === "president" ? "0.5rem" : "0rem",
-            transition: "0.2s",
-          }}
-        >
-          President
+        <div className="card-header border-bottom bg-base py-16 px-24">
+          <h6 className="text-lg fw-semibold mb-0">Head Table Roles</h6>
         </div>
 
-        {/* Item 2 — Secretary */}
-        <div
-          onClick={() => setOpenDropdown("secretary")}
-          onMouseEnter={(e) => (e.target.style.color = "#000")}
-          onMouseLeave={(e) =>
-            (e.target.style.color =
-              openDropdown === "secretary" ? "#000" : "#2c2c2c")
-          }
-          style={{
-            fontSize: "1rem",
-            fontWeight: openDropdown === "secretary" ? 600 : 500,
-            padding: "0.75rem 0",
-            cursor: "pointer",
-            color: openDropdown === "secretary" ? "#000" : "#2c2c2c",
-            borderLeft:
-              openDropdown === "secretary"
-                ? "3px solid #000"
-                : "3px solid transparent",
-            paddingLeft: openDropdown === "secretary" ? "0.5rem" : "0rem",
-            transition: "0.2s",
-          }}
-        >
-          Secretary
+        <div className="card-body p-24">
+          <div className="row">
+
+            {/* LEFT SIDE */}
+            <div className="col-md-6">
+              <h6
+                className="text-lg fw-semibold mb-20"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
+                  color: "#fff",
+                  padding: "8px 12px",
+                }}
+              >
+                Select Roles
+              </h6>
+
+              {/* Item 1 — President */}
+              <div
+                onClick={() => setOpenDropdown("president")}
+                onMouseEnter={(e) => (e.target.style.color = "#000")}
+                onMouseLeave={(e) =>
+                (e.target.style.color =
+                  openDropdown === "president" ? "#000" : "#2c2c2c")
+                }
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: openDropdown === "president" ? 600 : 500,
+                  padding: "0.75rem 0",
+                  cursor: "pointer",
+                  color: openDropdown === "president" ? "#000" : "#2c2c2c",
+                  borderLeft:
+                    openDropdown === "president"
+                      ? "3px solid #000"
+                      : "3px solid transparent",
+                  paddingLeft: openDropdown === "president" ? "0.5rem" : "0rem",
+                  transition: "0.2s",
+                }}
+              >
+                President
+              </div>
+
+              {/* Item 2 — Secretary */}
+              <div
+                onClick={() => setOpenDropdown("secretary")}
+                onMouseEnter={(e) => (e.target.style.color = "#000")}
+                onMouseLeave={(e) =>
+                (e.target.style.color =
+                  openDropdown === "secretary" ? "#000" : "#2c2c2c")
+                }
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: openDropdown === "secretary" ? 600 : 500,
+                  padding: "0.75rem 0",
+                  cursor: "pointer",
+                  color: openDropdown === "secretary" ? "#000" : "#2c2c2c",
+                  borderLeft:
+                    openDropdown === "secretary"
+                      ? "3px solid #000"
+                      : "3px solid transparent",
+                  paddingLeft: openDropdown === "secretary" ? "0.5rem" : "0rem",
+                  transition: "0.2s",
+                }}
+              >
+                Secretary
+              </div>
+
+              {/* Item 3 — Vice President */}
+              <div
+                onClick={() => setOpenDropdown("vicepresident")}
+                onMouseEnter={(e) => (e.target.style.color = "#000")}
+                onMouseLeave={(e) =>
+                (e.target.style.color =
+                  openDropdown === "vicepresident" ? "#000" : "#2c2c2c")
+                }
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: openDropdown === "vicepresident" ? 600 : 500,
+                  padding: "0.75rem 0",
+                  cursor: "pointer",
+                  color: openDropdown === "vicepresident" ? "#000" : "#2c2c2c",
+                  borderLeft:
+                    openDropdown === "vicepresident"
+                      ? "3px solid #000"
+                      : "3px solid transparent",
+                  paddingLeft: openDropdown === "vicepresident" ? "0.5rem" : "0rem",
+                  transition: "0.2s",
+                }}
+              >
+                Vice President
+              </div>
+            </div>
+
+            {/* RIGHT SIDE */}
+            <div className="col-md-6">
+              <h6
+                className="text-lg fw-semibold mb-20"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
+                  color: "#fff",
+                  padding: "8px 12px",
+                }}
+              >
+                Assign Members
+              </h6>
+
+              {/* PRESIDENT DROPDOWN */}
+              <div className="mb-4">
+                {openDropdown === "president" ? (
+                  <Select
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    options={members.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    value={presidentMember}
+                    onChange={(selected) => setPresidentMember(selected)}
+                    placeholder="Select President"
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (styles) => ({
+                        ...styles,
+                        backgroundColor: "#e6e6e6",
+                        border: "none",
+                        minHeight: "2.5rem",
+                        borderRadius: "6px",
+                      }),
+                    }}
+                  />
+                ) : (
+                  <DisabledSelect value={presidentMember} />
+                )}
+              </div>
+
+              {/* SECRETARY DROPDOWN */}
+              <div className="mb-4">
+                {openDropdown === "secretary" ? (
+                  <Select
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    options={members.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    value={secretaryMember}
+                    onChange={(selected) => setSecretaryMember(selected)}
+                    placeholder="Select Secretary"
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (styles) => ({
+                        ...styles,
+                        backgroundColor: "#e6e6e6",
+                        border: "none",
+                        minHeight: "2.5rem",
+                        borderRadius: "6px",
+                      }),
+                    }}
+                  />
+                ) : (
+                  <DisabledSelect value={secretaryMember} />
+                )}
+              </div>
+
+              {/* VICE PRESIDENT DROPDOWN */}
+              <div className="mb-4">
+                {openDropdown === "vicepresident" ? (
+                  <Select
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    options={members.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    value={vicePresidentMember}
+                    onChange={(selected) => setVicePresidentMember(selected)}
+                    placeholder="Select Vice President"
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (styles) => ({
+                        ...styles,
+                        backgroundColor: "#e6e6e6",
+                        border: "none",
+                        minHeight: "2.5rem",
+                        borderRadius: "6px",
+                      }),
+                    }}
+                  />
+                ) : (
+                  <DisabledSelect value={vicePresidentMember} />
+                )}
+              </div>
+
+            </div>
+          </div>
+
+          <div className="text-end mt-4 px-32">
+            <button
+              type="button"
+              onClick={handleRoleSubmit}
+              className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
+            >
+              Submit
+            </button>
+          </div>
+
         </div>
-
-        {/* Item 3 — Vice President */}
-        <div
-          onClick={() => setOpenDropdown("vicepresident")}
-          onMouseEnter={(e) => (e.target.style.color = "#000")}
-          onMouseLeave={(e) =>
-            (e.target.style.color =
-              openDropdown === "vicepresident" ? "#000" : "#2c2c2c")
-          }
-          style={{
-            fontSize: "1rem",
-            fontWeight: openDropdown === "vicepresident" ? 600 : 500,
-            padding: "0.75rem 0",
-            cursor: "pointer",
-            color: openDropdown === "vicepresident" ? "#000" : "#2c2c2c",
-            borderLeft:
-              openDropdown === "vicepresident"
-                ? "3px solid #000"
-                : "3px solid transparent",
-            paddingLeft: openDropdown === "vicepresident" ? "0.5rem" : "0rem",
-            transition: "0.2s",
-          }}
-        >
-          Vice President
-        </div>
-      </div>
-
-      {/* RIGHT SIDE */}
-      <div className="col-md-6">
-        <h6
-          className="text-lg fw-semibold mb-20"
-          style={{
-            background:
-              "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
-            color: "#fff",
-            padding: "8px 12px",
-          }}
-        >
-          Assign Members
-        </h6>
-
-        {/* PRESIDENT DROPDOWN */}
-        <div className="mb-4">
-          {openDropdown === "president" ? (
-            <Select
-              menuPortalTarget={document.body}
-              menuPosition="fixed"
-              options={members.map((m) => ({
-                label: m.name,
-                value: m.id,
-              }))}
-              value={presidentMember}
-              onChange={(selected) => setPresidentMember(selected)}
-              placeholder="Select President"
-              styles={{
-                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                control: (styles) => ({
-                  ...styles,
-                  backgroundColor: "#e6e6e6",
-                  border: "none",
-                  minHeight: "2.5rem",
-                  borderRadius: "6px",
-                }),
-              }}
-            />
-          ) : (
-            <DisabledSelect value={presidentMember} />
-          )}
-        </div>
-
-        {/* SECRETARY DROPDOWN */}
-        <div className="mb-4">
-          {openDropdown === "secretary" ? (
-            <Select
-              menuPortalTarget={document.body}
-              menuPosition="fixed"
-              options={members.map((m) => ({
-                label: m.name,
-                value: m.id,
-              }))}
-              value={secretaryMember}
-              onChange={(selected) => setSecretaryMember(selected)}
-              placeholder="Select Secretary"
-              styles={{
-                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                control: (styles) => ({
-                  ...styles,
-                  backgroundColor: "#e6e6e6",
-                  border: "none",
-                  minHeight: "2.5rem",
-                  borderRadius: "6px",
-                }),
-              }}
-            />
-          ) : (
-            <DisabledSelect value={secretaryMember} />
-          )}
-        </div>
-
-        {/* VICE PRESIDENT DROPDOWN */}
-        <div className="mb-4">
-          {openDropdown === "vicepresident" ? (
-            <Select
-              menuPortalTarget={document.body}
-              menuPosition="fixed"
-              options={members.map((m) => ({
-                label: m.name,
-                value: m.id,
-              }))}
-              value={vicePresidentMember}
-              onChange={(selected) => setVicePresidentMember(selected)}
-              placeholder="Select Vice President"
-              styles={{
-                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                control: (styles) => ({
-                  ...styles,
-                  backgroundColor: "#e6e6e6",
-                  border: "none",
-                  minHeight: "2.5rem",
-                  borderRadius: "6px",
-                }),
-              }}
-            />
-          ) : (
-            <DisabledSelect value={vicePresidentMember} />
-          )}
-        </div>
-
-      </div>
-    </div>
-
-    <div className="text-end mt-4 px-32">
-      <button
-        type="button"
-        onClick={handleRoleSubmit}
-        className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
-      >
-        Submit
-      </button>
-    </div>
-
-  </div>
       </div>
       {/* Top Achievers */}
       <div className="card h-100 p-0 radius-12 mb-5">
@@ -1713,6 +1688,7 @@ const fetchHeadTableData = async () => {
                 <table className="table table-bordered align-middle">
                   <thead className="bg-light">
                     <tr>
+                      <th>S.NO</th>
                       <th>Member</th>
                       <th>1-to-1</th>
                       <th>Referrals</th>
@@ -1721,17 +1697,18 @@ const fetchHeadTableData = async () => {
                       <th>Business</th>
                       <th>Testimonials</th>
                       <th>Attendance</th>
-                      <th>On-Time</th>
                       <th>Total Score</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {associatePerformance?.length > 0 ? (
-                      associatePerformance.map((m) => {
+                    {paginatedMembers?.length > 0 ? (
+                      paginatedMembers.map((member, index) => {
+                        // Find the associate report for this member
+                        const report = associatePerformance?.find(r => r.memberId === member._id) || {};
                         const key = getPeriodMonthKey();   // ex → "2025-12"
-                        const monthData = m?.monthlyScore?.[key] || {};  // pick correct month
-
+                        console.log(key, "key")
+                        const monthData = report?.monthlyScore?.[key] || {};
 
                         const oneToOne = monthData.oneToOne || 0;
                         const referrals = monthData.referrals || 0;
@@ -1753,17 +1730,23 @@ const fetchHeadTableData = async () => {
                           onTime;
 
                         return (
-                          <tr key={m._id}>
-                            <td>{m.memberName}</td>
-                            <td>{oneToOne?.toFixed(2) || "0.00"}</td>
-                            <td>{referrals?.toFixed(2) || "0.00"}</td>
-                            <td>{visitors?.toFixed(2) || "0.00"}</td>
-                            <td>{trainings?.toFixed(2) || "0.00"}</td>
-                            <td>{business?.toFixed(2) || "0.00"}</td>
-                            <td>{testimonials?.toFixed(2) || "0.00"}</td>
-                            <td>{attendance?.toFixed(2) || "0.00"}</td>
-                            <td>{onTime?.toFixed(2) || "0.00"}</td>
-
+                          <tr key={member._id}>
+                            <td>{(pagination.page - 1) * pagination.limit + index + 1}</td>
+                            <td>
+                              <Link
+                                to={`/associate/${member._id}/report`}
+                                style={{ color: "#007bff", fontWeight: "600", textDecoration: "underline", cursor: "pointer" }}
+                              >
+                                {member.name}
+                              </Link>
+                            </td>
+                            <td>{oneToOne.toFixed(2)}</td>
+                            <td>{referrals.toFixed(2)}</td>
+                            <td>{visitors.toFixed(2)}</td>
+                            <td>{trainings.toFixed(2)}</td>
+                            <td>{business.toFixed(2)}</td>
+                            <td>{testimonials.toFixed(2)}</td>
+                            <td>{attendance.toFixed(2)}</td>
                             <td>
                               <div className="fw-bold">{totalScore.toFixed(2)}</div>
                               <div className="progress" style={{ height: "6px" }}>
@@ -1778,7 +1761,7 @@ const fetchHeadTableData = async () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="10" className="text-muted fw-bold">
+                        <td colSpan={11} className="text-muted fw-bold">
                           No records found
                         </td>
                       </tr>
@@ -1792,9 +1775,9 @@ const fetchHeadTableData = async () => {
                 {/* Prev */}
                 <button
                   className="btn btn-primary"
-                  disabled={associatePag.page === 1}
+                  disabled={pagination.page === 1}
                   onClick={() =>
-                    setAssociatePag((prev) => ({ ...prev, page: prev.page - 1 }))
+                    setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
                   }
                 >
                   Prev
@@ -1802,16 +1785,16 @@ const fetchHeadTableData = async () => {
 
                 {/* Page Info */}
                 <div>
-                  Page <strong>{associatePag.page}</strong> of{" "}
-                  <strong>{associatePag.totalPages}</strong>
+                  Page <strong>{pagination.page}</strong> of{" "}
+                  <strong>{pagination.totalPages}</strong>
                 </div>
 
                 {/* Next */}
                 <button
                   className="btn btn-primary"
-                  disabled={associatePag.page === associatePag.totalPages}
+                  disabled={pagination.page === pagination.totalPages}
                   onClick={() =>
-                    setAssociatePag((prev) => ({ ...prev, page: prev.page + 1 }))
+                    setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
                   }
                 >
                   Next

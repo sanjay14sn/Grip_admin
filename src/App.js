@@ -132,6 +132,7 @@ import AttedenceListPage from "./pages/AttedenceListPage";
 import AttedenseMemberListPage from "./pages/AttedenceMemberPage";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import TrainingListPage from "./pages/TrainingPage";
+import MemberSixMonthReport from "./components/AssociatePerformanceReport";
 
 function App() {
   // Initialize auth state from sessionStorage so we know the value during the first render
@@ -271,6 +272,9 @@ function App() {
           <Route exact path="/enquiries" element={<EnquiryListPage />} />
 
           <Route exact path="/thankyou" element={<ThankyouOverallPage />} />
+
+          <Route exact path="/associate/:id/report" element={<MemberSixMonthReport />} />
+
 
           <Route
             exact

@@ -899,7 +899,7 @@ async submitHeadTableRoles(chapterId, payload) {
             if (response.status === 200 || response.status === 201) {
                 return {
                     success: true,
-                    total: response.data.data,  // total count from backend
+                    data: response.data.data,  // total count from backend
                 };
             } else {
                 console.error(
