@@ -10,7 +10,7 @@ const AddPinPage = () => {
   return (
     <>
     <MasterLayout>
-      <Breadcrumb title={id ? "Edit User" : "Add Pin"} />
+      <Breadcrumb title={id ? "Edit Pin" : "Add Pin"} />
       <AddPinLayer />
     </MasterLayout>
     </>
