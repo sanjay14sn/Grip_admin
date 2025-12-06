@@ -18,7 +18,7 @@ const ChapterAccessLayer = () => {
     stateName: "",
     zoneName: "",
     dob: "",
-    zoneHead: []
+    // zoneHead: []
   });
 
   // Chapter Modal State
@@ -203,7 +203,7 @@ const ChapterAccessLayer = () => {
           stateName: "",
           zoneName: "",
           dob: "",
-          zoneHead: [],
+          // zoneHead: [],
         });
         setErrors({});
       }
