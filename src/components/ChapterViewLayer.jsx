@@ -480,7 +480,7 @@ const ChapterViewLayer = () => {
     const transformedCards = [
       {
         count: apiData.MembersCount || 0,
-        label: "Members",
+        label: "Associates",
         icon: "ri-user-shared-fill",
         bg: "bggg-white",
         iconBg: "bg-primary",
@@ -576,7 +576,7 @@ const ChapterViewLayer = () => {
     } else {
       console.error(
         response?.response?.message ||
-        "Failed to fetch head table members data"
+        "Failed to fetch head table associates data"
       );
     }
   };
@@ -749,13 +749,13 @@ const ChapterViewLayer = () => {
 
           {/* Center Section - Member Count */}
           <div className="col-md-3 text-center">
-            <h6 className="fw-bold">Member Count</h6>
+            <h6 className="fw-bold">Associate Count</h6>
             <h1 className="text-grip display-4">{chapterData?.memberCount}</h1>
             <Link
               to={`/member-list/${chapterData?._id}`}
               className="text-grip text-sm"
             >
-              Show Members
+              Show Associates
             </Link>
           </div>
 
@@ -770,7 +770,7 @@ const ChapterViewLayer = () => {
                   to="/add-member"
                   className=" text-white  d-flex align-items-center gap-1"
                 >
-                  Add Member
+                  Add Associate
                   <Icon
                     icon="ic:baseline-plus"
                     className="icon text-xl line-height-1"
@@ -1363,7 +1363,7 @@ const ChapterViewLayer = () => {
                   padding: "8px 12px",
                 }}
               >
-                Assign Members
+                Assign Associates
               </h6>
 
               {/* PRESIDENT DROPDOWN */}
@@ -1669,7 +1669,7 @@ const ChapterViewLayer = () => {
               </div>
             </>
           ) : (
-            <p>No members found.</p>
+            <p>No associates found.</p>
           )}
         </div>
       </div>
@@ -1689,7 +1689,7 @@ const ChapterViewLayer = () => {
                   <thead className="bg-light">
                     <tr>
                       <th>S.NO</th>
-                      <th>Member</th>
+                      <th>Associate</th>
                       <th>1-to-1</th>
                       <th>Referrals</th>
                       <th>Visitors</th>
@@ -1802,7 +1802,7 @@ const ChapterViewLayer = () => {
               </div>
             </>
           ) : (
-            <p>No members found.</p>
+            <p>No associates found.</p>
           )}
         </div>
       </div>

@@ -58,7 +58,7 @@ const PrimaryMemberListLayer = () => {
           ),
         }));
       } else {
-        setError(response.data?.message || "Failed to fetch members");
+        setError(response.data?.message || "Failed to fetch associates");
       }
     } catch (err) {
       setError(err.message);
@@ -82,7 +82,7 @@ const PrimaryMemberListLayer = () => {
     try {
       const result = await Swal.fire({
         title: "Are you sure?",
-        text: `You are about to ${value.toLowerCase()} this member`,
+        text: `You are about to ${value.toLowerCase()} this associate`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
@@ -98,22 +98,22 @@ const PrimaryMemberListLayer = () => {
         if (response && response.status) {
           Swal.fire(
             "Success!",
-            `Member has been ${value.toLowerCase()}.`,
+            `Associate has been ${value.toLowerCase()}.`,
             "success"
           );
           fetchMembers();
         }
       }
     } catch (error) {
-      console.error("Error updating member status:", error);
-      Swal.fire("Error!", "Failed to update member status.", "error");
+      console.error("Error updating associate status:", error);
+      Swal.fire("Error!", "Failed to update associate status.", "error");
     }
   };
 
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "Are you sure?",
-      text: "You are about to delete this member",
+      text: "You are about to delete this associate",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -125,11 +125,11 @@ const PrimaryMemberListLayer = () => {
       try {
         const response = await memberApiProvider.deleteMember(id);
         if (response.status) {
-          Swal.fire("Deleted!", "Member has been deleted.", "success");
+          Swal.fire("Deleted!", "Associate has been deleted.", "success");
           // Refresh data after deletion
           fetchMembers();
         } else {
-          throw new Error(response.data?.message || "Failed to delete member");
+          throw new Error(response.data?.message || "Failed to delete associate");
         }
       } catch (err) {
         Swal.fire("Error!", err.message, "error");
@@ -169,7 +169,7 @@ const PrimaryMemberListLayer = () => {
         payload
       );
       if (response && response.status) {
-        Swal.fire("Success!", "Member role updated successfully", "success");
+        Swal.fire("Success!", "Associate role updated successfully", "success");
         fetchMembers();
         setShowEditModal(false);
       } else {
@@ -425,7 +425,7 @@ const PrimaryMemberListLayer = () => {
           <div className="modal-content radius-16 bg-base">
             <div className="modal-header py-16 px-24 border-bottom">
               <h1 className="modal-title fs-5" id="viewModalLabel">
-                Member Details
+                Associate Details
               </h1>
               <button
                 type="button"
@@ -514,7 +514,7 @@ const PrimaryMemberListLayer = () => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Edit Member Role</Modal.Title>
+          <Modal.Title>Edit Associate Role</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedMember && (
@@ -595,7 +595,7 @@ const PrimaryMemberListLayer = () => {
                   value={selectedRole}
                   onChange={handleRoleChange}
                 >
-                  <option value="member">Member</option>
+                  <option value="member">Associate</option>
                   {roleData
                     .filter((role) => !["admin", "cid", "mentor"].includes(role.name.toLowerCase()))
                     .map((role) => (

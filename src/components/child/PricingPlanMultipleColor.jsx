@@ -129,7 +129,7 @@ const PricingPlanMultipleColor = () => {
                                                         />
                                                     </span>
                                                     <span className="text-secondary-light text-lg">
-                                                        Up to 3 team members
+                                                        Up to 3 team associates
                                                     </span>
                                                 </li>
                                             </ul>
@@ -214,7 +214,7 @@ const PricingPlanMultipleColor = () => {
                                                         />
                                                     </span>
                                                     <span className="text-white text-lg">
-                                                        Up to 3 team members
+                                                        Up to 3 team associates
                                                     </span>
                                                 </li>
                                             </ul>
@@ -296,7 +296,7 @@ const PricingPlanMultipleColor = () => {
                                                         />
                                                     </span>
                                                     <span className="text-secondary-light text-lg">
-                                                        Up to 3 team members
+                                                        Up to 3 team associates
                                                     </span>
                                                 </li>
                                             </ul>
@@ -388,7 +388,7 @@ const PricingPlanMultipleColor = () => {
                                                         />
                                                     </span>
                                                     <span className="text-secondary-light text-lg">
-                                                        Up to 3 team members
+                                                        Up to 3 team associates
                                                     </span>
                                                 </li>
                                             </ul>
@@ -473,7 +473,7 @@ const PricingPlanMultipleColor = () => {
                                                         />
                                                     </span>
                                                     <span className="text-white text-lg">
-                                                        Up to 3 team members
+                                                        Up to 3 team associates
                                                     </span>
                                                 </li>
                                             </ul>
@@ -555,7 +555,7 @@ const PricingPlanMultipleColor = () => {
                                                         />
                                                     </span>
                                                     <span className="text-secondary-light text-lg">
-                                                        Up to 3 team members
+                                                        Up to 3 team associates
                                                     </span>
                                                 </li>
                                             </ul>

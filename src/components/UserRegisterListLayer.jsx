@@ -77,7 +77,7 @@ const UserRegisterMemberListLayer = () => {
             }
         } catch (error) {
             console.error("Error updating member status:", error);
-            Swal.fire("Error!", "Failed to update member status.", "error");
+            Swal.fire("Error!", "Failed to update associate status.", "error");
         }
     };
 
@@ -124,7 +124,6 @@ const UserRegisterMemberListLayer = () => {
             setPagination((prev) => ({ ...prev, page: newPage }));
         }
     };
-    console.log(membersData, "membersDatamembersData");
 
     return (
         <div className="card h-100 p-0 radius-12">
@@ -329,7 +328,7 @@ const UserRegisterMemberListLayer = () => {
                 centered
             >
                 <Modal.Header closeButton>
-                    <Modal.Title>Member Details</Modal.Title>
+                    <Modal.Title>Associate Details</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {selectedMember && (

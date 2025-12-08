@@ -51,7 +51,7 @@ class TrainingApiProvider {
                 return { status: false, response: response.data }; // non-success HTTP status
             }
         } catch (error) {
-            console.error(`Error fetching members for chapter ${chapterId}:`, error);
+            console.error(`Error fetching associates for chapter ${chapterId}:`, error);
             return { status: false, response: error.response?.data ?? null };
         }
     }

@@ -678,11 +678,11 @@ class ChapterApiProvider {
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
             } else {
-                console.error("Failed to fetch head table members by id:", response.data?.message ?? "Something went wrong");
+                console.error("Failed to fetch head table associates by id:", response.data?.message ?? "Something went wrong");
                 return { status: false, response: response.data };
             }
         } catch (error) {
-            console.error("Error fetching head table members by id:", error);
+            console.error("Error fetching head table associates by id:", error);
 
             if (error.response && error.response.status === 401) {
                 console.error("Unauthorized access - check your token.");

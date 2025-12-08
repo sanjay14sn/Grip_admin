@@ -12,13 +12,13 @@ class MemberApiProvider {
         };
       } else {
         console.error(
-          "Failed to fetch members:",
+          "Failed to fetch associates:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error fetching members:", error);
+      console.error("Error fetching associates:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -30,13 +30,13 @@ class MemberApiProvider {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to fetch member:",
+          "Failed to fetch associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error fetching member:", error);
+      console.error("Error fetching associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -50,13 +50,13 @@ class MemberApiProvider {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to fetch member:",
+          "Failed to fetch associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error fetching member:", error);
+      console.error("Error fetching associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -71,13 +71,13 @@ class MemberApiProvider {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to fetch member:",
+          "Failed to fetch associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error fetching member:", error);
+      console.error("Error fetching associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -113,16 +113,16 @@ async updateMember(id, memberData) {
 
     return {
       status: response.data.success === true, // ✅ align with backend flag
-      message: response.data.message || "Member updated successfully", // ✅ safe fallback
+      message: response.data.message || "Associate updated successfully", // ✅ safe fallback
       data: response.data.data ?? null, // ✅ direct data
     };
   } catch (error) {
-    console.error("❌ Error updating member:", error);
+    console.error("❌ Error updating associate:", error);
 
     const backendMessage =
       error.response?.data?.message ||
       error.message ||
-      "Failed to update member";
+      "Failed to update associate";
 
     return {
       status: false,
@@ -179,13 +179,13 @@ async getTopAchiver(chapterId) {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to delete member:",
+          "Failed to delete associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error deleting member:", error);
+      console.error("Error deleting associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -200,13 +200,13 @@ async getTopAchiver(chapterId) {
         };
       } else {
         console.error(
-          "Failed to fetch members:",
+          "Failed to fetch associates:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error fetching members:", error);
+      console.error("Error fetching associates:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -221,13 +221,13 @@ async getTopAchiver(chapterId) {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to update member:",
+          "Failed to update associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error updating member:", error);
+      console.error("Error updating associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -239,13 +239,13 @@ async getTopAchiver(chapterId) {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to update member:",
+          "Failed to update associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error updating member:", error);
+      console.error("Error updating associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }
@@ -257,13 +257,13 @@ async getTopAchiver(chapterId) {
         return { status: true, data: response.data };
       } else {
         console.error(
-          "Failed to update member:",
+          "Failed to update associate:",
           response.data?.message ?? "Something went wrong"
         );
         return { status: false, data: response.data };
       }
     } catch (error) {
-      console.error("Error updating member:", error);
+      console.error("Error updating associate:", error);
       return { status: false, data: error.response?.data ?? null };
     }
   }

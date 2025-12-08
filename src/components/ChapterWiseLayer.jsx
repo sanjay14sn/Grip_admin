@@ -111,7 +111,7 @@ const ChapterWiseLayer = () => {
                 <div className="card h-100">
                   <div className="chapterwiseheading d-flex text-white align-items-center flex-wrap gap-2 justify-content-between">
                     <h6 className="mb-2 fw-bold text-lg mb-0">{chapter.name}</h6>
-                    <span>{chapter.memberCount} Members</span>
+                    <span>{chapter.memberCount} Associates</span>
                   </div>
                   <div className="card-body">
                     <div className="mt-3">

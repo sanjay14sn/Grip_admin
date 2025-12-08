@@ -113,7 +113,7 @@ const ReferralOverallLayer = () => {
                       ))}
                       {chapter.members.length === 0 && (
                         <div className="text-center py-3 text-muted">
-                          No members in this chapter
+                          No associates in this chapter
                         </div>
                       )}
                     </div>

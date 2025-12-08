@@ -13,7 +13,7 @@ const RecentMembers = () => {
         setRecentMembers(result.response.data || []);
       } else {
         console.warn(
-          "Failed to fetch recent members:",
+          "Failed to fetch recent associates:",
           result.response?.message
         );
       }
@@ -37,7 +37,7 @@ const RecentMembers = () => {
     <div className="col-xxl-8">
       <div className="card h-100">
         <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between">
-          <h6 className="text-lg fw-semibold mb-0">Recent Members</h6>
+          <h6 className="text-lg fw-semibold mb-0">Recent Associates</h6>
           <Link
             to="/primarymember-list"
             className="text-primary-600 hover-text-primary d-flex align-items-center gap-1"
@@ -88,7 +88,7 @@ const RecentMembers = () => {
                 ) : (
                   <tr>
                     <td colSpan="5" className="text-center text-secondary">
-                      No recent members found.
+                      No recent associates found.
                     </td>
                   </tr>
                 )}

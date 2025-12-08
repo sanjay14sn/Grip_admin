@@ -13,11 +13,11 @@ class PaymentApiProvider {
                     data: response.data
                 };
             } else {
-                console.error("Failed to fetch members:", response.data?.message ?? "Something went wrong");
+                console.error("Failed to fetch associates:", response.data?.message ?? "Something went wrong");
                 return { status: false, data: response.data };
             }
         } catch (error) {
-            console.error("Error fetching members:", error);
+            console.error("Error fetching associates:", error);
             return { status: false, data: error.response?.data ?? null };
         }
     }
@@ -38,7 +38,7 @@ const params = {
                 return { status: false, data: response.data };
             }
         } catch (error) {
-            console.error("Error fetching member:", error);
+            console.error("Error fetching associate:", error);
             return { status: false, data: error.response?.data ?? null };
         }
     }
@@ -50,11 +50,11 @@ const params = {
             if (response.status === 200) {
                 return { status: true, data: response.data };
             } else {
-                console.error("Failed to fetch member:", response.data?.message ?? "Something went wrong");
+                console.error("Failed to fetch associate:", response.data?.message ?? "Something went wrong");
                 return { status: false, data: response.data };
             }
         } catch (error) {
-            console.error("Error fetching member:", error);
+            console.error("Error fetching associate:", error);
             return { status: false, data: error.response?.data ?? null };
         }
     }
@@ -65,11 +65,11 @@ const params = {
             if (response.status === 200 || response.status === 201) {
                 return { status: true, data: response.data };
             } else {
-                console.error("Failed to create member:", response.data?.message ?? "Something went wrong");
+                console.error("Failed to create associate:", response.data?.message ?? "Something went wrong");
                 return { status: false, data: response.data };
             }
         } catch (error) {
-            console.error("Error creating member:", error);
+            console.error("Error creating associate:", error);
             return { status: false, data: error.response?.data ?? null };
         }
     }

@@ -12,7 +12,7 @@ const UsersGridPage = () => {
       <MasterLayout>
 
         {/* Breadcrumb */}
-        <Breadcrumb title="Members Profile" name="Members" />
+        <Breadcrumb title="Associate Profile" name="Members" />
 
         {/* UsersGridLayer */}
         <UsersGridLayer />

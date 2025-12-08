@@ -82,7 +82,7 @@ const MemberListLayer = () => {
         }));
       }
     } catch (error) {
-      console.error("Error fetching members:", error);
+      console.error("Error fetching associates:", error);
     } finally {
       setLoading(false);
     }

@@ -1306,7 +1306,7 @@ const InputStatus = () => {
                             </div>
                             <div className="col-12">
                                 <button type="submit" className="btn btn-primary grip">
-                                    {isEditMode ? 'Update Member' : 'Submit Application'}
+                                    {isEditMode ? 'Update Associate' : 'Submit Application'}
                                 </button>
                             </div>
                         </div>

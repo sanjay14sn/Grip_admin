@@ -84,7 +84,8 @@ const UnitCountSix = ({countData}) => {
                 <div>
                   <h6 className='fw-semibold mb-2'>{countData?.memberCount}</h6>
                   <span className='fw-medium text-secondary-light text-sm'>
-                   Member's
+                   {/* Member's */}
+                   Associates
                   </span>
                 </div>
               </div>
