@@ -523,7 +523,7 @@ const PrimaryMemberListLayer = () => {
                 <p className="font-size-14 py-2">Name:</p>
               </div>
               <div className="col-md-6">
-                <span className="fw-normal text-body">
+                <span className="fw-normal text-body" style={{wordBreak: "break-all"}}>
                   {selectedMember.personalDetails?.firstName}{" "}
                   {selectedMember.personalDetails?.lastName}
                 </span>
@@ -533,7 +533,7 @@ const PrimaryMemberListLayer = () => {
                 <p className="font-size-14 py-2">Chapter Name:</p>
               </div>
               <div className="col-md-6">
-                <span className="fw-normal text-body">
+                <span className="fw-normal text-body" style={{wordBreak: "break-all"}}>
                   {selectedMember.chapterInfo?.chapterId?.chapterName}
                 </span>
               </div>
@@ -542,7 +542,7 @@ const PrimaryMemberListLayer = () => {
                 <p className="font-size-14 py-2">Company Name:</p>
               </div>
               <div className="col-md-6">
-                <span className="fw-normal text-body">
+                <span className="fw-normal text-body" style={{wordBreak: "break-all"}}>
                   {selectedMember.personalDetails?.companyName}
                 </span>
               </div>
@@ -551,7 +551,7 @@ const PrimaryMemberListLayer = () => {
                 <p className="font-size-14 py-2">Category:</p>
               </div>
               <div className="col-md-6">
-                <span className="fw-normal text-body">
+                <span className="fw-normal text-body" style={{wordBreak: "break-all"}}>
                   {selectedMember.personalDetails?.categoryRepresented || '-'}
                 </span>
               </div>
@@ -569,7 +569,7 @@ const PrimaryMemberListLayer = () => {
                 <p className="font-size-14 py-2">Email:</p>
               </div>
               <div className="col-md-6">
-                <span className="fw-normal text-body">
+                <span className="fw-normal text-body" style={{wordBreak: "break-all"}}>
                   {selectedMember.contactDetails?.email}
                 </span>
               </div>
