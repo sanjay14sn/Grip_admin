@@ -694,6 +694,8 @@ const InputStatus = () => {
                                     <option value="Friends">Friends</option>
                                     <option value="WhatsApp">WhatsApp</option>
                                     <option value="Other">Others</option>
+                                    <option value="FED">FED</option>
+                                    <option value="Grip">Grip</option>
                                 </select>
                                 {errors.chapterInfo?.howDidYouHearAboutGRIP && (
                                     <div className="">

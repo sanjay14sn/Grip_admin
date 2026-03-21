@@ -54,7 +54,7 @@ const AddPrimaryMemberLayer = () => {
       otherNetworkingOrgs: "",
       education: "",
       pins: [],
-      renewalDate:""
+      renewalDate: ""
     },
     businessAddress: {
       addressLine1: "",
@@ -467,20 +467,20 @@ const AddPrimaryMemberLayer = () => {
       toast.error("Belongs to other organizations field is required");
       return false;
     }
-    
+
     if (!formData.personalDetails.renewalDate) {
-  toast.error("Renewal Date field is required");
+      toast.error("Renewal Date field is required");
 
-  setErrors(prev => ({
-    ...prev,
-    personalDetails: {
-      ...prev.personalDetails,
-      renewalDate: "Renewal Date is required"
+      setErrors(prev => ({
+        ...prev,
+        personalDetails: {
+          ...prev.personalDetails,
+          renewalDate: "Renewal Date is required"
+        }
+      }));
+
+      return false;
     }
-  }));
-
-  return false;
-}
 
 
     // Business Address Validation
@@ -909,6 +909,9 @@ const AddPrimaryMemberLayer = () => {
                   <option value="Friends">Friends</option>
                   <option value="WhatsApp">WhatsApp</option>
                   <option value="Other">Others</option>
+                  <option value="FED">FED</option>
+                  <option value="Grip">Grip</option>
+
                 </select>
                 {errors.chapterInfo?.howDidYouHearAboutGRIP && (
                   <div className="">

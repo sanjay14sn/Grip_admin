@@ -203,6 +203,8 @@ const MembershipLayer = () => {
                                                         <option value="Friends">Friends</option>
                                                         <option value="WhatsApp">WhatsApp</option>
                                                         <option value="Other">Other</option>
+                                                        <option value="FED">FED</option>
+                                                        <option value="Grip">Grip</option>
 
                                                     </select>
                                                 </div>
@@ -348,7 +350,7 @@ const MembershipLayer = () => {
                                                 {networkingOrg === "yes" && (
                                                     <div className="col-6">
                                                         <label className="form-label">Please specify the other networking
-                                    organisations</label>
+                                                            organisations</label>
                                                         <input
                                                             type="text"
                                                             className="form-control"
