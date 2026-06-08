@@ -228,19 +228,19 @@ const RoleEditLayer = () => {
                                                         <Icon icon="lucide:edit" className="menu-icon" />
                                                     </button>
                                                 )}
-                                                {hasPermission("users-delete") && (
-                                                    <button
-                                                        type="button"
-                                                        className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                                                        onClick={() => handleDelete(ival._id, ival.name)}
-                                                        disabled={loading}
-                                                    >
-                                                        <Icon
-                                                            icon="fluent:delete-24-regular"
-                                                            className="menu-icon"
-                                                        />
-                                                    </button>
-                                                )}
+                                                {hasPermission("users-delete") && !["CID", "RD", "GRIP"].includes(ival.name.toUpperCase()) && (
+                                                     <button
+                                                         type="button"
+                                                         className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                                         onClick={() => handleDelete(ival._id, ival.name)}
+                                                         disabled={loading}
+                                                     >
+                                                         <Icon
+                                                             icon="fluent:delete-24-regular"
+                                                             className="menu-icon"
+                                                         />
+                                                     </button>
+                                                 )}
                                             </div>
                                         </td>
                                     </tr>

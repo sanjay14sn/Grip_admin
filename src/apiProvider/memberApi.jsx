@@ -44,7 +44,7 @@ class MemberApiProvider {
   async getMemberByChapterId(params, chapterId) {
     try {
       const response = await apiClient.get(`/members/by-chapter/${chapterId}`, {
-        params: params,
+        params: params,  // params may include: page, limit, search, statusFilter
       });
       if (response.status === 200) {
         return { status: true, data: response.data };

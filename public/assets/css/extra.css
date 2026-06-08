@@ -204,3 +204,28 @@ table.dataTable td.dt-type-date {
 .overlay.active::after {
   width: 100%;
 }
+
+/* Responsive adjustments for tables to prevent horizontal scrolling on desktop/tablet */
+@media (min-width: 992px) {
+  .table-responsive .bordered-table {
+    min-width: 100% !important;
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+  
+  .table-responsive .bordered-table th,
+  .table-responsive .bordered-table td {
+    white-space: normal !important;
+  }
+  
+  .table-responsive .bordered-table th.text-nowrap,
+  .table-responsive .bordered-table td.text-nowrap,
+  .table-responsive .bordered-table th:first-child,
+  .table-responsive .bordered-table td:first-child {
+    white-space: nowrap !important;
+  }
+}
+
+.text-nowrap {
+  white-space: nowrap !important;
+}

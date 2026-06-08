@@ -103,6 +103,7 @@ import MembershipPage from "./pages/MembershipPage";
 import MemberListPage from "./pages/MemberListpage";
 import RoleListPage from "./pages/RoleListPage";
 import PinListPage from "./pages/PinListPage";
+import ZoneListPage from "./pages/ZoneListPage";
 import AddPinLayer from "./pages/AddPinPage";
 import RoleAcessPage from "./pages/RolesAcessPage";
 import PrimaryMemberListPage from "./pages/PrimaryMemberListPage";
@@ -330,6 +331,9 @@ function App() {
           {/* ✅ Pin list page */}
           <Route path="/pin-list" element={<PinListPage />} />
 
+          {/* ✅ Zone list page */}
+          <Route path="/zone-list" element={<ZoneListPage />} />
+
           {/* ✅ Add new pin */}
           <Route path="/pins/add" element={<AddPinLayer />} />
 
@@ -443,6 +447,7 @@ function App() {
           <Route exact path="/progress" element={<ProgressPage />} />
           <Route exact path="/radio" element={<RadioPage />} />
           <Route exact path="/chapter" element={<RoleAccessPage />} />
+          <Route exact path="/chapter/zone/:zoneId" element={<RoleAccessPage />} />
           <Route exact path="/sign-in" element={<SignInPage />} />
           <Route exact path="/sign-up" element={<SignUpPage />} />
           <Route

@@ -10,7 +10,7 @@ import paymentApiProvider from "../apiProvider/paymentApi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
 import { hasPermission } from "../utils/auth";
-import { formatDate } from "../utils/dateFormatter";
+import { formatDate, toLocalISOString } from "../utils/dateFormatter";
 import config from "../config/config";
 
 const libraries = ['places'];
@@ -29,9 +29,11 @@ const defaultCenter = {
 const MeetingListLayer = () => {
     const [paymentDetails, setPaymentDetails] = useState([]);
     const [chapterList, setChapterList] = useState([]);
+    const [zoneList, setZoneList] = useState([]);
     const [formData, setFormData] = useState({
         topic: "",
         amount: "",
+        zoneId: "",
         chapters: [],
         hotelName: "",
         startDate: "",
@@ -137,7 +139,20 @@ const MeetingListLayer = () => {
         return () => clearTimeout(timer);
     }, [searchInput]);
 
+    const fetchZoneData = async () => {
+        try {
+            const response = await chapterApiProvider.getZones({ limit: 100 });
+            if (response && response.status) {
+                const data = response.response?.data || response.response || [];
+                setZoneList(Array.isArray(data) ? data : (data.zones || []));
+            }
+        } catch (error) {
+            console.error("Error fetching zones:", error);
+        }
+    };
+
     useEffect(() => {
+        fetchZoneData();
         fetchGetAllChapter();
         fetchPaymentData();
     }, [pagination.page, pagination.limit, searchQuery]);
@@ -154,11 +169,13 @@ const MeetingListLayer = () => {
             if (resultALlChapter?.status) {
                 const data = resultALlChapter?.response?.data;
                 if (data) {
+                    const activeChapters = data.filter(chapter => chapter.isActive === 1);
                     const formattedChapters = [
                         { value: "all", label: "All Chapters" },
-                        ...data.map((chapter) => ({
+                        ...activeChapters.map((chapter) => ({
                             value: chapter._id,
                             label: chapter.chapterName,
+                            zoneId: chapter.zoneId?._id || chapter.zoneId,
                         })),
                     ];
                     setChapterList(formattedChapters);
@@ -208,11 +225,11 @@ const MeetingListLayer = () => {
             }));
 
             const formattedStartDate = paymentToEdit.startDate
-                ? new Date(paymentToEdit.startDate).toISOString().slice(0, 16)
+                ? toLocalISOString(paymentToEdit.startDate)
                 : "";
 
             const formattedEndDate = paymentToEdit.endDate
-                ? new Date(paymentToEdit.endDate).toISOString().slice(0, 16)
+                ? toLocalISOString(paymentToEdit.endDate)
                 : "";
 
             if (paymentToEdit.latitude && paymentToEdit.longitude) {
@@ -223,9 +240,11 @@ const MeetingListLayer = () => {
                 setMarkerPosition({ lat, lng });
             }
 
+            const selectedZoneId = paymentToEdit.chapterId && paymentToEdit.chapterId[0] ? (paymentToEdit.chapterId[0].zoneId?._id || paymentToEdit.chapterId[0].zoneId) : "";
             setFormData({
                 topic: paymentToEdit.topic,
                 amount: paymentToEdit.amount,
+                zoneId: selectedZoneId,
                 chapters: selectedChapters,
                 startDate: formattedStartDate,
                 endDate: formattedEndDate,
@@ -390,6 +409,7 @@ const MeetingListLayer = () => {
         setFormData({
             topic: "",
             amount: "",
+            zoneId: "",
             chapters: [],
             startDate: "",
             endDate: "",
@@ -457,9 +477,9 @@ const MeetingListLayer = () => {
             selectedOptions.some((option) => option.value === "all");
 
         if (allChaptersSelected) {
-            const allRealChapters = chapterList.filter(
-                (chapter) => chapter.value !== "all"
-            );
+            const allRealChapters = formData.zoneId
+                ? chapterList.filter((chapter) => chapter.value !== "all" && chapter.zoneId === formData.zoneId)
+                : chapterList.filter((chapter) => chapter.value !== "all");
             setFormData({
                 ...formData,
                 chapters: allRealChapters,
@@ -842,12 +862,12 @@ const MeetingListLayer = () => {
                 open={modalVisible}
                 onCancel={handleModalClose}
                 footer={null}
-                width={500}
+                width={800}
                 centered
             >
                 <form onSubmit={handleSubmit}>
                     <div className="row">
-                        <div className="col-12 mb-20">
+                        <div className="col-md-6 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 Topic <span className="text-danger">*</span>
                             </label>
@@ -874,7 +894,7 @@ const MeetingListLayer = () => {
                             )}
                         </div>
 
-                        <div className="col-12 mb-20">
+                        <div className="col-md-6 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 Amount <span className="text-danger">*</span>
                             </label>
@@ -901,14 +921,42 @@ const MeetingListLayer = () => {
                             )}
                         </div>
 
-                        <div className="col-12 mb-20">
+                        <div className="col-md-6 mb-20">
+                            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                                Zone <span className="text-danger">*</span>
+                            </label>
+                            <select
+                                name="zoneId"
+                                className={`form-control radius-8 ${errors.zoneId ? "is-invalid" : ""}`}
+                                value={formData.zoneId}
+                                onChange={(e) => {
+                                    const { name, value } = e.target;
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        [name]: value,
+                                        chapters: [] // reset chapters on zone change
+                                    }));
+                                    if (errors.zoneId) {
+                                        setErrors(prev => ({ ...prev, zoneId: "" }));
+                                    }
+                                }}
+                            >
+                                <option value="">Select Zone</option>
+                                {zoneList.map(zone => (
+                                    <option key={zone._id} value={zone._id}>{zone.zoneName}</option>
+                                ))}
+                            </select>
+                            {errors.zoneId && <div className="invalid-feedback">{errors.zoneId}</div>}
+                        </div>
+
+                        <div className="col-md-6 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 Chapter(s) <span className="text-danger">*</span>
                             </label>
                             <Select
                                 isMulti
                                 name="chapters"
-                                options={chapterList}
+                                options={formData.zoneId ? chapterList.filter(c => c.value === 'all' || c.zoneId === formData.zoneId) : []}
                                 components={animatedComponents}
                                 className={`react-select-container ${errors.chapters ? "is-invalid" : ""
                                     }`}
@@ -916,14 +964,15 @@ const MeetingListLayer = () => {
                                 onChange={handleChapterChange}
                                 value={formData.chapters}
                                 styles={customStyles}
-                                placeholder="Select chapters..."
+                                placeholder={formData.zoneId ? "Select chapters..." : "Please select a zone first"}
+                                isDisabled={!formData.zoneId}
                                 closeMenuOnSelect={false}
                                 hideSelectedOptions={false}
                                 isOptionSelected={(option) => {
                                     if (option.value === "all") {
-                                        const allRealChapters = chapterList.filter(
-                                            (ch) => ch.value !== "all"
-                                        );
+                                        const allRealChapters = formData.zoneId
+                                            ? chapterList.filter((ch) => ch.value !== "all" && ch.zoneId === formData.zoneId)
+                                            : chapterList.filter((ch) => ch.value !== "all");
                                         return (
                                             formData.chapters.length === allRealChapters.length
                                         );
@@ -937,7 +986,7 @@ const MeetingListLayer = () => {
                                 <div className="invalid-feedback">{errors.chapters}</div>
                             )}
                         </div>
-                        <div className="col-12 mb-20">
+                        <div className="col-md-6 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 Hotel Name <span className="text-danger">*</span>
                             </label>
@@ -953,7 +1002,7 @@ const MeetingListLayer = () => {
                                 <div className="invalid-feedback">{errors.hotelName}</div>
                             )}
                         </div>
-                        <div className="col-12 mb-20">
+                        <div className="col-md-6 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 Start Date & Time <span className="text-danger">*</span>
                             </label>
@@ -963,14 +1012,14 @@ const MeetingListLayer = () => {
                                 className={`form-control radius-8 ${errors.startDate ? "is-invalid" : ""}`}
                                 value={formData.startDate}
                                 onChange={handleInputChange}
-                                min={new Date().toISOString().slice(0, 16)}
+                                min={toLocalISOString(new Date())}
                             />
                             {errors.startDate && (
                                 <div className="invalid-feedback">{errors.startDate}</div>
                             )}
                         </div>
 
-                        <div className="col-12 mb-20">
+                        <div className="col-md-6 mb-20">
                             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                                 End Date & Time <span className="text-danger">*</span>
                             </label>
@@ -980,7 +1029,7 @@ const MeetingListLayer = () => {
                                 className={`form-control radius-8 ${errors.endDate ? "is-invalid" : ""}`}
                                 value={formData.endDate}
                                 onChange={handleInputChange}
-                                min={new Date().toISOString().slice(0, 16)}
+                                min={toLocalISOString(new Date())}
                             />
                             {errors.endDate && (
                                 <div className="invalid-feedback">{errors.endDate}</div>

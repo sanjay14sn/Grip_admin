@@ -2,11 +2,11 @@ import React from 'react';
 
 const TransactionsOne = () => {
     return (
-        <div className="col-xxl-3">
+        <div className="col-xxl-4">
             <div className="card h-100">
                 <div className="card-body">
                     <div className="d-flex align-items-center flex-wrap gap-2 justify-content-between">
-                        <h6 className="mb-2 fw-bold text-lg">Transactions</h6>
+                        <h6 className="mb-2 fw-bold text-lg">Recent Thank You Slips</h6>
                         <div className="">
                             <select className="form-select form-select-sm w-auto bg-base border text-secondary-light" defaultValue="This Month">
                                 <option value="This Month">This Month</option>

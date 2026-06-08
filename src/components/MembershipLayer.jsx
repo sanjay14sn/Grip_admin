@@ -167,22 +167,7 @@ const MembershipLayer = () => {
 
                                                     </select>
                                                 </div>
-                                                <div className="col-6">
-                                                    <label className="form-label">Chapter Induction Directors (CID)  </label>
-                                                    <select class="form-control form-select">
 
-                                                        <option value=""> Select Name </option>
-                                                        <option value="madhu">M Madhu</option>
-                                                        <option value="rajesh">R Rajesh</option>
-                                                        <option value="praburajan">E Praburajan</option>
-                                                        <option value="gajendran">K Gajendran</option>
-                                                        <option value="kirubakaran">K Kirubakaran</option>
-                                                        <option value="r anand">R Anand</option>
-                                                        <option value="Palanikumar">Palanikumar</option>
-                                                        <option value="balasubramani">BalaSubramani</option>
-
-                                                    </select>
-                                                </div>
                                                 <div className="col-6">
                                                     <label className="form-label">Who invited you? </label>
                                                     <input

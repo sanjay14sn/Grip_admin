@@ -23,3 +23,11 @@ export function formatDate(dateStr) {
     }
     return value;
   }
+
+  export function toLocalISOString(dateInput) {
+    if (!dateInput) return "";
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return "";
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  }

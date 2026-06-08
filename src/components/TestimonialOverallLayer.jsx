@@ -69,210 +69,83 @@ const TestimonialOverallLayer = () => {
         <div className="card-body chapterwisebox p-24">
           <div className='row gy-4'>
             {testimonial.map((chapter) => (
-              <div className="col-xxl-4" key={chapter.chapterId}>
-                <div className="card">
-                  <div className="chapterwiseheading d-flex align-items-center flex-wrap gap-2 justify-content-between">
-                    <h6 className="mb-2 fw-bold text-lg mb-0">{chapter.chapterName}</h6>
-                    <Link
-                      to={`/testimonial-list/${chapter.chapterId}`}
-                      className="onetoonecount text-primary-600 hover-text-primary d-flex align-items-center gap-1"
-                    >
-                      {chapter.overallChapterCount}
-                      <Icon
-                        icon="solar:alt-arrow-right-linear"
-                        className="icon"
-                      />
-                    </Link>
-                  </div>
-                  <div className="card-body">
-                    <div className="mt-2">
-                      {chapter.members.map((member, index) => (
-                        <div
-                          className={`d-flex align-items-center justify-content-between gap-3 ${index < chapter.members.length - 1 ? 'mb-32' : ''}`}
-                          key={member.id}
-                        >
-                          <div className="d-flex align-items-center">
-                            {member.profileImage?.docPath ? (
-                              <img
-                                src={`${IMAGE_BASE_URL}${member.profileImage.docPath}/${member.profileImage.docName}`}
-                                alt={member.name}
-                                className="w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden"
-                              />
-                            ) : (
-                              <div className="w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden bg-light d-flex align-items-center justify-content-center">
-                                <Icon icon="solar:user-circle-linear" className="text-secondary" />
-                              </div>
-                            )}
-                            <div className="flex-grow-1">
-                              <h6 className="text-md mb-0">{member.name}</h6>
-                              <span className="text-sm text-secondary-light fw-medium">
-                                {member.companyName}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-primary-light text-md fw-medium">{member.totalCount}</span>
-                        </div>
-                      ))}
-                      {chapter.members.length === 0 && (
-                        <div className="text-center py-3 text-secondary">
-                          No associates in this chapter
-                        </div>
-                      )}
+              <div className="col-xxl-4 col-md-6 col-sm-12" key={chapter.chapterId}>
+                <Link
+                  to={`/testimonial-list/${chapter.chapterId}`}
+                  className="d-block text-decoration-none"
+                  style={{ transition: 'all 0.3s ease' }}
+                >
+                  <div 
+                    className="card border-0 overflow-hidden" 
+                    style={{
+                      background: 'linear-gradient(135deg, #c02221 0%, #454442 100%)',
+                      borderRadius: '16px',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-6px)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px rgba(192, 34, 33, 0.25)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+                    }}
+                  >
+                    <div className="p-24 d-flex align-items-center justify-content-between">
+                      <div>
+                        <span style={{ 
+                          fontSize: '11px', 
+                          textTransform: 'uppercase', 
+                          letterSpacing: '1.5px', 
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          fontWeight: '600',
+                          display: 'block',
+                          marginBottom: '4px'
+                        }}>
+                          Chapter
+                        </span>
+                        <h5 className="fw-bold text-white mb-0" style={{ fontSize: '22px', letterSpacing: '0.5px' }}>
+                          {chapter.chapterName}
+                        </h5>
+                        <span style={{ 
+                          fontSize: '13px', 
+                          color: 'rgba(255, 255, 255, 0.75)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          marginTop: '8px',
+                          gap: '4px'
+                        }}>
+                          View Performers
+                          <Icon icon="solar:arrow-right-linear" style={{ fontSize: '14px' }} />
+                        </span>
+                      </div>
+                      <div 
+                        className="d-flex align-items-center justify-content-center"
+                        style={{
+                          background: '#ffffff',
+                          color: '#c02221',
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '50%',
+                          fontWeight: '700',
+                          fontSize: '18px',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                          flexShrink: 0
+                        }}
+                      >
+                        {chapter.overallChapterCount}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Modal Start */}
-      <div
-        className="modal fade"
-        id="exampleModalTwo"
-        tabIndex={-1}
-        aria-labelledby="exampleModalLabel"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog modal-m modal-dialog modal-dialog-centered">
-          <div className="modal-content radius-16 bg-base">
-            <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0">
-              <h1 className="modal-title fs-5" id="exampleModalLabel">
-                Add New Region
-              </h1>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body p-24">
-              <form action="#">
-                <div className="row">
-                  <div className="col-12 mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                      Region Name
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                    />
-                  </div>
-
-                  <div className="col-12 mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      className="form-control radius-8"
-                    />
-                  </div>
-
-                  <div className="col-12 mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                      Region Head
-                    </label>
-                    <select className="form-control form-select">
-                      <option value="Date">Select Region Head</option>
-                      <option value="1">Rajesh</option>
-                      <option value="2">Madhu</option>
-                      <option value="3">Prabhu</option>
-                    </select>
-                  </div>
-
-                  <div className="d-flex align-items-center gap-3 mt-24">
-                    <button
-                      type="reset"
-                      className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary grip border border-primary-600 text-md px-48 py-12 radius-8"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Modal End */}
-
-      {/* Modal Start */}
-      <div
-        className="modal fade"
-        id="exampleModalOne"
-        tabIndex={-1}
-        aria-labelledby="exampleModalLabel"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog modal-m modal-dialog modal-dialog-centered">
-          <div className="modal-content radius-16 bg-base">
-            <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0">
-              <h1 className="modal-title fs-5" id="exampleModalLabel">
-                Edit Chapter
-              </h1>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body p-24">
-              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-                    <td style={{ padding: '8px 0' }}><strong>Chapter Name:</strong></td>
-                    <td style={{ padding: '8px 0' }}>
-                      GRIP Aram <span className='chapterday'>(Tuesday)</span>
-                    </td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-                    <td style={{ padding: '8px 0' }}><strong>Region:</strong></td>
-                    <td style={{ padding: '8px 0' }}>Chennai</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-                    <td style={{ padding: '8px 0' }}><strong>CID:</strong></td>
-                    <td style={{ padding: '8px 0' }}>Richard</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-                    <td style={{ padding: '8px 0' }}><strong>Location:</strong></td>
-                    <td style={{ padding: '8px 0' }}>Pallavaram</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-                    <td style={{ padding: '8px 0' }}><strong>Status:</strong></td>
-                    <td style={{ padding: '8px 0' }}>
-                      <select
-                        className="form-select"
-                        style={{
-                          width: '150px',
-                          padding: '8px 8px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          backgroundColor: '#fff',
-                        }}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                        <option value="Pending">Upcoming</option>
-                      </select>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Modal End */}
     </>
   );
 };

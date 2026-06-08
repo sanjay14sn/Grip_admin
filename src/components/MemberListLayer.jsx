@@ -24,6 +24,8 @@ const MemberListLayer = () => {
   });
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [showDeactivated, setShowDeactivated] = useState(false);
+  const [activating, setActivating] = useState(null);
   const handleResetClick = () => setResetStep(1);
 
   const handleSendOtp = () => {
@@ -60,7 +62,21 @@ const MemberListLayer = () => {
     if (id) {
       fetchData(id);
     }
-  }, [id, search, pagination.page, pagination.limit]);
+  }, [id, search, pagination.page, pagination.limit, showDeactivated]);
+
+  const handleActivateMember = async (memberId) => {
+    setActivating(memberId);
+    try {
+      const response = await memberApiProvider.updateMemberStatus(memberId, { status: 'active' });
+      if (response && response.status) {
+        await fetchData(id);
+      }
+    } catch (error) {
+      console.error("Error activating member:", error);
+    } finally {
+      setActivating(null);
+    }
+  };
 
   const fetchData = async (chapterId) => {
     setLoading(true);
@@ -69,6 +85,7 @@ const MemberListLayer = () => {
         page: pagination.page,
         limit: pagination.limit,
         search: search.trim() || undefined,
+        status: showDeactivated ? 'decline' : 'active',
       };
       const response = await memberApiProvider.getMemberByChapterId(params, chapterId);
       if (response && response.status) {
@@ -109,6 +126,14 @@ const MemberListLayer = () => {
             />
             <Icon icon="ion:search-outline" className="icon" />
           </div>
+          <button
+            type="button"
+            className={`btn btn-sm ${showDeactivated ? 'btn-danger' : 'btn-outline-danger'} d-flex align-items-center gap-2`}
+            onClick={() => { setShowDeactivated(!showDeactivated); setPagination(prev => ({...prev, page: 1})); }}
+          >
+            <Icon icon={showDeactivated ? 'solar:user-block-linear' : 'solar:user-block-linear'} className="text-lg" />
+            {showDeactivated ? 'Viewing Deactivated' : 'Show Deactivated'}
+          </button>
         </div>
       </div>
 
@@ -121,54 +146,81 @@ const MemberListLayer = () => {
           </div>
         ) : (
           <div className="table-responsive scroll-sm">
+            {showDeactivated && (
+              <div className="alert alert-warning d-flex align-items-center gap-2 mb-3 py-2" role="alert">
+                <Icon icon="solar:user-block-linear" className="text-lg" />
+                <span>Showing <strong>deactivated</strong> associates. Click "Activate" to restore them.</span>
+              </div>
+            )}
             <table className="table bordered-table sm-table mb-0">
               <thead>
                 <tr>
-                  <th>S.No</th>
+                  <th className="text-nowrap">S.No</th>
                   <th>Name</th>
                   <th>Company name</th>
                   <th>Category</th>
-                  <th>Mobile Number</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th className="text-nowrap">Mobile Number</th>
+                  <th className="text-nowrap">Status</th>
+                  <th className="text-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {membersData.map((member, index) => (
                   <tr key={member._id}>
-                    <td> {(pagination.page - 1) * pagination.limit + index + 1}.</td>
-                    <td>{member.name}</td>
+                    <td className="text-nowrap"> {(pagination.page - 1) * pagination.limit + index + 1}.</td>
+                    <td>
+                      <Link to={`/associate/${member._id}/report`} className="text-primary-600 fw-semibold text-hover-primary">
+                        {member.name}
+                      </Link>
+                    </td>
                     <td>{member.personalDetails.companyName}</td>
                     <td>
                       <span className="text-md mb-0 fw-normal text-secondary-light">
                         {member.personalDetails.categoryRepresented}
                       </span>
                     </td>
-                    <td>{member.contactDetails.mobileNumber}</td>
-                    <td>
-                      <select
-                        className={`form-select newonee form-select-sm w-auto radius-12 h-40-px custom-status-select ${member.status === 'active'
-                          ? 'status-activate'
-                          : member.status === 'decline'
-                            ? 'status-decline'
-                            : ''
-                          }`}
-                        value={member.status}
-                        onChange={(e) => handleStatusChange(member._id, e.target.value)}
-                      >
-                        <option value="active">Activate</option>
-                        <option value="decline">Decline</option>
-                      </select>
-                    </td>
-                    <td>
-                      <div className="d-flex align-items-center gap-10 justify-content-center">
+                    <td className="text-nowrap">{member.contactDetails.mobileNumber}</td>
+                    <td className="text-nowrap">
+                      {showDeactivated ? (
                         <button
                           type="button"
-                          className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                          onClick={() => { setSelectedMember(member); setShowViewModal(true); }}
+                          className="btn btn-sm btn-success d-flex align-items-center gap-1"
+                          disabled={activating === member._id}
+                          onClick={() => handleActivateMember(member._id)}
                         >
-                          <Icon icon="majesticons:eye-line" className="icon text-xl" />
+                          {activating === member._id ? (
+                            <span className="spinner-border spinner-border-sm" />
+                          ) : (
+                            <Icon icon="solar:check-circle-linear" className="text-md" />
+                          )}
+                          Activate
                         </button>
+                      ) : (
+                        <select
+                          className={`form-select newonee form-select-sm w-auto radius-12 h-40-px custom-status-select ${member.status === 'active'
+                            ? 'status-activate'
+                            : member.status === 'decline'
+                              ? 'status-decline'
+                              : ''
+                            }`}
+                          value={member.status}
+                          onChange={(e) => handleStatusChange(member._id, e.target.value)}
+                        >
+                          <option value="active">Activate</option>
+                          <option value="decline">Decline</option>
+                        </select>
+                      )}
+                    </td>
+                    <td className="text-nowrap">
+                      <div className="d-flex align-items-center gap-10 justify-content-center">
+                        <Link to={`/associate/${member._id}/report`}>
+                          <button
+                            type="button"
+                            className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                          >
+                            <Icon icon="majesticons:eye-line" className="icon text-xl" />
+                          </button>
+                        </Link>
                         <Link to={`/edit-primarymember/${member._id}`}>
                         <button
                           type="button"

@@ -3,14 +3,60 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser, hasPermission, setCurrentUser } from "../utils/auth";
 import userApiProvider from "../apiProvider/userApi";
+import notificationApiProvider from "../apiProvider/notificationApi";
 import { IMAGE_BASE_URL } from "../network/apiClient";
 
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation(); // Hook to get the current route
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchNotifications();
+    const intervalId = setInterval(fetchNotifications, 60000); // Polling every minute
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await notificationApiProvider.getNotifications();
+      if (res && res.success) {
+        setNotifications(res.data);
+        setUnreadCount(res.meta.unreadCount);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (unreadCount === 0) return;
+    try {
+      const res = await notificationApiProvider.markAllAsRead();
+      if (res && res.success) {
+        setUnreadCount(0);
+        fetchNotifications();
+      }
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "onetoone": return "lucide:users";
+      case "referral": return "lucide:briefcase";
+      case "testimonial": return "lucide:star";
+      case "visitor": return "lucide:user-plus";
+      case "expectedvisitor": return "lucide:calendar-clock";
+      case "thankyou": return "lucide:heart";
+      default: return "lucide:bell";
+    }
+  };
 
   useEffect(() => {
     const handleDropdownClick = (event) => {
@@ -238,6 +284,17 @@ const MasterLayout = ({ children }) => {
                   <span>Chapter</span>
                 </Link>
                 <ul className="sidebar-submenu">
+                  <li>
+                    <NavLink
+                      to="/zone-list"
+                      className={(navData) =>
+                        navData.isActive ? "active-page" : ""
+                      }
+                    >
+                      <Icon icon="ic:outline-map" className="menu-icon" />
+                      Zones
+                    </NavLink>
+                  </li>
                   <li>
                     <NavLink
                       to="/chapter"
@@ -536,16 +593,23 @@ const MasterLayout = ({ children }) => {
                 {/* Language dropdown end */}
 
                 {/* Message dropdown end */}
-                {/* <div className="dropdown">
+                {/* Notification Dropdown Start */}
+                <div className="dropdown">
                   <button
                     className="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
                     type="button"
                     data-bs-toggle="dropdown"
+                    onClick={markAllAsRead}
                   >
                     <Icon
                       icon="iconoir:bell"
                       className="text-primary-light text-xl"
                     />
+                    {unreadCount > 0 && (
+                      <span className="indicator bg-danger text-white rounded-circle position-absolute top-0 end-0 translate-middle" style={{ width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {unreadCount}
+                      </span>
+                    )}
                   </button>
                   <div className="dropdown-menu to-top dropdown-menu-lg p-0">
                     <div className="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
@@ -555,134 +619,45 @@ const MasterLayout = ({ children }) => {
                         </h6>
                       </div>
                       <span className="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">
-                        05
+                        {unreadCount}
                       </span>
                     </div>
                     <div className="max-h-400-px overflow-y-auto scroll-sm pe-4">
-                      <Link
-                        to="#"
-                        className="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between"
-                      >
-                        <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                          <span className="w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
-                            <Icon
-                              icon="bitcoin-icons:verify-outline"
-                              className="icon text-xxl"
-                            />
-                          </span>
-                          <div>
-                            <h6 className="text-md fw-semibold mb-4">
-                              Congratulations
-                            </h6>
-                            <p className="mb-0 text-sm text-secondary-light text-w-200-px">
-                              Your profile has been Verified. Your profile has
-                              been Verified
-                            </p>
+                      {notifications && notifications.length > 0 ? (
+                        notifications.map((notif) => (
+                          <div
+                            key={notif._id}
+                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between ${notif.isRead ? "bg-base" : "bg-neutral-50"}`}
+                          >
+                            <div className="text-black d-flex align-items-center gap-3">
+                              <span className="w-44-px h-44-px bg-primary-subtle text-primary-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                                <Icon
+                                  icon={getNotificationIcon(notif.type)}
+                                  className="icon text-xl"
+                                />
+                              </span>
+                              <div>
+                                <h6 className="text-md fw-semibold mb-1 text-capitalize">
+                                  {(notif.type || "Notification").replace("expectedvisitor", "expected visitor")}
+                                </h6>
+                                <p className="mb-0 text-sm text-secondary-light">
+                                  {notif.message}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs text-secondary-light flex-shrink-0">
+                              {new Date(notif.createdAt).toLocaleString()}
+                            </span>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-secondary-light">
+                          No notifications yet.
                         </div>
-                        <span className="text-sm text-secondary-light flex-shrink-0">
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to="#"
-                        className="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between bg-neutral-50"
-                      >
-                        <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                          <span className="w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
-                            <img
-                              src="/assets/images/notification/profile-1.png"
-                              alt=""
-                            />
-                          </span>
-                          <div>
-                            <h6 className="text-md fw-semibold mb-4">
-                              Richard
-                            </h6>
-                            <p className="mb-0 text-sm text-secondary-light text-w-200-px">
-                              Invite you to Chapter
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-sm text-secondary-light flex-shrink-0">
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to="#"
-                        className="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between"
-                      >
-                        <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                          <span className="w-44-px h-44-px bg-info-subtle text-info-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
-                            AM
-                          </span>
-                          <div>
-                            <h6 className="text-md fw-semibold mb-4">Anbu</h6>
-                            <p className="mb-0 text-sm text-secondary-light text-w-200-px">
-                              Invite you to Chapter
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-sm text-secondary-light flex-shrink-0">
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to="#"
-                        className="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between bg-neutral-50"
-                      >
-                        <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                          <span className="w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
-                            <img
-                              src="/assets/images/notification/profile-2.png"
-                              alt=""
-                            />
-                          </span>
-                          <div>
-                            <h6 className="text-md fw-semibold mb-4">
-                              Kesavan
-                            </h6>
-                            <p className="mb-0 text-sm text-secondary-light text-w-200-px">
-                              Invite you to Chapter
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-sm text-secondary-light flex-shrink-0">
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to="#"
-                        className="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between"
-                      >
-                        <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                          <span className="w-44-px h-44-px bg-info-subtle text-info-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
-                            DR
-                          </span>
-                          <div>
-                            <h6 className="text-md fw-semibold mb-4">
-                              Praveen
-                            </h6>
-                            <p className="mb-0 text-sm text-secondary-light text-w-200-px">
-                              Invite you to Chapter
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-sm text-secondary-light flex-shrink-0">
-                          23 Mins ago
-                        </span>
-                      </Link>
-                    </div>
-                    <div className="text-center py-12 px-16">
-                      <Link
-                        to="#"
-                        className="text-primary-600 fw-semibold text-md"
-                      >
-                        See All Notification
-                      </Link>
+                      )}
                     </div>
                   </div>
-                </div> */}
+                </div>
                 {/* Notification dropdown end */}
                 <div className="dropdown">
                   <button

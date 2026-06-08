@@ -822,50 +822,7 @@ const AddPrimaryMemberLayer = () => {
                   </>
                 )}
               </div>
-              <div className="col-4">
-                <label className="form-label">
-                  Chapter Induction Directors (CID)
-                  <span className="text-danger">*</span>
-                </label>
-                <Select
-                  isMulti
-                  className="basic-multi-select border"
-                  classNamePrefix="select"
-                  name="CIDId"
-                  options={cids.map((cid) => ({
-                    value: cid._id,
-                    label: cid.name,
-                  }))}
-                  value={cids
-                    .filter(
-                      (cid) =>
-                        Array.isArray(formData.chapterInfo.CIDId) &&
-                        formData.chapterInfo.CIDId.includes(cid._id)
-                    )
-                    .map((cid) => ({ value: cid._id, label: cid.name }))}
-                  onChange={(selectedOptions) => {
-                    const ids = selectedOptions
-                      ? selectedOptions.map((option) => option.value)
-                      : [];
-                    setFormData((prev) => ({
-                      ...prev,
-                      chapterInfo: {
-                        ...prev.chapterInfo,
-                        CIDId: ids,
-                      },
-                    }));
-                  }}
-                  isDisabled={true}
-                  placeholder="Select CID(s)"
-                />
-                {errors.chapterInfo?.CIDId && (
-                  <div className="">
-                    <span className="text-danger">
-                      {errors.chapterInfo.CIDId}
-                    </span>
-                  </div>
-                )}
-              </div>
+
               <div className="col-6">
                 <label className="form-label">
                   Who Invited You?<span className="text-danger">*</span>

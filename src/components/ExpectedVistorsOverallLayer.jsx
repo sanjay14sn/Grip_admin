@@ -52,68 +52,77 @@ const ExpectedVisitorsLayer = () => {
         <div className="card-body chapterwisebox p-24">
           <div className="row gy-4">
             {groupByChapter.map((chapter) => (
-              <div className="col-xxl-4" key={chapter.chapterId}>
-                <div className="card">
-                  {/* Header */}
-                  <div className="chapterwiseheading d-flex align-items-center flex-wrap gap-2 justify-content-between">
-                    <h6 className="fw-bold text-lg mb-0">
-                      {chapter.chapterName}
-                    </h6>
-
-                    <Link
-                      to={`/expected-visitors/${chapter.chapterId}`}
-                      className="onetoonecount text-primary-600 hover-text-primary d-flex align-items-center gap-1"
-                    >
-                      {chapter.activeVisitors.length}
-                      <Icon
-                        icon="solar:alt-arrow-right-linear"
-                        className="icon"
-                      />
-                    </Link>
-                  </div>
-
-                  {/* Visitor list */}
-                  <div className="card-body">
-                    <div className="mt-2">
-                      {chapter.activeVisitors.length > 0 ? (
-                        chapter.activeVisitors.map((visitor, index) => (
-                          <div
-                            key={visitor._id}
-                            className={`d-flex align-items-center justify-content-between gap-3 ${
-                              index < chapter.activeVisitors.length - 1
-                                ? "mb-32"
-                                : ""
-                            }`}
-                          >
-                            <div className="d-flex align-items-center">
-                              <div className="w-40-px h-40-px rounded-circle flex-shrink-0 me-12 bg-light d-flex align-items-center justify-content-center">
-                                <Icon
-                                  icon="solar:user-circle-linear"
-                                  className="text-muted text-xl"
-                                />
-                              </div>
-
-                              <div className="flex-grow-1">
-                                <h6 className="text-md mb-0">{visitor.name}</h6>
-                                <span className="text-sm text-secondary-light fw-medium">
-                                  {visitor.mobile}
-                                </span>
-                              </div>
-                            </div>
-
-                            <span className="text-primary-light text-md fw-medium">
-                              1
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-3 text-muted">
-                          No expected visitors
-                        </div>
-                      )}
+              <div className="col-xxl-4 col-md-6 col-sm-12" key={chapter.chapterId}>
+                <Link
+                  to={`/expected-visitors/${chapter.chapterId}`}
+                  className="d-block text-decoration-none"
+                  style={{ transition: 'all 0.3s ease' }}
+                >
+                  <div 
+                    className="card border-0 overflow-hidden" 
+                    style={{
+                      background: 'linear-gradient(135deg, #c02221 0%, #454442 100%)',
+                      borderRadius: '16px',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-6px)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px rgba(192, 34, 33, 0.25)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+                    }}
+                  >
+                    <div className="p-24 d-flex align-items-center justify-content-between">
+                      <div>
+                        <span style={{ 
+                          fontSize: '11px', 
+                          textTransform: 'uppercase', 
+                          letterSpacing: '1.5px', 
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          fontWeight: '600',
+                          display: 'block',
+                          marginBottom: '4px'
+                        }}>
+                          Chapter
+                        </span>
+                        <h5 className="fw-bold text-white mb-0" style={{ fontSize: '22px', letterSpacing: '0.5px' }}>
+                          {chapter.chapterName}
+                        </h5>
+                        <span style={{ 
+                          fontSize: '13px', 
+                          color: 'rgba(255, 255, 255, 0.75)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          marginTop: '8px',
+                          gap: '4px'
+                        }}>
+                          View Performers
+                          <Icon icon="solar:arrow-right-linear" style={{ fontSize: '14px' }} />
+                        </span>
+                      </div>
+                      <div 
+                        className="d-flex align-items-center justify-content-center"
+                        style={{
+                          background: '#ffffff',
+                          color: '#c02221',
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '50%',
+                          fontWeight: '700',
+                          fontSize: '18px',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                          flexShrink: 0
+                        }}
+                      >
+                        {chapter.activeVisitors.length}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </div>
             ))}
           </div>

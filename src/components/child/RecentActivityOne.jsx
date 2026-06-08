@@ -1,14 +1,45 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import chapterApiProvider from "../../apiProvider/chapterApi";
+
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return date.toLocaleString("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
 
 const RecentActivityOne = () => {
+  const [chapters, setChapters] = useState([]);
+
+  useEffect(() => {
+    const fetchChapters = async () => {
+      const result = await chapterApiProvider.getAllChapters({
+        limit: 10,
+        sortField: "createdAt",
+        sortOrder: "desc",
+        isActive: 1
+      });
+      if (result.status) {
+        setChapters(result.response.data || []);
+      }
+    };
+    fetchChapters();
+  }, []);
+
   return (
-    <div className='col-xxl-8'>
+    <div className='col-xxl-12'>
       <div className='card h-100'>
         <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between'>
-          <h6 className='text-lg fw-semibold mb-0'>Recent Activity</h6>
+          <h6 className='text-lg fw-semibold mb-0'>Recent Chapters</h6>
           <Link
-            to='#'
+            to='/chapters'
             className='text-primary-600 hover-text-primary d-flex align-items-center gap-1'
           >
             View All
@@ -24,153 +55,39 @@ const RecentActivityOne = () => {
               <thead>
                 <tr>
                   <th scope='col' className='bg-transparent rounded-0'>
-                    Customer
+                    Chapter Name
                   </th>
                   <th scope='col' className='bg-transparent rounded-0'>
-                    ID
+                    Zone
                   </th>
                   <th scope='col' className='bg-transparent rounded-0'>
-                    Retained
+                    State / Country
                   </th>
                   <th scope='col' className='bg-transparent rounded-0'>
-                    Amount
-                  </th>
-                  <th scope='col' className='bg-transparent rounded-0'>
-                    Status
+                    Created Date
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center'>
-                      <img
-                        src='assets/images/user-grid/user-grid-img1.png'
-                        alt=''
-                        className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                      />
+                {chapters.map((chapter) => (
+                  <tr key={chapter._id}>
+                    <td>
                       <div className='flex-grow-1'>
-                        <h6 className='text-md mb-0'>Kristin Watson</h6>
-                        <span className='text-sm text-secondary-light fw-medium'>
-                          ulfaha@mail.ru
-                        </span>
+                        <h6 className='text-md mb-0'>{chapter.chapterName}</h6>
                       </div>
-                    </div>
-                  </td>
-                  <td>#63254</td>
-                  <td>5 min ago</td>
-                  <td>$12,408.12</td>
-                  <td>
-                    {" "}
-                    <span className='bg-success-focus text-success-main px-10 py-4 radius-8 fw-medium text-sm'>
-                      Member
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center'>
-                      <img
-                        src='assets/images/user-grid/user-grid-img2.png'
-                        alt=''
-                        className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                      />
-                      <div className='flex-grow-1'>
-                        <h6 className='text-md mb-0'>Theresa Webb</h6>
-                        <span className='text-sm text-secondary-light fw-medium'>
-                          joie@gmail.com
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>#63254</td>
-                  <td>12 min ago</td>
-                  <td>$12,408.12</td>
-                  <td>
-                    {" "}
-                    <span className='bg-lilac-100 text-lilac-600 px-10 py-4 radius-8 fw-medium text-sm'>
-                      New Customer
-                    </span>{" "}
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center'>
-                      <img
-                        src='assets/images/user-grid/user-grid-img3.png'
-                        alt=''
-                        className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                      />
-                      <div className='flex-grow-1'>
-                        <h6 className='text-md mb-0'>Brooklyn Simmons</h6>
-                        <span className='text-sm text-secondary-light fw-medium'>
-                          warn@mail.ru
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>#63254</td>
-                  <td>15 min ago</td>
-                  <td>$12,408.12</td>
-                  <td>
-                    {" "}
-                    <span className='bg-warning-focus text-warning-main px-10 py-4 radius-8 fw-medium text-sm'>
-                      Signed Up{" "}
-                    </span>{" "}
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center'>
-                      <img
-                        src='assets/images/user-grid/user-grid-img4.png'
-                        alt=''
-                        className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                      />
-                      <div className='flex-grow-1'>
-                        <h6 className='text-md mb-0'>Robert Fox</h6>
-                        <span className='text-sm text-secondary-light fw-medium'>
-                          fellora@mail.ru
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>#63254</td>
-                  <td>17 min ago</td>
-                  <td>$12,408.12</td>
-                  <td>
-                    {" "}
-                    <span className='bg-success-focus text-success-main px-10 py-4 radius-8 fw-medium text-sm'>
-                      Member
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center'>
-                      <img
-                        src='assets/images/user-grid/user-grid-img5.png'
-                        alt=''
-                        className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                      />
-                      <div className='flex-grow-1'>
-                        <h6 className='text-md mb-0'>Jane Cooper</h6>
-                        <span className='text-sm text-secondary-light fw-medium'>
-                          zitka@mail.ru
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>#63254</td>
-                  <td>25 min ago</td>
-                  <td>$12,408.12</td>
-                  <td>
-                    {" "}
-                    <span className='bg-warning-focus text-warning-main px-10 py-4 radius-8 fw-medium text-sm'>
-                      Signed Up{" "}
-                    </span>{" "}
-                  </td>
-                </tr>
+                    </td>
+                    <td>{chapter.zoneId?.zoneName || "N/A"}</td>
+                    <td>
+                      {chapter.stateName}, {chapter.countryName}
+                    </td>
+                    <td>{formatDate(chapter.createdAt)}</td>
+                  </tr>
+                ))}
+                {chapters.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4">No recent chapters found.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

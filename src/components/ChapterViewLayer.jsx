@@ -11,31 +11,6 @@ import Select from "react-select";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const DisabledSelect = ({ value }) => (
-  <Select
-    value={value}
-    isDisabled={true}
-    styles={{
-      control: (styles) => ({
-        ...styles,
-        backgroundColor: "#e6e6e6",
-        border: "none",
-        minHeight: "2.5rem",
-        borderRadius: "6px",
-        opacity: 1,
-      }),
-      singleValue: (styles) => ({
-        ...styles,
-        color: "#000",
-      }),
-      placeholder: (styles) => ({
-        ...styles,
-        color: "#000",
-      }),
-    }}
-  />
-);
-
 const ChapterViewLayer = () => {
   const CHART_OPTIONS = {
     chart: {
@@ -120,7 +95,6 @@ const ChapterViewLayer = () => {
     visitors: { totalCount: 0, topMembers: [] },
     referralSlips: { totalCount: 0, topReceivers: [] },
   });
-  const [openDropdown, setOpenDropdown] = useState();
   const [members, setMembers] = useState([]);
   const [referralMember, setReferralMember] = useState(null);
   const [businessMember, setBusinessMember] = useState(null);
@@ -130,38 +104,159 @@ const ChapterViewLayer = () => {
   const [presidentMember, setPresidentMember] = useState(null);
   const [secretaryMember, setSecretaryMember] = useState(null);
   const [vicePresidentMember, setVicePresidentMember] = useState(null);
+  const [associateCommitteeMembers, setAssociateCommitteeMembers] = useState([]);
+  const [coordinatorMembers, setCoordinatorMembers] = useState([]);
+  const [roleModalTarget, setRoleModalTarget] = useState(null);
+
+  const customSelectStyles = {
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    control: (styles, { isFocused }) => ({
+      ...styles,
+      backgroundColor: "#fff",
+      border: isFocused ? "1.5px solid rgb(192, 34, 33)" : "1px solid #dee2e6",
+      minHeight: "3rem",
+      borderRadius: "8px",
+      boxShadow: isFocused ? "0 0 0 3px rgba(192, 34, 33, 0.15)" : "none",
+      transition: "all 0.2s ease",
+      "&:hover": {
+        borderColor: "rgb(192, 34, 33)",
+      }
+    }),
+    option: (styles, { isSelected, isFocused }) => ({
+      ...styles,
+      backgroundColor: isSelected 
+        ? "rgb(192, 34, 33)" 
+        : isFocused 
+          ? "rgba(192, 34, 33, 0.05)" 
+          : "#fff",
+      color: isSelected ? "#fff" : "#334155",
+      cursor: "pointer",
+      "&:active": {
+        backgroundColor: "rgb(192, 34, 33)",
+        color: "#fff"
+      }
+    })
+  };
+
+  const formatOptionLabel = (option) => {
+    const member = members.find(m => m.id === option.value);
+    const imageUrl = member?.profileImage?.docPath
+      ? `${IMAGE_BASE_URL}/${member.profileImage.docPath}/${member.profileImage.docName}`
+      : null;
+      
+    return (
+      <div className="d-flex align-items-center gap-2 py-1">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={option.label}
+            className="rounded-circle object-fit-cover shadow-sm"
+            style={{ width: "24px", height: "24px", border: "1px solid #dee2e6" }}
+            onError={(e) => { e.target.src = "/assets/images/avatar/avatar1.png"; }}
+          />
+        ) : (
+          <div
+            className="d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              backgroundColor: "rgb(192, 34, 33)",
+              fontSize: "10px"
+            }}
+          >
+            {option.label ? option.label.charAt(0).toUpperCase() : "?"}
+          </div>
+        )}
+        <span className="fw-medium text-dark">{option.label}</span>
+      </div>
+    );
+  };
+
+  const renderMemberPreview = (selectedOption, subtitle, badgeText) => {
+    if (!selectedOption) return null;
+    const memberObj = members.find(m => m.id === selectedOption.value);
+    const imageUrl = memberObj?.profileImage?.docPath
+      ? `${IMAGE_BASE_URL}/${memberObj.profileImage.docPath}/${memberObj.profileImage.docName}`
+      : null;
+
+    // Use email/phone as subtitle if available
+    const displaySubtitle = memberObj ? (memberObj.email || memberObj.mobileNumber || subtitle) : subtitle;
+
+    return (
+      <div 
+        className="mt-3 p-12 radius-12 border d-flex align-items-center gap-12 bg-base shadow-sm"
+        style={{ 
+          borderLeft: "4px solid rgb(192, 34, 33)",
+          animation: "fadeIn 0.3s ease-in-out",
+          backgroundColor: "#fcfcfc",
+          minHeight: "72px"
+        }}
+      >
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={selectedOption.label}
+            className="rounded-circle object-fit-cover border border-2 border-white shadow-sm flex-shrink-0"
+            style={{ width: "40px", height: "40px" }}
+            onError={(e) => { e.target.src = "/assets/images/avatar/avatar1.png"; }}
+          />
+        ) : (
+          <div
+            className="d-flex align-items-center justify-content-center text-white fw-bold shadow-sm flex-shrink-0"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              backgroundColor: "rgb(192, 34, 33)",
+              fontSize: "15px",
+            }}
+          >
+            {selectedOption.label ? selectedOption.label.charAt(0).toUpperCase() : "?"}
+          </div>
+        )}
+        <div className="flex-grow-1 min-w-0">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <h6 className="mb-0 fw-bold text-dark text-sm text-truncate" style={{ maxWidth: "120px" }}>
+              {selectedOption.label}
+            </h6>
+            <span 
+              className="badge px-2 py-1 radius-4 fw-semibold flex-shrink-0"
+              style={{ 
+                color: "rgb(192, 34, 33)", 
+                backgroundColor: "rgba(192, 34, 33, 0.08)",
+                fontSize: "10px",
+                lineHeight: "1"
+              }}
+            >
+              {badgeText}
+            </span>
+          </div>
+          <span className="text-secondary-light text-xs d-block text-truncate mt-1">
+            {displaySubtitle}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
 
   const handleRoleSubmit = async () => {
-    if (!presidentMember?.value) {
-      toast.error("President member is required");
-      return;
-    }
-
-    if (!secretaryMember?.value) {
-      toast.error("Secretary member is required");
-      return;
-    }
-
-    if (!vicePresidentMember?.value) {
-      toast.error("Vice President member is required");
-      return;
-    }
-
     // FINAL PAYLOAD
     const payload = {
-      president: presidentMember.value,
-      secretary: secretaryMember.value,
-      vicePresident: vicePresidentMember.value,
+      president: presidentMember?.value || null,
+      secretary: secretaryMember?.value || null,
+      vicePresident: vicePresidentMember?.value || null,
+      associateCommittee: associateCommitteeMembers ? associateCommitteeMembers.map(m => m.value) : [],
+      coordinator: coordinatorMembers ? coordinatorMembers.map(m => m.value) : [],
     };
 
     try {
       const res = await chapterApiProvider.submitHeadTableRoles(id, payload);
 
-
       if (res.status) {
         toast.success(res.message || "Head table roles saved!");
-        setOpenDropdown(null);
+        fetchHeadTableMembers(id); // Refresh data
       } else {
         toast.error(res.message || "Backend error");
       }
@@ -209,7 +304,7 @@ const ChapterViewLayer = () => {
   };
   useEffect(() => {
     if (id) {
-      fetchData(id);
+      fetchChapterData(id);
       fetchCountData(id);
       fetchHeadTableMembers(id);
       fetchHeadTableUsers(id);
@@ -262,9 +357,19 @@ const ChapterViewLayer = () => {
 
       // 1. FETCH MEMBERS
       const response = await memberApiProvider.getMemberByChapterId(params, chapterId);
-      const members = response?.data?.data?.members || [];
+      const fetchedMembers = response?.data?.data?.members || [];
 
-      setMembersData(members);
+      setMembersData(fetchedMembers);
+
+      // Populate 'members' state so that Select dropdowns and Head Table UI have access to names, images, etc.
+      const mappedMembers = fetchedMembers.map(m => ({
+        id: m._id,
+        name: `${m.personalDetails?.firstName || ""} ${m.personalDetails?.lastName || ""}`.trim(),
+        companyName: m.personalDetails?.companyName,
+        profileImage: m.personalDetails?.profileImage,
+        contactDetails: m.contactDetails,
+      }));
+      setMembers(mappedMembers);
 
       const total = response?.data?.data?.pagination?.total || 0;
       setPagination((prev) => ({
@@ -273,7 +378,7 @@ const ChapterViewLayer = () => {
         totalPages: Math.ceil(total / prev.limit),
       }));
 
-      if (members.length === 0) {
+      if (fetchedMembers.length === 0) {
         setAttendanceCounts({});
         setOneToOneCounts({});
         setReferralCounts({});
@@ -284,7 +389,7 @@ const ChapterViewLayer = () => {
         return;
       }
 
-      const memberIds = members.map((m) => m._id);
+      const memberIds = fetchedMembers.map((m) => m._id);
 
       // 2. PARALLEL FETCH
       const [
@@ -296,7 +401,7 @@ const ChapterViewLayer = () => {
         testimonialRes,
         associatePerformanceRes,
       ] = await Promise.all([
-        chapterApiProvider.getMembersAttendanceCount(members),
+        chapterApiProvider.getMembersAttendanceCount(fetchedMembers),
         chapterApiProvider.getOneToOneCounts(memberIds),
         chapterApiProvider.getReferralCounts(memberIds),
         chapterApiProvider.getThankYouSlipAmounts(memberIds),
@@ -355,8 +460,6 @@ const ChapterViewLayer = () => {
 
       if (res.status) {
         toast.success(res.message || "Top achievers submitted successfully!");
-        // 🔥 CLEAR DROPDOWNS AFTER SUCCESS
-        setOpenDropdown(null);
       } else {
         toast.error(res.message || "Backend error");
       }
@@ -437,14 +540,13 @@ const ChapterViewLayer = () => {
     }
   };
 
-  const fetchData = async (id) => {
+  const fetchChapterData = async (id) => {
     const responce = await chapterApiProvider.getChaptersById(id);
     if (responce && responce.status) {
       const chapters = responce?.response?.data;
       console.log(chapters, "chapters");
       if (chapters) {
         setChapterData(chapters);
-        setMembers(chapters.members || []); // slider part
       }
     }
   };
@@ -550,10 +652,12 @@ const ChapterViewLayer = () => {
       const data = response?.response?.data || [];
       setHeadTableMembersData(data);
 
-      // 🟩 Auto-select the 3 roles
+      // 🟩 Auto-select the roles
       const president = data.find((x) => x.roleName === "President");
       const secretary = data.find((x) => x.roleName === "Secretary");
       const vicePresident = data.find((x) => x.roleName === "Vice President");
+      const associateCommittee = data.filter((x) => x.roleName === "Associate Committee");
+      const coordinator = data.filter((x) => x.roleName === "Coordinator");
 
       setPresidentMember(
         president
@@ -571,6 +675,14 @@ const ChapterViewLayer = () => {
         vicePresident
           ? { label: vicePresident.name, value: vicePresident.id }
           : null
+      );
+
+      setAssociateCommitteeMembers(
+        associateCommittee.map((x) => ({ label: x.name, value: x.id }))
+      );
+
+      setCoordinatorMembers(
+        coordinator.map((x) => ({ label: x.name, value: x.id }))
       );
 
     } else {
@@ -697,6 +809,156 @@ const ChapterViewLayer = () => {
       ),
     },
   ].filter((chapter) => chapter?.members?.length > 0); // Only show categories with data
+
+  const renderProfileCard = (memberSelection, roleTitle) => {
+    const themeColor = "rgb(192, 34, 33)";
+    
+    if (!memberSelection) {
+      return (
+        <div 
+          className="card h-100 border-dashed d-flex align-items-center justify-content-center p-4 cursor-pointer"
+          style={{ backgroundColor: "#fff", borderColor: themeColor, borderRadius: "16px", minHeight: "140px", transition: "all 0.2s ease", borderStyle: "dashed", borderWidth: "2px" }}
+          data-bs-toggle="modal" 
+          data-bs-target="#memberSelectionModal"
+          onClick={() => setRoleModalTarget(roleTitle)}
+        >
+          <div className="d-flex flex-column align-items-center" style={{ color: themeColor }}>
+            <span className="fw-bold text-md">+ Assign {roleTitle}</span>
+          </div>
+        </div>
+      );
+    }
+
+    const memberObj = members.find((m) => m.id === memberSelection.value);
+    
+    return (
+      <div 
+        className="card h-100 border-0 p-3 position-relative" 
+        style={{ 
+          backgroundColor: "#fff", 
+          borderRadius: "16px", 
+          boxShadow: "0 4px 12px rgba(0,0,0,0.03)", 
+          border: `1px solid ${themeColor}` 
+        }}
+      >
+        <button 
+          className="btn btn-sm position-absolute top-0 end-0 m-3 d-flex align-items-center justify-content-center p-1"
+          data-bs-toggle="modal" 
+          data-bs-target="#memberSelectionModal"
+          onClick={() => setRoleModalTarget(roleTitle)}
+          style={{ zIndex: 10, border: "none", backgroundColor: "transparent", color: themeColor, fontSize: "14px", fontWeight: "bold", textDecoration: "underline" }}
+        >
+          Edit
+        </button>
+
+        <div className="d-flex align-items-center gap-3 mt-2">
+          <div className="position-relative" style={{ width: "56px", height: "56px", minWidth: "56px" }}>
+            <div 
+              className="d-flex align-items-center justify-content-center rounded-circle shadow-sm fw-bold text-white fs-5 position-absolute w-100 h-100"
+              style={{ backgroundColor: themeColor, top: 0, left: 0 }}
+            >
+              {memberSelection.label ? memberSelection.label.charAt(0).toUpperCase() : "?"}
+            </div>
+            {memberObj?.profileImage?.docPath && (
+              <img 
+                src={`${IMAGE_BASE_URL}/${memberObj.profileImage.docPath}/${memberObj.profileImage.docName}`} 
+                alt="" 
+                className="rounded-circle object-fit-cover shadow-sm position-absolute w-100 h-100"
+                style={{ border: `2px solid ${themeColor}`, top: 0, left: 0 }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            )}
+          </div>
+
+          <div className="flex-grow-1 min-w-0" style={{ paddingRight: "40px" }}>
+            <span 
+              className="badge mb-2 radius-4 px-2 py-1 fw-semibold text-xs"
+              style={{ backgroundColor: "rgba(192, 34, 33, 0.1)", color: themeColor }}
+            >
+              {roleTitle}
+            </span>
+            <h6 className="mb-1 fw-bold text-dark text-md text-truncate">
+              {memberSelection.label}
+            </h6>
+            <div className="d-flex align-items-center gap-1 text-xs text-truncate" style={{ color: "#64748b" }}>
+              <span className="text-truncate">{memberObj?.companyName || "N/A"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMemberCards = (selectedMembers, setMembersFunction, roleTitle) => {
+    const themeColor = "rgb(192, 34, 33)";
+    return (
+      <div className="row g-3">
+        {selectedMembers.map((m) => {
+          const memberObj = members.find((obj) => obj.id === m.value);
+          return (
+            <div className="col-xl-6 col-md-12 col-sm-6" key={m.value}>
+              <div 
+                className="card border-0 p-3 position-relative shadow-sm"
+                style={{ backgroundColor: "#fff", borderRadius: "12px", border: `1px solid ${themeColor}` }}
+              >
+                <span 
+                  className="position-absolute top-0 end-0 m-2 cursor-pointer fw-bold" 
+                  style={{ color: themeColor, fontSize: "18px", lineHeight: "1" }}
+                  onClick={() => setMembersFunction(prev => prev.filter(item => item.value !== m.value))}
+                >
+                  ×
+                </span>
+                <div className="d-flex align-items-center gap-3">
+                  <div className="position-relative" style={{ width: "40px", height: "40px", minWidth: "40px" }}>
+                    <div 
+                      className="d-flex align-items-center justify-content-center rounded-circle shadow-sm fw-bold text-white fs-6 position-absolute w-100 h-100"
+                      style={{ backgroundColor: themeColor, top: 0, left: 0 }}
+                    >
+                      {m.label ? m.label.charAt(0).toUpperCase() : "?"}
+                    </div>
+                    {memberObj?.profileImage?.docPath && (
+                      <img 
+                        src={`${IMAGE_BASE_URL}/${memberObj.profileImage.docPath}/${memberObj.profileImage.docName}`} 
+                        alt="" 
+                        className="rounded-circle object-fit-cover shadow-sm position-absolute w-100 h-100"
+                        style={{ border: `1px solid ${themeColor}`, top: 0, left: 0 }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-grow-1 min-w-0" style={{ paddingRight: "16px" }}>
+                    <h6 className="mb-0 fw-bold text-dark text-sm text-truncate">
+                      {m.label}
+                    </h6>
+                    <span className="text-xs fw-medium" style={{ color: themeColor }}>{roleTitle}</span>
+                    {memberObj?.contactDetails?.email && (
+                      <div className="text-xs text-truncate mt-1" style={{ color: "#64748b" }}>
+                        {memberObj.contactDetails.email}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        
+        <div className="col-xl-6 col-md-12 col-sm-6">
+          <div 
+            className="card h-100 border-dashed d-flex align-items-center justify-content-center p-3 cursor-pointer shadow-sm"
+            style={{ backgroundColor: "#fff", borderColor: themeColor, borderRadius: "12px", minHeight: "74px", transition: "all 0.2s ease", borderStyle: "dashed", borderWidth: "2px" }}
+            data-bs-toggle="modal" 
+            data-bs-target="#memberSelectionModal"
+            onClick={() => setRoleModalTarget(roleTitle)}
+          >
+            <div className="d-flex align-items-center gap-2">
+              <span className="fw-bold text-sm" style={{ color: themeColor }}>+ Add {roleTitle === "Associate Committee" ? "Committee Member" : "Coordinator"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -832,7 +1094,14 @@ const ChapterViewLayer = () => {
             <div className="text-center py-4">No leadership data available</div>
           ) : (
             <div className="row g-4 justify-content-evenly">
-              {headTableUsersData.map((user, index) => (
+              {headTableUsersData
+                .filter((user) => {
+                  const name = (user?.name || "").toLowerCase();
+                  const isPreethi = name.includes("preethi");
+                  const isGajendran = name.includes("gajendran");
+                  return !isPreethi && !isGajendran;
+                })
+                .map((user, index) => (
                 <div
                   key={index}
                   className="col-12 col-sm-6 col-md-4 col-lg-3 user-grid-card"
@@ -890,7 +1159,14 @@ const ChapterViewLayer = () => {
 
         <div className="card-body p-24">
           <div className="row g-4 justify-content-evenly">
-            {headTableMembersData.map((member, index) => (
+            {headTableMembersData
+              .filter((member) => {
+                const name = (member?.name || "").toLowerCase();
+                const isPreethi = name.includes("preethi");
+                const isGajendran = name.includes("gajendran");
+                return !isPreethi && !isGajendran;
+              })
+              .map((member, index) => (
               <div
                 key={index}
                 className="col-12 col-sm-6 col-md-4 col-lg-3 user-grid-card"
@@ -1033,439 +1309,132 @@ const ChapterViewLayer = () => {
         </div>
       </div>
 
-      {/* slider part og */}
-      <div className="card h-100 p-0 radius-12 mb-5">
-        <div className="card-header border-bottom bg-base py-16 px-24">
-          <h6 className="text-lg fw-semibold mb-0">Slider</h6>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .form-group label {
+          transition: color 0.2s;
+        }
+        .form-group:focus-within label {
+          color: rgb(192, 34, 33) !important;
+        }
+      `}</style>
+
+      {/* Top Achievers of the Month Form - Redesigned */}
+      <div className="card h-100 p-0 mb-5 border-0 shadow-sm overflow-hidden" style={{ borderRadius: "16px", backgroundColor: "#F8F9FB", border: "1px solid #e2e8f0" }}>
+        {/* Modern Header */}
+        <div className="card-header border-bottom bg-white py-20 px-32 d-flex align-items-center justify-content-between" style={{ borderBottom: "1px solid #e2e8f0", padding: "20px 32px" }}>
+          <div className="d-flex align-items-center gap-3">
+            <div>
+              <h6 className="text-lg fw-bold mb-1 text-dark" style={{ margin: 0 }}>Top Achievers of the Month</h6>
+              <span className="text-sm fw-medium" style={{ color: "#64748b" }}>Manage top members with maximum contributions.</span>
+            </div>
+          </div>
         </div>
 
-        <div className="card-body p-24">
-          <div className="row">
-            {/* LEFT SIDE */}
-            <div className="col-md-6">
-              <h6
-                className="text-lg fw-semibold mb-20"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
-                  color: "#fff",
-                  padding: "8px 12px",
-                }}
-              >
-                Top Achivers of the month
-              </h6>
-
-              {/* Item 1 */}
-              <div
-                onClick={() => setOpenDropdown("referrals")}
-                onMouseEnter={(e) => (e.target.style.color = "#000")}
-                onMouseLeave={(e) =>
-                (e.target.style.color =
-                  openDropdown === "referrals" ? "#000" : "#2c2c2c")
-                }
-                style={{
-                  fontSize: "1rem", // ≈ 16px
-                  fontWeight: openDropdown === "referrals" ? 600 : 500,
-                  padding: "0.75rem 0",
-                  cursor: "pointer",
-                  color: openDropdown === "referrals" ? "#000" : "#2c2c2c",
-                  borderLeft:
-                    openDropdown === "referrals"
-                      ? "3px solid #000"
-                      : "3px solid transparent",
-                  paddingLeft: openDropdown === "referrals" ? "0.5rem" : "0rem",
-                  transition: "0.2s",
-                }}
-              >
-                Maximum Referrals Contributed
-              </div>
-
-              {/* Item 2 */}
-              <div
-                onClick={() => setOpenDropdown("business")}
-                onMouseEnter={(e) => (e.target.style.color = "#000")}
-                onMouseLeave={(e) =>
-                (e.target.style.color =
-                  openDropdown === "business" ? "#000" : "#2c2c2c")
-                }
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: openDropdown === "business" ? 600 : 500,
-                  padding: "0.75rem 0",
-                  cursor: "pointer",
-                  color: openDropdown === "business" ? "#000" : "#2c2c2c",
-                  borderLeft:
-                    openDropdown === "business"
-                      ? "3px solid #000"
-                      : "3px solid transparent",
-                  paddingLeft: openDropdown === "business" ? "0.5rem" : "0rem",
-                  transition: "0.2s",
-                }}
-              >
-                Maximum Business Contributed
-              </div>
-
-              {/* Item 3 */}
-              <div
-                onClick={() => setOpenDropdown("visitors")}
-                onMouseEnter={(e) => (e.target.style.color = "#000")}
-                onMouseLeave={(e) =>
-                (e.target.style.color =
-                  openDropdown === "visitors" ? "#000" : "#2c2c2c")
-                }
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: openDropdown === "visitors" ? 600 : 500,
-                  padding: "0.75rem 0",
-                  cursor: "pointer",
-                  color: openDropdown === "visitors" ? "#000" : "#2c2c2c",
-                  borderLeft:
-                    openDropdown === "visitors"
-                      ? "3px solid #000"
-                      : "3px solid transparent",
-                  paddingLeft: openDropdown === "visitors" ? "0.5rem" : "0rem",
-                  transition: "0.2s",
-                }}
-              >
-                Maximum Visitors Invited
-              </div>
+        <div className="card-body p-32" style={{ padding: "32px" }}>
+          {/* Referrals, Business, Visitors Section */}
+          <div className="row g-4 mb-4">
+            <div className="col-md-4">
+              <h6 className="fw-bold text-dark mb-3 text-sm">Maximum Referrals Contributed</h6>
+              {renderProfileCard(referralMember, "Maximum Referrals")}
             </div>
-
-            {/* RIGHT SIDE */}
-            <div className="col-md-6">
-              <h6
-                className="text-lg fw-semibold mb-20"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
-                  color: "#fff",
-                  padding: "8px 12px",
-                }}
-              >
-                Associates
-              </h6>
-
-              {/* Referrals */}
-
-              <div className="mb-4">
-                {openDropdown === "referrals" ? (
-                  <Select
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
-                    options={members.map((m) => ({
-                      label: m.name,
-                      value: m.id,
-                    }))}
-                    value={referralMember}
-                    onChange={(selected) => setReferralMember(selected)}
-                    placeholder="Select Member for Referrals"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      control: (styles) => ({
-                        ...styles,
-                        backgroundColor: "#e6e6e6",
-                        border: "none",
-                        minHeight: "2.5rem",
-                        borderRadius: "6px",
-                      }),
-                    }}
-                  />
-                ) : (
-                  <DisabledSelect value={referralMember} />
-                )}
-              </div>
-
-              {/* Business */}
-              <div className="mb-4">
-                {openDropdown === "business" ? (
-                  <Select
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
-                    options={members.map((m) => ({
-                      label: m.name,
-                      value: m.id,
-                    }))}
-                    value={businessMember}
-                    onChange={(selected) => setBusinessMember(selected)}
-                    placeholder="Select Member for Business"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      control: (styles) => ({
-                        ...styles,
-                        backgroundColor: "#e6e6e6",
-                        border: "none",
-                        minHeight: "2.5rem",
-                        borderRadius: "6px",
-                      }),
-                    }}
-                  />
-                ) : (
-                  <DisabledSelect value={businessMember} />
-                )}
-              </div>
-
-              {/* Visitors */}
-              <div className="mb-4">
-                {openDropdown === "visitors" ? (
-                  <Select
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
-                    options={members.map((m) => ({
-                      label: m.name,
-                      value: m.id,
-                    }))}
-                    value={visitorMember}
-                    onChange={(selected) => setVisitorMember(selected)}
-                    placeholder="Select Member for Visitors"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      control: (styles) => ({
-                        ...styles,
-                        backgroundColor: "#e6e6e6",
-                        border: "none",
-                        minHeight: "2.5rem",
-                        borderRadius: "6px",
-                      }),
-                    }}
-                  />
-                ) : (
-                  <DisabledSelect value={visitorMember} />
-                )}
-              </div>
+            <div className="col-md-4">
+              <h6 className="fw-bold text-dark mb-3 text-sm">Maximum Business Contributed</h6>
+              {renderProfileCard(businessMember, "Maximum Business")}
+            </div>
+            <div className="col-md-4">
+              <h6 className="fw-bold text-dark mb-3 text-sm">Maximum Visitors Invited</h6>
+              {renderProfileCard(visitorMember, "Maximum Visitors")}
             </div>
           </div>
+        </div>
 
-          <div className="text-end mt-4 px-32">
-            {hasPermission("topachievers-create") && (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
-              >
-                Submit
-              </button>
-            )}
-          </div>
-
+        {/* Footer Actions */}
+        <div className="card-footer bg-white border-top d-flex justify-content-end gap-3" style={{ padding: "20px 32px", borderTop: "1px solid #e2e8f0" }}>
+          {hasPermission("topachievers-create") && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="btn btn-primary fw-bold shadow-sm d-flex align-items-center justify-content-center"
+              style={{ backgroundColor: "rgb(192, 34, 33)", color: "#fff", borderColor: "rgb(192, 34, 33)", padding: "10px 32px", borderRadius: "8px", transition: "all 0.2s ease" }}
+            >
+              Submit Top Achievers
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Roles section */}
-      <div className="card h-100 p-0 radius-12 mb-5">
-        <div className="card-header border-bottom bg-base py-16 px-24">
-          <h6 className="text-lg fw-semibold mb-0">Head Table Roles</h6>
+      {/* Head Table Roles Form - Redesigned */}
+      <div className="card h-100 p-0 mb-5 border-0 shadow-sm overflow-hidden" style={{ borderRadius: "16px", backgroundColor: "#F8F9FB", border: "1px solid #e2e8f0" }}>
+        {/* Modern Header */}
+        <div className="card-header border-bottom bg-white py-20 px-32 d-flex align-items-center justify-content-between" style={{ borderBottom: "1px solid #e2e8f0", padding: "20px 32px" }}>
+          <div className="d-flex align-items-center gap-3">
+            <div>
+              <h6 className="text-lg fw-bold mb-1 text-dark" style={{ margin: 0 }}>Head Table Leadership Roles</h6>
+              <span className="text-sm fw-medium" style={{ color: "#64748b" }}>Manage top-level administrators and coordinators for this chapter.</span>
+            </div>
+          </div>
         </div>
 
-        <div className="card-body p-24">
-          <div className="row">
-
-            {/* LEFT SIDE */}
-            <div className="col-md-6">
-              <h6
-                className="text-lg fw-semibold mb-20"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
-                  color: "#fff",
-                  padding: "8px 12px",
-                }}
-              >
-                Select Roles
-              </h6>
-
-              {/* Item 1 — President */}
-              <div
-                onClick={() => setOpenDropdown("president")}
-                onMouseEnter={(e) => (e.target.style.color = "#000")}
-                onMouseLeave={(e) =>
-                (e.target.style.color =
-                  openDropdown === "president" ? "#000" : "#2c2c2c")
-                }
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: openDropdown === "president" ? 600 : 500,
-                  padding: "0.75rem 0",
-                  cursor: "pointer",
-                  color: openDropdown === "president" ? "#000" : "#2c2c2c",
-                  borderLeft:
-                    openDropdown === "president"
-                      ? "3px solid #000"
-                      : "3px solid transparent",
-                  paddingLeft: openDropdown === "president" ? "0.5rem" : "0rem",
-                  transition: "0.2s",
-                }}
-              >
-                President
-              </div>
-
-              {/* Item 2 — Secretary */}
-              <div
-                onClick={() => setOpenDropdown("secretary")}
-                onMouseEnter={(e) => (e.target.style.color = "#000")}
-                onMouseLeave={(e) =>
-                (e.target.style.color =
-                  openDropdown === "secretary" ? "#000" : "#2c2c2c")
-                }
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: openDropdown === "secretary" ? 600 : 500,
-                  padding: "0.75rem 0",
-                  cursor: "pointer",
-                  color: openDropdown === "secretary" ? "#000" : "#2c2c2c",
-                  borderLeft:
-                    openDropdown === "secretary"
-                      ? "3px solid #000"
-                      : "3px solid transparent",
-                  paddingLeft: openDropdown === "secretary" ? "0.5rem" : "0rem",
-                  transition: "0.2s",
-                }}
-              >
-                Secretary
-              </div>
-
-              {/* Item 3 — Vice President */}
-              <div
-                onClick={() => setOpenDropdown("vicepresident")}
-                onMouseEnter={(e) => (e.target.style.color = "#000")}
-                onMouseLeave={(e) =>
-                (e.target.style.color =
-                  openDropdown === "vicepresident" ? "#000" : "#2c2c2c")
-                }
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: openDropdown === "vicepresident" ? 600 : 500,
-                  padding: "0.75rem 0",
-                  cursor: "pointer",
-                  color: openDropdown === "vicepresident" ? "#000" : "#2c2c2c",
-                  borderLeft:
-                    openDropdown === "vicepresident"
-                      ? "3px solid #000"
-                      : "3px solid transparent",
-                  paddingLeft: openDropdown === "vicepresident" ? "0.5rem" : "0rem",
-                  transition: "0.2s",
-                }}
-              >
-                Vice President
-              </div>
+        <div className="card-body p-32" style={{ padding: "32px" }}>
+          {/* President, Secretary, VP Section */}
+          <div className="row g-4 mb-4">
+            <div className="col-md-4">
+              {renderProfileCard(presidentMember, "President")}
             </div>
-
-            {/* RIGHT SIDE */}
-            <div className="col-md-6">
-              <h6
-                className="text-lg fw-semibold mb-20"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgb(192, 34, 33), rgb(69, 68, 66))",
-                  color: "#fff",
-                  padding: "8px 12px",
-                }}
-              >
-                Assign Associates
-              </h6>
-
-              {/* PRESIDENT DROPDOWN */}
-              <div className="mb-4">
-                {openDropdown === "president" ? (
-                  <Select
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    options={members.map((m) => ({
-                      label: m.name,
-                      value: m.id,
-                    }))}
-                    value={presidentMember}
-                    onChange={(selected) => setPresidentMember(selected)}
-                    placeholder="Select President"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      control: (styles) => ({
-                        ...styles,
-                        backgroundColor: "#e6e6e6",
-                        border: "none",
-                        minHeight: "2.5rem",
-                        borderRadius: "6px",
-                      }),
-                    }}
-                  />
-                ) : (
-                  <DisabledSelect value={presidentMember} />
-                )}
-              </div>
-
-              {/* SECRETARY DROPDOWN */}
-              <div className="mb-4">
-                {openDropdown === "secretary" ? (
-                  <Select
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    options={members.map((m) => ({
-                      label: m.name,
-                      value: m.id,
-                    }))}
-                    value={secretaryMember}
-                    onChange={(selected) => setSecretaryMember(selected)}
-                    placeholder="Select Secretary"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      control: (styles) => ({
-                        ...styles,
-                        backgroundColor: "#e6e6e6",
-                        border: "none",
-                        minHeight: "2.5rem",
-                        borderRadius: "6px",
-                      }),
-                    }}
-                  />
-                ) : (
-                  <DisabledSelect value={secretaryMember} />
-                )}
-              </div>
-
-              {/* VICE PRESIDENT DROPDOWN */}
-              <div className="mb-4">
-                {openDropdown === "vicepresident" ? (
-                  <Select
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    options={members.map((m) => ({
-                      label: m.name,
-                      value: m.id,
-                    }))}
-                    value={vicePresidentMember}
-                    onChange={(selected) => setVicePresidentMember(selected)}
-                    placeholder="Select Vice President"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      control: (styles) => ({
-                        ...styles,
-                        backgroundColor: "#e6e6e6",
-                        border: "none",
-                        minHeight: "2.5rem",
-                        borderRadius: "6px",
-                      }),
-                    }}
-                  />
-                ) : (
-                  <DisabledSelect value={vicePresidentMember} />
-                )}
-              </div>
-
+            <div className="col-md-4">
+              {renderProfileCard(secretaryMember, "Secretary")}
+            </div>
+            <div className="col-md-4">
+              {renderProfileCard(vicePresidentMember, "Vice President")}
             </div>
           </div>
 
-          <div className="text-end mt-4 px-32">
-            <button
-              type="button"
-              onClick={handleRoleSubmit}
-              className="btn btn-primary grip text-sm btn-lg px-32 py-12 radius-8"
-            >
-              Submit
-            </button>
-          </div>
+          <hr style={{ borderColor: "#cbd5e1", margin: "32px 0" }} />
 
+          <div className="row g-4 mb-4">
+            {/* Associate Committee Section */}
+            <div className="col-md-6 border-end pe-4">
+              <div className="h-100">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <h6 className="fw-bold text-dark mb-0">Associate Committee</h6>
+                </div>
+                {renderMemberCards(associateCommitteeMembers, setAssociateCommitteeMembers, "Associate Committee")}
+              </div>
+            </div>
+
+            {/* Coordinator Team Section */}
+            <div className="col-md-6 ps-4">
+              <div className="h-100">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <h6 className="fw-bold text-dark mb-0">Coordinator Team</h6>
+                </div>
+                {renderMemberCards(coordinatorMembers, setCoordinatorMembers, "Coordinator")}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="card-footer bg-white border-top d-flex justify-content-end gap-3" style={{ padding: "20px 32px", borderTop: "1px solid #e2e8f0" }}>
+          <button
+            type="button"
+            className="btn btn-light fw-bold px-24 py-10 radius-8"
+            style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "10px 24px", borderRadius: "8px", border: "1px solid #e2e8f0" }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleRoleSubmit}
+            className="btn btn-primary fw-bold shadow-sm d-flex align-items-center justify-content-center"
+            style={{ backgroundColor: "rgb(192, 34, 33)", color: "#fff", borderColor: "rgb(192, 34, 33)", padding: "10px 32px", borderRadius: "8px", transition: "all 0.2s ease" }}
+          >
+            Save Leadership Roles
+          </button>
         </div>
       </div>
       {/* Top Achievers */}
@@ -2068,6 +2037,101 @@ const ChapterViewLayer = () => {
 
       {/* REQUIRED!! */}
       <ToastContainer position="top-right" autoClose={3000} />
+      <div
+        className="modal fade"
+        id="memberSelectionModal"
+        tabIndex="-1"
+        aria-labelledby="memberSelectionModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content border-0 shadow-lg" style={{ borderRadius: "16px" }}>
+            <div className="modal-header border-bottom bg-light" style={{ padding: "16px 24px" }}>
+              <h5 className="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="memberSelectionModalLabel">
+                Select {roleModalTarget}
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              />
+            </div>
+            <div className="modal-body" style={{ padding: "24px", minHeight: "300px" }}>
+              <label className="form-label fw-bold text-secondary mb-3 d-flex align-items-center gap-2">
+                Search Member
+              </label>
+              <Select
+                isMulti={roleModalTarget === "Associate Committee" || roleModalTarget === "Coordinator"}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+                options={members.map((m) => ({
+                  label: m.name,
+                  value: m.id,
+                }))}
+                value={
+                  roleModalTarget === "President" ? presidentMember :
+                  roleModalTarget === "Secretary" ? secretaryMember :
+                  roleModalTarget === "Vice President" ? vicePresidentMember :
+                  roleModalTarget === "Associate Committee" ? associateCommitteeMembers :
+                  roleModalTarget === "Coordinator" ? coordinatorMembers :
+                  roleModalTarget === "Maximum Referrals" ? referralMember :
+                  roleModalTarget === "Maximum Business" ? businessMember :
+                  roleModalTarget === "Maximum Visitors" ? visitorMember : null
+                }
+                onChange={(selected) => {
+                  if (roleModalTarget === "President") setPresidentMember(selected);
+                  else if (roleModalTarget === "Secretary") setSecretaryMember(selected);
+                  else if (roleModalTarget === "Vice President") setVicePresidentMember(selected);
+                  else if (roleModalTarget === "Associate Committee") setAssociateCommitteeMembers(selected);
+                  else if (roleModalTarget === "Coordinator") setCoordinatorMembers(selected);
+                  else if (roleModalTarget === "Maximum Referrals") setReferralMember(selected);
+                  else if (roleModalTarget === "Maximum Business") setBusinessMember(selected);
+                  else if (roleModalTarget === "Maximum Visitors") setVisitorMember(selected);
+                }}
+                placeholder={`Search to assign ${roleModalTarget}...`}
+                styles={{
+                  menuPortal: (base) => ({ ...base, zIndex: 99999 }),
+                  control: (styles, { isFocused }) => ({
+                    ...styles,
+                    backgroundColor: "#fff",
+                    border: isFocused ? "1.5px solid rgb(192, 34, 33)" : "1px solid #dee2e6",
+                    boxShadow: "none",
+                    borderRadius: "8px",
+                    padding: "4px",
+                    "&:hover": {
+                      border: "1.5px solid rgb(192, 34, 33)",
+                    },
+                  }),
+                  option: (styles, { isFocused, isSelected }) => ({
+                    ...styles,
+                    backgroundColor: isSelected
+                      ? "rgb(192, 34, 33)"
+                      : isFocused
+                      ? "rgba(192, 34, 33, 0.1)"
+                      : "white",
+                    color: isSelected ? "white" : "#333",
+                    padding: "10px 14px",
+                    fontWeight: isSelected ? "600" : "400",
+                    cursor: "pointer",
+                  }),
+                }}
+                formatOptionLabel={formatOptionLabel}
+              />
+            </div>
+            <div className="modal-footer border-top bg-light d-flex justify-content-end" style={{ padding: "16px 24px" }}>
+              <button
+                type="button"
+                className="btn btn-primary fw-semibold"
+                style={{ backgroundColor: "rgb(192, 34, 33)", borderColor: "rgb(192, 34, 33)", padding: "10px 32px", borderRadius: "8px" }}
+                data-bs-dismiss="modal"
+              >
+                Confirm Selection
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 };

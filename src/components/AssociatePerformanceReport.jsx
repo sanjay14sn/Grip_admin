@@ -1,112 +1,224 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import ReactApexChart from "react-apexcharts";
+import { Icon } from "@iconify/react/dist/iconify.js";
 import chapterApiProvider from "../apiProvider/chapterApi";
+import MasterLayout from "../masterLayout/MasterLayout";
+import Breadcrumb from "../components/Breadcrumb";
 
 export default function MemberSixMonthReport() {
-    const { id } = useParams();
-    const navigate = useNavigate();
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true);
-    const [memberData, setMemberData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [selectedMetric, setSelectedMetric] = useState("oneToOne");
+  const [timeFilter, setTimeFilter] = useState("6months");
 
-    useEffect(() => {
-        if (id) {
-            fetchReport(id);
-        }
-    }, [id]);
-
-
-    /** 🔥 Fetch Only One Member Performance */
-    async function fetchReport(memberId) {
-        try {
-            setLoading(true);
-           let memberIds=[memberId]
-            const body = {
-                page: 1,
-                limit: 1
-            };
-            const res = await chapterApiProvider.getAssociatePerformanceReport(memberIds,body)
-
-            if (res?.success && res.data.length > 0) {
-                setMemberData(res.data[0]); // store single associate
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
+  useEffect(() => {
+    if (id) {
+      fetchReport(id);
     }
+  }, [id]);
 
-    /** 🔥 Convert "2025-09" → "September 2025" */
-    const formatMonth = (monthKey) => {
-        const date = new Date(monthKey + "-01");
-        return date.toLocaleString("en-US", { month: "long", year: "numeric" });
-    };
+  async function fetchReport(memberId) {
+    try {
+      setLoading(true);
+      const memberIds = [memberId];
+      const body = { page: 1, limit: 1 };
+      const res = await chapterApiProvider.getAssociatePerformanceReport(memberIds, body);
 
-    /** Score total for each row */
-    const calcMonthTotal = (m) =>
-        (m?.oneToOne || 0) +
-        (m?.referrals || 0) +
-        (m?.visitors || 0) +
-        (m?.trainings || 0) +
-        (m?.business || 0) +
-        (m?.testimonials || 0) +
-        (m?.attendance || 0);
+      if (res?.success && res.data.length > 0) {
+        setData(res.data[0]);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  const getFilteredMonths = () => {
+    if (!data?.totals) return [];
+    
+    // Sort months chronologically
+    const allMonths = Object.keys(data.totals).sort();
+    
+    if (timeFilter === "3months") {
+      return allMonths.slice(-3);
+    } else if (timeFilter === "thisMonth") {
+      return allMonths.slice(-1);
+    }
+    // 6months default
+    return allMonths;
+  };
 
+  const getMetricTotal = (metricKey) => {
+    if (!data?.totals) return 0;
+    const months = getFilteredMonths();
+    return months.reduce((sum, month) => sum + (data.totals[month][metricKey] || 0), 0);
+  };
+
+  const getChartData = () => {
+    if (!data?.totals) return { categories: [], seriesData: [] };
+    
+    const months = getFilteredMonths();
+    
+    // Format YYYY-MM to MMM YYYY (e.g. 2024-05 -> May 2024)
+    const categories = months.map(m => {
+      const [year, month] = m.split("-");
+      const date = new Date(year, parseInt(month) - 1, 1);
+      return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    });
+    
+    const seriesData = months.map(m => data.totals[m][selectedMetric] || 0);
+    
+    return { categories, seriesData };
+  };
+
+  const metrics = [
+    { key: "oneToOne", label: "121's", icon: "solar:users-group-rounded-linear", color: "primary" },
+    { key: "referrals", label: "Referral's", icon: "solar:hand-shake-linear", color: "success" },
+    { key: "business", label: "Thank you Slip", icon: "solar:wad-of-money-linear", color: "warning" },
+    { key: "testimonials", label: "Testimonial", icon: "solar:star-fall-linear", color: "info" },
+    { key: "visitors", label: "Visitor / Guest", icon: "solar:user-plus-linear", color: "danger" },
+    { key: "expectedVisitors", label: "Expected Visitors", icon: "solar:user-id-linear", color: "secondary" }
+  ];
+
+  const chartInfo = getChartData();
+
+  const chartOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Inter, sans-serif"
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        columnWidth: "40%",
+      }
+    },
+    dataLabels: { enabled: false },
+    stroke: { width: 2, colors: ["transparent"] },
+    xaxis: {
+      categories: chartInfo.categories,
+      labels: { style: { colors: "#6c757d", fontSize: "12px" } }
+    },
+    yaxis: {
+      labels: { style: { colors: "#6c757d", fontSize: "12px" } }
+    },
+    fill: { opacity: 1 },
+    colors: ["#487fff"], // Primary color
+    tooltip: {
+      theme: "light",
+      y: { formatter: (val) => val }
+    }
+  };
+
+  const chartSeries = [{
+    name: metrics.find(m => m.key === selectedMetric)?.label || "Count",
+    data: chartInfo.seriesData
+  }];
+
+  if (loading) {
     return (
-        <div className="card p-3">
-
-            {/* HEADER */}
-            <div className="d-flex justify-content-between mb-3">
-                <h4>6-Month Report — <b>{memberData?.memberName}</b></h4>
-                <button className="btn btn-dark" onClick={() => navigate(-1)}>Back</button>
-            </div>
-
-            {loading ? (
-                <h5 className="text-center">Loading...</h5>
-            ) : (
-                <div className="table-responsive">
-                    <table className="table table-bordered">
-
-                        <thead className="bg-light fw-bold">
-                            <tr>
-                                <th>Month</th>
-                                <th>One-to-One</th>
-                                <th>Referrals</th>
-                                <th>Visitors</th>
-                                <th>Trainings</th>
-                                <th>Business</th>
-                                <th>Testimonials</th>
-                                <th>Attendance</th>
-                                <th>Total Score</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {memberData && Object.keys(memberData.monthlyScore).map((month) => {
-                                const row = memberData.monthlyScore[month];
-                                return (
-                                    <tr key={month}>
-                                        <td><b>{formatMonth(month)}</b></td>
-                                        <td>{row.oneToOne || 0}</td>
-                                        <td>{row.referrals || 0}</td>
-                                        <td>{row.visitors || 0}</td>
-                                        <td>{row.trainings || 0}</td>
-                                        <td>{row.business || 0}</td>
-                                        <td>{row.testimonials || 0}</td>
-                                        <td>{row.attendance || 0}</td>
-                                        <td className="fw-bold text-primary">
-                                            {calcMonthTotal(row).toFixed(2)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-
-                    </table>
-                </div>
-            )}
+    <MasterLayout>
+      <Breadcrumb title="Associate Performance" />
+      <div className="card h-100 p-0 radius-12 d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
+      </div>
+    </MasterLayout>
     );
+  }
+
+  if (!data) {
+    return (
+    <MasterLayout>
+      <Breadcrumb title="Associate Performance" />
+      <div className="card h-100 p-0 radius-12 d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+        <h5 className="text-secondary">Associate data not found</h5>
+      </div>
+    </MasterLayout>
+    );
+  }
+
+  return (
+    <MasterLayout>
+      <Breadcrumb title="Associate Performance" />
+      <div className="card h-100 p-0 radius-12">
+        <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div className="d-flex align-items-center gap-3">
+            <button 
+              type="button" 
+              className="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center w-40-px h-40-px rounded-circle" 
+              onClick={() => navigate(-1)}
+            >
+              <Icon icon="solar:alt-arrow-left-linear" className="text-xl" />
+            </button>
+            <div className="w-56-px h-56-px rounded-circle bg-primary-50 text-primary-600 d-flex justify-content-center align-items-center text-xl fw-bold">
+              {data.memberName ? data.memberName.charAt(0).toUpperCase() : "A"}
+            </div>
+            <div>
+              <h5 className="mb-1 fw-bold">{data.memberName}</h5>
+              <span className="text-secondary-light text-sm">Associate Performance Dashboard</span>
+            </div>
+          </div>
+          <div>
+            <select 
+              className="form-select form-select-sm w-auto shadow-sm"
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+            >
+              <option value="6months">Last 6 Months</option>
+              <option value="3months">Last 3 Months</option>
+              <option value="thisMonth">This Month</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="card-body p-24">
+          {/* Metric Cards */}
+          <div className="row gy-4 mb-24">
+            {metrics.map((metric) => (
+              <div className="col-xxl-4 col-sm-6" key={metric.key}>
+                <div 
+                  className={`card p-16 radius-12 shadow-sm border border-1 cursor-pointer transition-all ${selectedMetric === metric.key ? "border-primary bg-primary-50" : "border-light bg-hover-light"}`}
+                  onClick={() => setSelectedMetric(metric.key)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                      <span className="text-secondary-light text-sm mb-1 d-block">{metric.label}</span>
+                      <h4 className="mb-0 fw-bold">{getMetricTotal(metric.key)}</h4>
+                    </div>
+                    <div className={`w-48-px h-48-px rounded-circle bg-${metric.color}-50 text-${metric.color}-600 d-flex justify-content-center align-items-center text-2xl`}>
+                      <Icon icon={metric.icon} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart */}
+          <div className="card border border-light radius-12 shadow-sm mt-4">
+            <div className="card-header border-bottom bg-base py-16 px-24">
+              <h6 className="mb-0 fw-semibold">{metrics.find(m => m.key === selectedMetric)?.label} Trend</h6>
+            </div>
+            <div className="card-body p-24">
+              <ReactApexChart 
+                options={chartOptions} 
+                series={chartSeries} 
+                type="bar" 
+                height={350} 
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </MasterLayout>
+  );
 }

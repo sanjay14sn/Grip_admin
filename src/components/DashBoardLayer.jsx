@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import UnitCountSix from "./child/UnitCountSix";
 import TopPerformanceTwo from "./child/TopPerformanceTwo";
 import RecentMembers from "./child/LatestAppointmentsOne";
-import TotalIncome from "./child/TotalIncome";
-import SourceVisitors from "./child/SourceVisitors";
+import RecentActivityOne from "./child/RecentActivityOne";
 import dashboardApiProvider from "../apiProvider/dashboardApi";
 
 const DashBoardLayer = () => {
@@ -32,8 +31,7 @@ const DashBoardLayer = () => {
         <div className='col-xxxl-9'>
           <div className='row gy-4'>
             <UnitCountSix countData={countData} />
-            <SourceVisitors />
-            <TotalIncome />
+            <RecentActivityOne />
           </div>
         </div>
         <div className='col-xxxl-3'>

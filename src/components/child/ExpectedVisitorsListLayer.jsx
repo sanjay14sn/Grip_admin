@@ -52,6 +52,12 @@ const ExpectedVisitorsListLayer = () => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, page: newPage }));
+    }
+  };
+
  const deleteExpectedVisitor = async (id) => {
   // Show confirmation popup
   const result = await Swal.fire({
@@ -173,31 +179,72 @@ const ExpectedVisitorsListLayer = () => {
           </div>
 
           {/* Pagination */}
-          <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
-            <button
-              className="btn btn-outline-primary"
-              disabled={pagination.page === 1}
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
-              }
-            >
-              Previous
-            </button>
-
-            <span className="badge bg-danger text-white px-3 py-2">
-              {pagination.page}
-            </span>
-
-            <button
-              className="btn btn-outline-primary"
-              disabled={pagination.page === pagination.totalPages}
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-              }
-            >
-              Next
-            </button>
-          </div>
+          {pagination.totalPages > 1 && (
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <div>
+                Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+                of {pagination.total} entries
+              </div>
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={pagination.page === 1}
+                  onClick={() => handlePageChange(1)}
+                >
+                  First
+                </button>
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={pagination.page === 1}
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                >
+                  Previous
+                </button>
+                {Array.from(
+                  { length: Math.min(5, pagination.totalPages) },
+                  (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (pagination.page <= 3) {
+                      pageNum = i + 1;
+                    } else if (pagination.page >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = pagination.page - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        className={`btn btn-sm ${pagination.page === pageNum
+                            ? "btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
+                            : "btn-outline-danger"
+                          }`}
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  }
+                )}
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={pagination.page === pagination.totalPages}
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                >
+                  Next
+                </button>
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={pagination.page === pagination.totalPages}
+                  onClick={() => handlePageChange(pagination.totalPages)}
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <ToastContainer />

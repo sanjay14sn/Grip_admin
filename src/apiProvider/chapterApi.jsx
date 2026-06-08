@@ -65,20 +65,27 @@ class ChapterApiProvider {
         }
     }
 
-    async getAllChapters(input) {
+    async getAllChapters(input = {}) {
         try {
-            console.log("Fetching all chaptersdfg...");
-            const search = input && input.search ? input.search : "";
-            const response = await apiClient.get(`/chapters/list`, { params: { search } });
+            console.log("Fetching all chapters...");
+            const params = {
+                search: input.search || "",
+                limit: input.limit || 100,
+                sortField: input.sortField,
+                sortOrder: input.sortOrder,
+                page: input.page || 1,
+                ...(input.isActive !== undefined && { isActive: input.isActive })
+            };
+            const response = await apiClient.get(`/chapters/list`, { params });
             console.log("Response from getAllChapters:", response);
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
             } else {
-                console.error("Failed to fetch categories:", response.data?.message ?? "Something went wrong");
+                console.error("Failed to fetch chapters:", response.data?.message ?? "Something went wrong");
                 return { status: false, response: response.data };
             }
         } catch (error) {
-            console.error("Error fetching chapter:", error);
+            console.error("Error fetching chapters:", error);
 
             if (error.response && error.response.status === 401) {
                 console.error("Unauthorized access - check your token.");
@@ -106,6 +113,48 @@ class ChapterApiProvider {
                 console.error("Error Response:", error.response.data);
             }
 
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+    async getZones(params) {
+        try {
+            const response = await apiClient.get(`/zones/list`, { params });
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error("Failed to fetch zones:", response.data?.message ?? "Something went wrong");
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error fetching zones:", error);
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+    async deleteZone(id) {
+        try {
+            const response = await apiClient.delete(`/zones/${id}`);
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error("Failed to delete zone:", response.data?.message ?? "Something went wrong");
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error deleting zone:", error);
+            return { status: false, response: error.response?.data ?? null };
+        }
+    }
+    async updateZone(id, input) {
+        try {
+            const response = await apiClient.put(`/zones/${id}`, input);
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                console.error("Failed to update zone:", response.data?.message ?? "Something went wrong");
+                return { status: false, response: response.data };
+            }
+        } catch (error) {
+            console.error("Error updating zone:", error);
             return { status: false, response: error.response?.data ?? null };
         }
     }
@@ -156,7 +205,8 @@ class ChapterApiProvider {
         try {
             const data = {
                 isActive: input.isActive,
-                weekday: input.weekday
+                weekday: input.weekday,
+                ...(input.mentorId && { mentorId: input.mentorId })
             };
             console.log(data, "ertyuiy345tyu");
             const response = await apiClient.patch(`/chapters/${id}/status`, data);

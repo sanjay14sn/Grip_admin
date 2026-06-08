@@ -26,7 +26,8 @@ class UserApiProvider {
     async getUsersByRole(input) {
         try {
             const params = {
-                role: input.role
+                role: input.role,
+                ...(input.zoneId && { zoneId: input.zoneId })
             }
             const response = await apiClient.get(`/users/by-role`, { params });
 

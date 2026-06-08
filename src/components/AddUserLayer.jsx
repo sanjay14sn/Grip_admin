@@ -2,7 +2,8 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect } from 'react';
 import roleApiProvider from '../apiProvider/roleApi';
 import userApiProvider from '../apiProvider/userApi';
-import { useParams, useNavigate } from 'react-router-dom';
+import chapterApiProvider from '../apiProvider/chapterApi';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { toast, ToastContainer } from 'react-toastify';
 import { IMAGE_BASE_URL } from '../network/apiClient';
@@ -10,11 +11,17 @@ import { IMAGE_BASE_URL } from '../network/apiClient';
 
 const AddUserLayer = () => {
     const { id } = useParams();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const initialZoneId = queryParams.get("zoneId");
+    const initialRole = queryParams.get("role");
+
     const isEditMode = !!id;
     const navigate = useNavigate();
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
     const [roleOptions, setRoleOptions] = useState([]);
+    const [zones, setZones] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showPin, setShowPin] = useState(false);
     const [error, setError] = useState({});
@@ -27,11 +34,13 @@ const AddUserLayer = () => {
         username: '',
         pin: '',
         mobileNumber: '',
-        role: ''
+        role: initialRole || '',
+        zoneId: initialZoneId || ''
     });
 
     useEffect(() => {
         fetchRoleData();
+        fetchZoneData();
         if (isEditMode) {
             fetchUserData();
         }
@@ -52,6 +61,19 @@ const AddUserLayer = () => {
         }
     };
 
+    const fetchZoneData = async () => {
+        try {
+            const response = await chapterApiProvider.getZones({ limit: 100 });
+            console.log("FETCHED ZONES in AddUserLayer:", response);
+            if (response && response.status) {
+                const data = response.response?.data || response.response || [];
+                setZones(Array.isArray(data) ? data : (data.zones || []));
+            }
+        } catch (error) {
+            console.error("Error fetching zones:", error);
+        }
+    };
+
     const fetchUserData = async () => {
         setLoading(true);
         try {
@@ -68,6 +90,7 @@ const AddUserLayer = () => {
                     pin: '', // Don't pre-fill PIN for security
                     mobileNumber: user.mobileNumber,
                     role: user?.role._id,
+                    zoneId: user?.zoneId || '',
                     image: user.profileImage || ''
                 });
                 if (user.profileImage) {
@@ -170,17 +193,7 @@ const AddUserLayer = () => {
             return false
         }
 
-        // Validate Username
-        if (!formData.username?.trim()) {
-            errors.username = "Please enter username";
-            setError(errors)
-            return false
-        }
-        if (formData.username.length < 4) {
-            errors.username = "Username must be at least 4 characters";
-            setError(errors)
-            return false
-        }
+        // Username is automatically set to name
 
         // Validate PIN (exactly 4 digits)
         if(!isEditMode){
@@ -237,10 +250,14 @@ const AddUserLayer = () => {
         formDataToSend.append('name', formData.name);
         formDataToSend.append('companyName', formData.companyName);
         formDataToSend.append('email', formData.email);
-        formDataToSend.append('username', formData.username);
+        formDataToSend.append('username', formData.name);
         formDataToSend.append('pin', formData.pin);
         formDataToSend.append('mobileNumber', formData.mobileNumber);
         formDataToSend.append('role', formData.role);
+        
+        if (formData.zoneId) {
+            formDataToSend.append('zoneId', formData.zoneId);
+        }
 
         // Append the file if selected
         if (selectedFile) {
@@ -326,7 +343,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
         <div className="card h-100 p-0 radius-12">
             <div className="card-body p-24">
                 <div className="row justify-content-center">
-                    <div className="col-xxl-6 col-xl-8 col-lg-10">
+                    <div className="col-xxl-8 col-xl-10 col-lg-12">
                         <div className="card border">
                             <div className="card-body">
                                 <h6 className="text-md text-primary-light mb-16">Profile Image</h6>
@@ -362,7 +379,8 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                     </div>
                                 </div>
                                 <form onSubmit={handleSubmit}>
-                                    <div className="mb-20">
+                                    <div className="row">
+                                    <div className="col-md-6 mb-20">
                                         <label htmlFor="name" className="form-label fw-semibold text-primary-light text-sm mb-8">
                                             Name <span className="text-danger-600">*</span>
                                         </label>
@@ -377,7 +395,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         {error && error.name ? <span className='text-danger'>{error.name}</span> : <></>}
                                     </div>
 
-                                    <div className="mb-20">
+                                    <div className="col-md-6 mb-20">
                                         <label htmlFor="companyName" className="form-label fw-semibold text-primary-light text-sm mb-8">
                                             Company Name <span className="text-danger-600">*</span>
                                         </label>
@@ -392,7 +410,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         {error && error.companyName ? <span className='text-danger'>{error.companyName}</span> : <></>}
                                     </div>
 
-                                    <div className="mb-20">
+                                    <div className="col-md-6 mb-20">
                                         <label htmlFor="mobileNumber" className="form-label fw-semibold text-primary-light text-sm mb-8">
                                             Mobile Number <span className="text-danger-600">*</span>
                                         </label>
@@ -407,7 +425,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         {error && error.mobileNumber ? <span className='text-danger'>{error.mobileNumber}</span> : <></>}
                                     </div>
 
-                                    <div className="mb-20">
+                                    <div className="col-md-6 mb-20">
                                         <label htmlFor="email" className="form-label fw-semibold text-primary-light text-sm mb-8">
                                             Email <span className="text-danger-600">*</span>
                                         </label>
@@ -422,23 +440,10 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         {error && error.email ? <span className='text-danger'>{error.email}</span> : <></>}
                                     </div>
 
-                                    <div className="mb-20">
-                                        <label htmlFor="username" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                                            Username <span className="text-danger-600">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="form-control radius-8"
-                                            id="username"
-                                            value={formData.username}
-                                            onChange={handleInputChange}
-                                            disabled={loading}
-                                        />
-                                        {error && error.username ? <span>{error.username}</span> : <></>}
-                                    </div>
+                                    {/* Username field removed - name is used instead */}
 
                                     {!isEditMode && (
-                                        <div className="mb-20">
+                                        <div className="col-md-6 mb-20">
                                             <label htmlFor="pin" className="form-label fw-semibold text-primary-light text-sm mb-8">
                                                 PIN <span className="text-danger-600">*</span>
                                             </label>
@@ -466,7 +471,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         </div>
                                     )}
 
-                                    <div className="mb-20">
+                                    <div className="col-md-6 mb-20">
                                         <label htmlFor="role" className="form-label fw-semibold text-primary-light text-sm mb-8">
                                             Role <span className="text-danger-600">*</span>
                                         </label>
@@ -487,6 +492,28 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         {error && error.role ? <span className='text-danger'>{error.role}</span> : <></>}
                                     </div>
 
+                                    {/* Zone Selection */}
+                                    <div className="col-md-6 mb-20">
+                                        <label htmlFor="zoneId" className="form-label fw-semibold text-primary-light text-sm mb-8">
+                                            Zone
+                                        </label>
+                                        <select
+                                            className="form-control radius-8 form-select"
+                                            id="zoneId"
+                                            value={formData.zoneId}
+                                            onChange={handleInputChange}
+                                            disabled={loading}
+                                        >
+                                            <option value="">Select Zone</option>
+                                            {zones.map((zone) => (
+                                                <option key={zone._id} value={zone._id}>
+                                                    {zone.zoneName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                                                        </div>
                                     <div className="d-flex align-items-center justify-content-center gap-3">
                                         <button
                                             type="button"

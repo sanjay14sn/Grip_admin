@@ -19,6 +19,15 @@ const UserRegisterMemberListLayer = () => {
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState(null);
     const [showMemberModal, setShowMemberModal] = useState(false);
+    const [showDeclinedModal, setShowDeclinedModal] = useState(false);
+    const [declinedMembersData, setDeclinedMembersData] = useState([]);
+    const [loadingDeclined, setLoadingDeclined] = useState(false);
+    const [declinedPagination, setDeclinedPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1,
+    });
     const [search, setSearch] = useState("");
     const [pagination, setPagination] = useState({
         page: 1,
@@ -81,6 +90,33 @@ const UserRegisterMemberListLayer = () => {
         }
     };
 
+    const fetchDeclinedData = async (page = 1) => {
+        setLoadingDeclined(true);
+        try {
+            const params = {
+                page: page,
+                limit: declinedPagination.limit,
+                status: "decline",
+            };
+            const response = await memberApiProvider.getRegisterUserList(params);
+            if (response && response.status) {
+                setDeclinedMembersData(response.data.data.members || []);
+                setDeclinedPagination({
+                    page,
+                    limit: declinedPagination.limit,
+                    total: response.data.data.pagination?.total || 0,
+                    totalPages: Math.ceil(
+                        (response.data.data.pagination?.total || 0) / declinedPagination.limit
+                    ),
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching declined members:", error);
+        } finally {
+            setLoadingDeclined(false);
+        }
+    };
+
     const handleViewMember = (member) => {
         setSelectedMember(member);
         setShowMemberModal(true);
@@ -101,6 +137,7 @@ const UserRegisterMemberListLayer = () => {
                 page: pagination.page,
                 limit: pagination.limit,
                 search: search.trim() || undefined,
+                status: "pending",
             };
             const response = await memberApiProvider.getRegisterUserList(params);
             if (response && response.status) {
@@ -141,6 +178,24 @@ const UserRegisterMemberListLayer = () => {
                         <Icon icon="ion:search-outline" className="icon" />
                     </div>
 
+                    {hasPermission("associates-list") && (
+                        <button
+                            type="button"
+                            className="btn btn-warning grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2 text-white"
+                            style={{ backgroundColor: "#ff9800", borderColor: "#ff9800" }}
+                            onClick={() => {
+                                setShowDeclinedModal(true);
+                                fetchDeclinedData(1);
+                            }}
+                        >
+                            <Icon
+                                icon="mdi:account-cancel-outline"
+                                className="icon text-xl line-height-1"
+                            />
+                            Declined Associates
+                        </button>
+                    )}
+
                     {/* <select
                         className="form-select form-select-sm w-auto"
                         defaultValue="Select Number"
@@ -178,21 +233,21 @@ const UserRegisterMemberListLayer = () => {
                         <table className="table bordered-table sm-table mb-0">
                             <thead>
                                 <tr>
-                                    <th>S.No</th>
+                                    <th className="text-nowrap">S.No</th>
                                     <th>Name</th>
                                     <th>Chapter name</th>
                                     <th>Company name</th>
                                     <th>Category</th>
-                                    <th>Mobile Number</th>
-                                    <th className="text-center">Status</th>
-                                    <th className="text-center">Action</th>
+                                    <th className="text-nowrap">Mobile Number</th>
+                                    <th className="text-center text-nowrap">Status</th>
+                                    <th className="text-center text-nowrap">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {membersData &&
                                     membersData.map((member, index) => (
                                         <tr key={member._id}>
-                                            <td> {(pagination.page - 1) * pagination.limit + index + 1}.</td>
+                                            <td className="text-nowrap"> {(pagination.page - 1) * pagination.limit + index + 1}.</td>
                                             <td>{member.name}</td>
                                             <td>{member.chapterInfo?.chapterId?.chapterName}</td>
                                             <td>{member.personalDetails.companyName}</td>
@@ -201,8 +256,8 @@ const UserRegisterMemberListLayer = () => {
                                                     {member.personalDetails.categoryRepresented}
                                                 </span>
                                             </td>
-                                            <td>{member.contactDetails.mobileNumber}</td>
-                                            <td className="text-center">
+                                            <td className="text-nowrap">{member.contactDetails.mobileNumber}</td>
+                                            <td className="text-center text-nowrap">
                                                 <select
                                                     disabled={!hasPermission("associates-update")}
                                                     className={`form-select newonee form-select-sm w-auto radius-12 h-40-px custom-status-select ${member.status === "active"
@@ -221,7 +276,7 @@ const UserRegisterMemberListLayer = () => {
                                                     <option value="decline">Decline</option>
                                                 </select>
                                             </td>
-                                            <td className="text-center">
+                                            <td className="text-center text-nowrap">
                                                 <div className="d-flex align-items-center gap-10 justify-content-center">
                                                     {hasPermission("associates-list") && (
                                                         <button
@@ -451,6 +506,128 @@ const UserRegisterMemberListLayer = () => {
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowMemberModal(false)}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Declined Associates Modal */}
+            <Modal
+                show={showDeclinedModal}
+                onHide={() => setShowDeclinedModal(false)}
+                size="lg"
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Declined Associates</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {loadingDeclined ? (
+                        <div className="text-center py-5">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="table-responsive scroll-sm">
+                            <table className="table bordered-table sm-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Company name</th>
+                                        <th className="text-nowrap">Mobile Number</th>
+                                        <th className="text-center text-nowrap">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {declinedMembersData && declinedMembersData.length > 0 ? (
+                                        declinedMembersData.map((member) => (
+                                            <tr key={member._id}>
+                                                <td>{member.name}</td>
+                                                <td>{member.personalDetails?.companyName || "N/A"}</td>
+                                                <td className="text-nowrap">{member.contactDetails?.mobileNumber || "N/A"}</td>
+                                                <td className="text-center text-nowrap">
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-success"
+                                                        onClick={async () => {
+                                                            try {
+                                                                const result = await Swal.fire({
+                                                                    title: "Are you sure?",
+                                                                    text: `You are about to activate this member`,
+                                                                    icon: "warning",
+                                                                    showCancelButton: true,
+                                                                    confirmButtonColor: "#3085d6",
+                                                                    cancelButtonColor: "#d33",
+                                                                    confirmButtonText: "Yes, activate it!",
+                                                                });
+
+                                                                if (result.isConfirmed) {
+                                                                    const response = await memberApiProvider.updateMemberStatus(member._id, {
+                                                                        status: "active",
+                                                                    });
+
+                                                                    if (response && response.status) {
+                                                                        Swal.fire(
+                                                                            "Success!",
+                                                                            "Member has been activated.",
+                                                                            "success"
+                                                                        );
+                                                                        fetchDeclinedData(declinedPagination.page);
+                                                                        fetchData();
+                                                                    }
+                                                                }
+                                                            } catch (error) {
+                                                                console.error("Error activating member:", error);
+                                                                Swal.fire("Error!", "Failed to activate associate.", "error");
+                                                            }
+                                                        }}
+                                                    >
+                                                        Activate
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="text-center py-4">
+                                                No declined associates found
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {declinedPagination.totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                Showing {(declinedPagination.page - 1) * declinedPagination.limit + 1} to{" "}
+                                {Math.min(declinedPagination.page * declinedPagination.limit, declinedPagination.total)}{" "}
+                                of {declinedPagination.total} entries
+                            </div>
+                            <div className="d-flex gap-2">
+                                <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    disabled={declinedPagination.page === 1}
+                                    onClick={() => fetchDeclinedData(declinedPagination.page - 1)}
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    disabled={declinedPagination.page === declinedPagination.totalPages}
+                                    onClick={() => fetchDeclinedData(declinedPagination.page + 1)}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeclinedModal(false)}>
                         Close
                     </Button>
                 </Modal.Footer>

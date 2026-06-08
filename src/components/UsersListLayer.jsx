@@ -87,8 +87,12 @@ const UsersListLayer = () => {
                         <div style="flex: 1;">${user.mobileNumber || 'N/A'}</div>
                     </div>
                     <div style="display: flex; margin-bottom: 12px;">
-                        <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Company:</div>
-                        <div style="flex: 1;">${user.companyName || 'N/A'}</div>
+                        <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Role:</div>
+                        <div style="flex: 1;">${user.role?.name || 'N/A'}</div>
+                    </div>
+                    <div style="display: flex; margin-bottom: 12px;">
+                        <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Zone:</div>
+                        <div style="flex: 1;">${user.zoneId?.zoneName || 'N/A'}</div>
                     </div>
                     <div style="display: flex; margin-bottom: 12px;">
                         <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Status:</div>
@@ -197,7 +201,8 @@ const UsersListLayer = () => {
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Mobile Number</th>
-                                <th>Company Name</th>
+                                <th>Role</th>
+                                <th>Zone</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -217,7 +222,8 @@ const UsersListLayer = () => {
                                         <td>{user.name}</td>
                                         <td>{user.email}</td>
                                         <td>{user.mobileNumber}</td>
-                                        <td>{user.companyName}</td>
+                                        <td>{user.role?.name || "N/A"}</td>
+                                        <td>{user.zoneId?.zoneName || "N/A"}</td>
                                         <td>
                                             <div className="d-flex align-items-center gap-10">
                                                 <button

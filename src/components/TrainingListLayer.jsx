@@ -9,7 +9,7 @@ import paymentApiProvider from "../apiProvider/paymentApi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
 import { hasPermission } from "../utils/auth";
-import { formatDate } from "../utils/dateFormatter";
+import { formatDate, toLocalISOString } from "../utils/dateFormatter";
 import config from "../config/config";
 import TrainingApi from "../apiProvider/TrainingApi";
 import { Modal } from "bootstrap/dist/js/bootstrap.bundle.min";
@@ -193,11 +193,11 @@ const EventListLayer = () => {
 
             // Format date for datetime-local input
             const formattedStartDate = paymentToEdit.startDate
-                ? new Date(paymentToEdit.startDate).toISOString().slice(0, 16)
+                ? toLocalISOString(paymentToEdit.startDate)
                 : "";
 
             const formattedEndDate = paymentToEdit.endDate
-                ? new Date(paymentToEdit.endDate).toISOString().slice(0, 16)
+                ? toLocalISOString(paymentToEdit.endDate)
                 : "";
 
             // Set initial map position if coordinates exist
@@ -1059,7 +1059,7 @@ const EventListLayer = () => {
                                             className={`form-control radius-8 ${errors.startDate ? "is-invalid" : ""}`}
                                             value={formData.startDate}
                                             onChange={handleInputChange}
-                                            min={new Date().toISOString().slice(0, 16)}
+                                            min={toLocalISOString(new Date())}
                                         />
                                         {errors.startDate && (
                                             <div className="invalid-feedback">{errors.startDate}</div>
@@ -1076,7 +1076,7 @@ const EventListLayer = () => {
                                             className={`form-control radius-8 ${errors.endDate ? "is-invalid" : ""}`}
                                             value={formData.endDate}
                                             onChange={handleInputChange}
-                                            min={new Date().toISOString().slice(0, 16)}
+                                            min={toLocalISOString(new Date())}
                                         />
                                         {errors.endDate && (
                                             <div className="invalid-feedback">{errors.endDate}</div>

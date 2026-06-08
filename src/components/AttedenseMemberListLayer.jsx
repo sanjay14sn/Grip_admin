@@ -154,6 +154,32 @@ const AttedenseMemberListLayer = () => {
 
 
 
+    const getPunchTimeDisplay = (member) => {
+        if (!member.punchTime) {
+            const now = new Date();
+            const meetingStart = new Date(member.meetingStartDate);
+            // Punching opens 2 hours before meeting start
+            if (now < new Date(meetingStart.getTime() - 2 * 60 * 60 * 1000)) {
+                return <span className="text-muted">Not Started</span>;
+            }
+            return <span className="text-danger">Not Punched</span>;
+        }
+
+        const punchTimeStr = new Date(member.punchTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true, dateStyle: 'short', timeStyle: 'short' });
+        
+        // If createdBy doesn't match member ID, it means it was marked by Admin
+        if (member.createdBy && member.createdBy !== member._id) {
+            return (
+                <div>
+                    <div>{punchTimeStr}</div>
+                    <span className="badge bg-info-100 text-info-600 px-8 py-2 radius-4" style={{ fontSize: '0.7em' }}>Marked by Admin</span>
+                </div>
+            );
+        }
+
+        return punchTimeStr;
+    };
+
     if (loading)
         return (
             <div className="text-center py-5">
@@ -190,6 +216,7 @@ const AttedenseMemberListLayer = () => {
                                 <th>Company name</th>
                                 <th>Category</th>
                                 <th>Status</th>
+                                <th>Punch Time</th>
                                 {/* ✅ Only show Action column if at least one member has status */}
                                 {members.some((m) => m.status) && <th>Action</th>}
                             </tr>
@@ -233,6 +260,10 @@ const AttedenseMemberListLayer = () => {
                                                 Mark Attendance
                                             </button>
                                         )}
+                                    </td>
+                                    
+                                    <td>
+                                        {getPunchTimeDisplay(member)}
                                     </td>
 
                                     {/* ✅ Show Action column only when member has status */}

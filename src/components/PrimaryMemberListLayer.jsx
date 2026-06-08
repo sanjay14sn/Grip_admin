@@ -45,6 +45,7 @@ const PrimaryMemberListLayer = () => {
         page: pagination.page,
         limit: pagination.limit,
         search: searchQuery,
+        isPanel: true,
       };
 
       const response = await memberApiProvider.getMembers(params);
@@ -237,21 +238,21 @@ const PrimaryMemberListLayer = () => {
           <table className="table bordered-table sm-table mb-0">
             <thead>
               <tr>
-                <th>S.No</th>
+                <th className="text-nowrap">S.No</th>
                 <th>Name</th>
                 <th>Chapter Name</th>
                 <th>Role</th>
                 <th>Company name</th>
                 <th>Category</th>
-                <th>Mobile Number</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th className="text-nowrap">Mobile Number</th>
+                <th className="text-nowrap">Status</th>
+                <th className="text-nowrap">Action</th>
               </tr>
             </thead>
             <tbody>
               {members.map((member, index) => (
                 <tr key={member._id}>
-                  <td>
+                  <td className="text-nowrap">
                     {(pagination.page - 1) * pagination.limit + index + 1}.
                   </td>
                   <td>
@@ -275,8 +276,8 @@ const PrimaryMemberListLayer = () => {
                       {member.personalDetails?.categoryRepresented || '-'}
                     </span>
                   </td>
-                  <td>{member.contactDetails?.mobileNumber}</td>
-                  <td>
+                  <td className="text-nowrap">{member.contactDetails?.mobileNumber}</td>
+                  <td className="text-nowrap">
                     <select
                       disabled={!hasPermission("users-update")}
                       className={`form-select newonee form-select-sm w-auto radius-12 h-40-px custom-status-select ${member.status === "active"
@@ -300,7 +301,7 @@ const PrimaryMemberListLayer = () => {
                       <option value="Decline">Decline</option>
                     </select>
                   </td>
-                  <td>
+                  <td className="text-nowrap">
                     <div className="d-flex gap-10 justify-content-start">
                       {hasPermission("users-update") && (
                         <button
