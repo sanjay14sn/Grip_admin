@@ -1,13 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import userApiProvider from "./apiProvider/userApi";
-import HomePageOne from "./pages/HomePageOne";
-import HomePageTwo from "./pages/HomePageTwo";
-import HomePageThree from "./pages/HomePageThree";
-import HomePageFour from "./pages/HomePageFour";
-import HomePageFive from "./pages/HomePageFive";
-import HomePageSix from "./pages/HomePageSix";
-import HomePageSeven from "./pages/HomePageSeven";
+
 import EmailPage from "./pages/EmailPage";
 import AddUserPage from "./pages/AddUserPage";
 import AddPinPage from "./pages/AddPinPage";
@@ -85,9 +79,7 @@ import WizardPage from "./pages/WizardPage";
 import RouteScrollToTop from "./helper/RouteScrollToTop";
 import TextGeneratorNewPage from "./pages/TextGeneratorNewPage";
 import DashboardPage from "./pages/Dashboard";
-import HomePageNine from "./pages/HomePageNine";
-import HomePageTen from "./pages/HomePageTen";
-import HomePageEleven from "./pages/HomePageEleven";
+
 import GalleryGridPage from "./pages/GalleryGridPage";
 import GalleryMasonryPage from "./pages/GalleryMasonryPage";
 import GalleryHoverPage from "./pages/GalleryHoverPage";
