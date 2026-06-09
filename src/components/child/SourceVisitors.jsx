@@ -55,6 +55,7 @@ const SourceVisitors = () => {
 
   useEffect(() => {
     fetchHowDidYouHearStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFilter]);
 
   const sortedSources = [...visitorData].sort((a, b) => a.percentage - b.percentage);

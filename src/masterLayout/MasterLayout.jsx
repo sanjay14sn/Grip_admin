@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { getCurrentUser, hasPermission, setCurrentUser } from "../utils/auth";
 import userApiProvider from "../apiProvider/userApi";
 import notificationApiProvider from "../apiProvider/notificationApi";
@@ -13,7 +13,6 @@ const MasterLayout = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation(); // Hook to get the current route
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchNotifications();

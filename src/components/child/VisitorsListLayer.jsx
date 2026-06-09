@@ -76,23 +76,7 @@ const VisitorsListLayer = () => {
     }
   };
 
-  const handleStatusChange = async (status, recordId) => {
-    if (!status) return;
-    try {
-      const input = { status, id: recordId, formName: 'visitors' };
-      const response = await chapterApiProvider.changeStatus(input);
-      if (response) {
-        toast('Status updated successfully');
-        fetchChapters(id);
-      } else {
-        toast('Failed to update status');
-        fetchChapters(id);
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status');
-    }
-  };
+
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -103,6 +87,7 @@ const VisitorsListLayer = () => {
   // 🔥 REFRESH DATA ON PAGE CHANGE
   useEffect(() => {
     fetchChapters(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, pagination.page]);
 
   return (

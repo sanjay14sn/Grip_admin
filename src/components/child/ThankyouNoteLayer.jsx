@@ -38,7 +38,6 @@ const ThankyouNoteLayer = () => {
 
             const response = await chapterApiProvider.thankYouSlipListMember(id, input);
 
-            const listData = response?.response?.data?.records || [];
             const paginationData = response?.response?.data?.pagination || {};
 
             setchapterMembers(response?.response?.data || {});
@@ -56,6 +55,7 @@ const ThankyouNoteLayer = () => {
 
     useEffect(() => {
         fetchChapters(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, pagination.page]);
 
     const deleteThankYouSlip = async (thankYouSlipId) => {
@@ -96,28 +96,7 @@ const ThankyouNoteLayer = () => {
         }
     };
 
-    const handleStatusChange = async (status, recordId) => {
-        if (!status) return;
-        try {
-            let input = {
-                status: status,
-                id: recordId,
-                formName: "thankyouslips"
-            };
 
-            const response = await chapterApiProvider.changeStatus(input);
-
-            if (response) {
-                toast("Status updated successfully");
-                fetchChapters(id);
-            } else {
-                toast("Failed to update status");
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            alert('Failed to update status');
-        }
-    };
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
