@@ -10,7 +10,7 @@ import accessRequestApiProvider from "../apiProvider/accessRequestApi";
 
 const RoleEditLayer = () => {
     const [roleData, setRoleData] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -117,6 +117,7 @@ const RoleEditLayer = () => {
 
     const fetchData = async (isSearch = false) => {
         try {
+            setLoading(true);
             const params = {
                 page: pagination.page,
                 limit: pagination.limit,
@@ -140,6 +141,7 @@ const RoleEditLayer = () => {
             setError(err.message || "Failed to fetch roles");
             console.error("Error fetching roles:", err);
         } finally {
+            setLoading(false);
         }
     };
 

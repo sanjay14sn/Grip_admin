@@ -73,6 +73,7 @@ const ChapterAccessLayer = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [errors, setErrors] = useState({});
   const [chaptererror, setChapterError] = useState({});
+  const [loading, setLoading] = useState(true);
 
   // User Modal State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -152,6 +153,7 @@ const ChapterAccessLayer = () => {
 
   const fetchChapters = React.useCallback(async (search = "") => {
     try {
+      setLoading(true);
       let response;
       if (zoneId) {
         response = await chapterApiProvider.getChaptersByZone(zoneId);
@@ -170,6 +172,8 @@ const ChapterAccessLayer = () => {
       }
     } catch (error) {
       console.error("Error fetching chapters:", error);
+    } finally {
+      setLoading(false);
     }
   }, [zoneId]);
 
@@ -756,8 +760,15 @@ const ChapterAccessLayer = () => {
 
       <div className="card h-100 p-0 radius-12">
         <div className="card-body p-24">
-          <div className="row gy-4">
-            {chapters.filter((chapter) => chapter.isActive === 1 || chapter.approvalStatus === "waiting_for_approval").length === 0 ? (
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="row gy-4">
+              {chapters.filter((chapter) => chapter.isActive === 1 || chapter.approvalStatus === "waiting_for_approval").length === 0 ? (
               <div className="col-12 text-center py-5">
                 <div className="text-muted fs-5 fw-semibold py-24">
                   {zoneId ? "No active chapters found under this zone." : "No active chapters found."}
@@ -910,7 +921,8 @@ const ChapterAccessLayer = () => {
                 </div>
               ))
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

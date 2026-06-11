@@ -103,7 +103,8 @@ const AddUserLayer = () => {
             const response = await chapterApiProvider.getChaptersByZone(zoneId);
             if (response && response.status) {
                 const data = response.response?.data || response.response || [];
-                setChapters(Array.isArray(data) ? data : (data.chapters || []));
+                const allChapters = Array.isArray(data) ? data : (data.chapters || []);
+                setChapters(allChapters.filter(c => c.isActive === 1));
             }
         } catch (error) {
             console.error("Error fetching chapters:", error);

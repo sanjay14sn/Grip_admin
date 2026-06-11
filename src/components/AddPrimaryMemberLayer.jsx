@@ -219,7 +219,7 @@ const AddPrimaryMemberLayer = () => {
       try {
         const response = await chapterApiProvider.getChaptersByZone(newValue);
         if (response && response.status) {
-          const chaptersData = response.response.data || [];
+          const chaptersData = (response.response.data || []).filter(c => c.isActive === 1);
           setChapters(chaptersData);
 
           // Extract unique CIDs from all chapters
@@ -613,7 +613,7 @@ const AddPrimaryMemberLayer = () => {
     try {
       const response = await chapterApiProvider.getChaptersByZone(zoneId);
       if (response && response.status) {
-        const chaptersData = response.response.data || [];
+        const chaptersData = (response.response.data || []).filter(c => c.isActive === 1);
         setChapters(chaptersData);
         console.log("Chapters data:", chaptersData);
 
