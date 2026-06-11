@@ -44,7 +44,7 @@ class ExpectedVisitorsApiProvider {
       }
     } catch (error) {
       console.error("Error fetching expected visitors by id:", error);
-      return { status: false, response: error.response?.data ?? null };
+      return { status: false, response: error.data ?? null, httpStatus: error.status };
     }
   }
 

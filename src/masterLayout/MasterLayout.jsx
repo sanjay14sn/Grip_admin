@@ -1,23 +1,95 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser, hasPermission, setCurrentUser } from "../utils/auth";
 import userApiProvider from "../apiProvider/userApi";
 import notificationApiProvider from "../apiProvider/notificationApi";
 import { IMAGE_BASE_URL } from "../network/apiClient";
+import memberApiProvider from "../apiProvider/memberApi";
 
 const MasterLayout = ({ children }) => {
+  const navigate = useNavigate();
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(() => getCurrentUser()?.data || null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [recommendations, setRecommendations] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchContainerRef = useRef(null);
   const location = useLocation(); // Hook to get the current route
+
+  const rawRole = userData?.role;
+  const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+  const roleNameLower = roleName.toLowerCase();
+  const isSuperAdmin = roleNameLower === 'admin' || roleNameLower === 'super admin' || roleNameLower === 'super-admin';
+  const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
 
   useEffect(() => {
     fetchNotifications();
     const intervalId = setInterval(fetchNotifications, 60000); // Polling every minute
     return () => clearInterval(intervalId);
+  }, []);
+
+  // Debounced search recommendations query
+  useEffect(() => {
+    if (!globalSearchQuery.trim() || globalSearchQuery.trim().length < 2) {
+      setRecommendations([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const activeRes = await memberApiProvider.getRegisterUserList({
+          search: globalSearchQuery.trim(),
+          limit: 5,
+          status: "active"
+        });
+
+        const pendingRes = await memberApiProvider.getRegisterUserList({
+          search: globalSearchQuery.trim(),
+          limit: 5
+        });
+
+        let list = [];
+        if (activeRes && activeRes.status && activeRes.data?.data?.members) {
+          list = [...list, ...activeRes.data.data.members];
+        }
+        if (pendingRes && pendingRes.status && pendingRes.data?.data?.members) {
+          const existingIds = new Set(list.map(m => m._id));
+          pendingRes.data.data.members.forEach(m => {
+            if (!existingIds.has(m._id)) {
+              list.push(m);
+            }
+          });
+        }
+
+        setRecommendations(list.slice(0, 8));
+      } catch (err) {
+        console.error("Error fetching search recommendations:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [globalSearchQuery]);
+
+  // Click outside listener to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const fetchNotifications = async () => {
@@ -148,14 +220,22 @@ const MasterLayout = ({ children }) => {
         const response = await userApiProvider.getUserById(userId);
         if (response?.response?.data) {
           const freshUserData = response.response.data;
-          const newSessionData = { ...sessionData, data: freshUserData };
+          // merge fresh role data if it exists, otherwise keep existing
+          const newSessionData = { ...sessionData, data: { ...sessionData.data, ...freshUserData } };
           setCurrentUser(newSessionData);
-          setUserData(freshUserData);
+          setUserData(newSessionData.data);
         }
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
+    }
+  };
+
+  const handleGlobalSearchSubmit = (e) => {
+    e.preventDefault();
+    if (globalSearchQuery.trim()) {
+      navigate(`/user-member-list?search=${encodeURIComponent(globalSearchQuery.trim())}`);
     }
   };
 
@@ -214,7 +294,7 @@ const MasterLayout = ({ children }) => {
               </li>
             )}
             {/* Invoice Dropdown */}
-            {hasPermission("users-list") && (
+            {(hasPermission("users-list") || hasPermission("roles-list")) && (
               <li className="dropdown">
                 <Link to="#">
                   <Icon icon="mdi:account-cog-outline" className="menu-icon" />
@@ -233,34 +313,60 @@ const MasterLayout = ({ children }) => {
                       Admin Users
                     </NavLink>
                   </li>
-                  <li>
-                    <NavLink
-                      to="/primarymember-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="mdi:account-group-outline"
-                        className="menu-icon"
-                      />
-                      Panel Associate
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/roles-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="mdi:account-key-outline"
-                        className="menu-icon"
-                      />
-                      Role
-                    </NavLink>
-                  </li>
+                  {userData?.role !== "zone-admin" && (
+                    <>
+                      <li>
+                        <NavLink
+                          to="/primarymember-list"
+                          className={(navData) =>
+                            navData.isActive ? "active-page" : ""
+                          }
+                        >
+                          <Icon
+                            icon="mdi:account-group-outline"
+                            className="menu-icon"
+                          />
+                          Panel Associate
+                        </NavLink>
+                      </li>
+                    </>
+                  )}
+                  {(isSuperAdmin || isED) && (
+                    <li>
+                      <NavLink
+                        to="/roles-list"
+                        className={(navData) =>
+                          navData.isActive ? "active-page" : ""
+                        }
+                      >
+                        <Icon
+                          icon="mdi:account-key-outline"
+                          className="menu-icon"
+                        />
+                        Role
+                      </NavLink>
+                    </li>
+                  )}
+                  {/* Access Requests — visible to Admin/Super Admin only */}
+                  {(userData?.role?.name?.toLowerCase() === 'admin' ||
+                    userData?.role?.name?.toLowerCase() === 'super admin' ||
+                    userData?.role?.name?.toLowerCase() === 'super-admin') && (
+                    <li>
+                      <NavLink
+                        to="/access-requests"
+                        className={(navData) =>
+                          navData.isActive ? "active-page" : ""
+                        }
+                      >
+                        <Icon
+                          icon="mdi:shield-account-outline"
+                          className="menu-icon"
+                        />
+                        Access Requests
+                      </NavLink>
+                    </li>
+                  )}
+
                   {/* <li>
                     <NavLink
                       to='/head-table'
@@ -283,17 +389,19 @@ const MasterLayout = ({ children }) => {
                   <span>Chapter</span>
                 </Link>
                 <ul className="sidebar-submenu">
-                  <li>
-                    <NavLink
-                      to="/zone-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon="ic:outline-map" className="menu-icon" />
-                      Zones
-                    </NavLink>
-                  </li>
+                  {(userData?.role?.name?.toLowerCase() === "admin" || userData?.role?.name?.toLowerCase() === "super admin" || userData?.role?.name?.toLowerCase() === "super-admin") && (
+                    <li>
+                      <NavLink
+                        to="/zone-list"
+                        className={(navData) =>
+                          navData.isActive ? "active-page" : ""
+                        }
+                      >
+                        <Icon icon="ic:outline-map" className="menu-icon" />
+                        Zones
+                      </NavLink>
+                    </li>
+                  )}
                   <li>
                     <NavLink
                       to="/chapter"
@@ -316,23 +424,31 @@ const MasterLayout = ({ children }) => {
                       Chapter Report
                     </NavLink>
                   </li>
-                  <li>
-                    <NavLink
-                      to="/pin-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon="mdi:pin" className="menu-icon" />
-                      Pins
-                    </NavLink>
-                  </li>
+                  {(userData?.role?.name?.toLowerCase() === "admin" || userData?.role?.name?.toLowerCase() === "super admin" || userData?.role?.name?.toLowerCase() === "super-admin") && (
+                    <li>
+                      <NavLink
+                        to="/pin-list"
+                        className={(navData) =>
+                          navData.isActive ? "active-page" : ""
+                        }
+                      >
+                        <Icon icon="mdi:pin" className="menu-icon" />
+                        Pins
+                      </NavLink>
+                    </li>
+                  )}
                 </ul>
               </li>
             )}
 
             {/* Invoice Dropdown */}
-            {hasPermission("performers-list") && (
+            {(hasPermission("performers-list") ||
+              hasPermission("121s-list") ||
+              hasPermission("referrals-list") ||
+              hasPermission("thank-you-slip-list") ||
+              hasPermission("testimonial-list") ||
+              hasPermission("visitor-guest-list") ||
+              hasPermission("expected-visitors-list")) && (
               <li className="dropdown">
                 <Link to="#">
                   <Icon icon="mdi:account-tie" className="menu-icon" />
@@ -340,85 +456,70 @@ const MasterLayout = ({ children }) => {
                   <span>Performers</span>
                 </Link>
                 <ul className="sidebar-submenu">
+                  {hasPermission("121s-list") && (
                   <li>
-                    <NavLink
-                      to="/121-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="mdi:format-list-bulleted-type"
-                        className="menu-icon"
-                      />
+                    <NavLink to="/121-list" className={(navData) => navData.isActive ? "active-page" : "" }>
+                      <Icon icon="mdi:format-list-bulleted-type" className="menu-icon" />
                       121's
                     </NavLink>
                   </li>
+                  )}
+
+                  {hasPermission("referrals-list") && (
 
                   <li>
-                    <NavLink
-                      to="/referral"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="material-symbols:person-add-outline"
-                        className="menu-icon"
-                      />
+                    <NavLink to="/referral" className={(navData) => navData.isActive ? "active-page" : "" }>
+                      <Icon icon="material-symbols:person-add-outline" className="menu-icon" />
                       Referral's
                     </NavLink>
+
                   </li>
 
+                  )}
+
+                  {hasPermission("thank-you-slip-list") && (
+
                   <li>
-                    <NavLink
-                      to="/thankyou"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
+                    <NavLink to="/thankyou" className={(navData) => navData.isActive ? "active-page" : "" }>
                       <Icon icon="mdi:hand-heart-outline" className="menu-icon" />
                       Thank you Slip
                     </NavLink>
+
                   </li>
 
+                  )}
+
+                  {hasPermission("testimonial-list") && (
+
                   <li>
-                    <NavLink
-                      to="/testimoniall"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon
-                        icon="mdi:message-star-outline"
-                        className="menu-icon"
-                      />
+                    <NavLink to="/testimoniall" className={(navData) => navData.isActive ? "active-page" : "" }>
+                      <Icon icon="mdi:message-star-outline" className="menu-icon" />
                       Testimonial
                     </NavLink>
+
                   </li>
 
+                  )}
+
+                  {hasPermission("visitor-guest-list") && (
+
                   <li>
-                    <NavLink
-                      to="/visitor"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
+                    <NavLink to="/visitor" className={(navData) => navData.isActive ? "active-page" : "" }>
                       <Icon icon="mdi:eye-outline" className="menu-icon" />
                       Visitor /Guest
                     </NavLink>
+
                   </li>
+
+                  )}
+                  {hasPermission("expected-visitors-list") && (
                   <li>
-                    <NavLink
-                      to="/expected-visitors"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
+                    <NavLink to="/expected-visitors" className={(navData) => navData.isActive ? "active-page" : "" }>
                       <Icon icon="mdi:account-clock-outline" className="menu-icon" />
                       Expected Visitors
                     </NavLink>
                   </li>
+                  )}
                 </ul>
               </li>
             )}
@@ -496,53 +597,37 @@ const MasterLayout = ({ children }) => {
               </ul>
             </li>
             )} */}
-            {/* Invoice Dropdown */}
-            {hasPermission("payments-list") && (
-              <>
-
+            {/* Invoice Dropdown */}            {hasPermission("payments-list") && (
+              <li>
+                <NavLink to="/payments" className={(navData) => navData.isActive ? "active-page" : "" }>
+                  <Icon icon="mdi:credit-card-outline" className="menu-icon" />
+                  Payments
+                </NavLink>
+              </li>
+            )}
+            {hasPermission("meeting-list") && (
                 <li>
-                  <NavLink
-                    to="/payment-list"
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon
-                      icon="mdi:credit-card-plus-outline"
-                      className="menu-icon"
-                    />
+                  <NavLink to="/payment-list" className={(navData) => navData.isActive ? "active-page" : "" }>
+                    <Icon icon="mdi:credit-card-plus-outline" className="menu-icon" />
                     Meeting
                   </NavLink>
                 </li>
+            )}
+            {hasPermission("events-list") && (
                 <li>
-                  <NavLink
-                    to="/attedence-list"
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon
-                      icon="mdi:credit-card-plus-outline"
-                      className="menu-icon"
-                    />
+                  <NavLink to="/attedence-list" className={(navData) => navData.isActive ? "active-page" : "" }>
+                    <Icon icon="mdi:credit-card-plus-outline" className="menu-icon" />
                     Events
                   </NavLink>
                 </li>
+            )}
+            {hasPermission("training-list") && (
                 <li>
-                  <NavLink
-                    to="/training-list"
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon
-                      icon="mdi:book-open-variant"
-                      className="menu-icon"
-                    />
+                  <NavLink to="/training-list" className={(navData) => navData.isActive ? "active-page" : "" }>
+                    <Icon icon="mdi:book-open-variant" className="menu-icon" />
                     Training
                   </NavLink>
                 </li>
-              </>
             )}
           </ul>
         </div>
@@ -579,12 +664,138 @@ const MasterLayout = ({ children }) => {
                 >
                   <Icon icon="heroicons:bars-3-solid" className="icon" />
                 </button>
-                {/* <form className="navbar-search">
-                  <input type="text" name="search" placeholder="Search" />
-                  <Icon icon="ion:search-outline" className="icon" />
-                </form> */}
               </div>
             </div>
+
+            {/* Global Search Bar Center Column */}
+            <div className="col-lg-5 d-none d-lg-block" ref={searchContainerRef} style={{ position: "relative" }}>
+              <form onSubmit={handleGlobalSearchSubmit} className="navbar-search w-100 position-relative" style={{ display: "block" }}>
+                <input
+                  type="text"
+                  name="search"
+                  className="w-100 bg-neutral-50 border border-neutral-200"
+                  style={{
+                    height: "2.6rem",
+                    paddingLeft: "2.8rem",
+                    paddingRight: "1.2rem",
+                    fontSize: "0.875rem",
+                    outline: "none",
+                    transition: "border-color 0.25s, box-shadow 0.25s",
+                    borderRadius: "20px"
+                  }}
+                  placeholder="Search associates, chapters, meetings..."
+                  value={globalSearchQuery}
+                  onChange={(e) => {
+                    setGlobalSearchQuery(e.target.value);
+                    setShowSearchDropdown(true);
+                  }}
+                  onFocus={() => setShowSearchDropdown(true)}
+                />
+                <Icon
+                  icon="ion:search-outline"
+                  className="position-absolute top-50 translate-middle-y text-secondary text-lg"
+                  style={{ left: "1.2rem", pointerEvents: "none" }}
+                />
+              </form>
+
+              {/* Autocomplete Recommendations Dropdown */}
+              {showSearchDropdown && (globalSearchQuery.trim().length >= 2 || isSearching) && (
+                <div 
+                  className="position-absolute bg-white border border-neutral-200 rounded-12 shadow-lg w-100 mt-2 overflow-hidden" 
+                  style={{ 
+                    zIndex: 9999, 
+                    top: "100%", 
+                    left: 0,
+                    maxHeight: "350px",
+                    overflowY: "auto",
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+                  }}
+                >
+                  {isSearching ? (
+                    <div className="d-flex align-items-center justify-content-center p-3 gap-2 text-secondary">
+                      <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ width: "1rem", height: "1rem" }}>
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      <span style={{ fontSize: "0.85rem" }}>Searching...</span>
+                    </div>
+                  ) : recommendations.length > 0 ? (
+                    <div className="py-2">
+                      <div className="px-3 py-1 text-xs text-muted fw-bold text-uppercase border-bottom" style={{ letterSpacing: "0.05em", fontSize: "0.7rem" }}>
+                        Associates
+                      </div>
+                      <ul className="list-unstyled mb-0">
+                        {recommendations.map((member) => {
+                          const name = `${member.personalDetails?.firstName || ""} ${member.personalDetails?.lastName || ""}`.trim();
+                          const company = member.personalDetails?.companyName || "";
+                          const chapter = member.chapterInfo?.chapterId?.chapterName || "";
+                          const status = member.status || "active";
+
+                          return (
+                            <li key={member._id}>
+                              <button
+                                type="button"
+                                className="w-100 text-start border-0 px-3 py-2 d-flex align-items-center justify-content-between transition-colors search-recommendation-item"
+                                style={{ 
+                                  backgroundColor: "transparent", 
+                                  outline: "none",
+                                  fontSize: "0.85rem"
+                                }}
+                                onClick={() => {
+                                  setGlobalSearchQuery(name);
+                                  setShowSearchDropdown(false);
+                                  navigate(`/user-member-list?search=${encodeURIComponent(name)}`);
+                                }}
+                              >
+                                <div className="d-flex align-items-center gap-3">
+                                  <img
+                                    src={
+                                      member.profileImage?.docPath
+                                        ? `${IMAGE_BASE_URL}/${member.profileImage?.docPath}/${member.profileImage?.docName}`
+                                        : "/assets/images/user.png"
+                                    }
+                                    alt="profile"
+                                    className="rounded-circle object-fit-cover"
+                                    style={{ width: "32px", height: "32px", border: "1px solid #f3f4f6" }}
+                                  />
+                                  <div>
+                                    <div className="fw-semibold text-dark">{name}</div>
+                                    <div className="text-muted text-xs" style={{ fontSize: "0.75rem" }}>
+                                      {company} {chapter ? `• ${chapter}` : ""}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span 
+                                  className={`badge rounded-pill text-capitalize`}
+                                  style={{
+                                    fontSize: "0.7rem",
+                                    padding: "0.2rem 0.5rem",
+                                    backgroundColor: status === "active" ? "#e8f5e9" : status === "decline" ? "#ffebee" : "#fff8e1",
+                                    color: status === "active" ? "#2e7d32" : status === "decline" ? "#c62828" : "#f57f17",
+                                  }}
+                                >
+                                  {status}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="p-3 text-center text-muted" style={{ fontSize: "0.85rem" }}>
+                      No matching associates found.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <style>{`
+                .search-recommendation-item:hover {
+                  background-color: #f8f9fa !important;
+                }
+              `}</style>
+            </div>
+
             <div className="col-auto">
               <div className="d-flex flex-wrap align-items-center gap-3">
                 {/* <ThemeToggleButton /> */}

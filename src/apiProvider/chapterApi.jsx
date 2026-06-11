@@ -160,7 +160,12 @@ class ChapterApiProvider {
     }
     async getChaptersByZone(input) {
         try {
-            const response = await apiClient.get(`/chapters/by-zone/${input}`);
+            const zoneId = (input && typeof input === 'object') ? (input._id || null) : input;
+            if (!zoneId || zoneId === '[object Object]') {
+                console.error("getChaptersByZone called with invalid/empty zoneId:", input);
+                return { status: false, response: { data: { success: false, message: "Invalid zone ID" } } };
+            }
+            const response = await apiClient.get(`/chapters/by-zone/${zoneId}`);
 
             if (response.status === 200 || response.status === 201) {
                 return { status: true, response: response.data };
@@ -306,13 +311,7 @@ class ChapterApiProvider {
             }
         } catch (error) {
             console.error("Error fetching thank you slip list member:", error);
-
-            if (error.response && error.response.status === 401) {
-                console.error("Unauthorized access - check your token.");
-                console.error("Error Response:", error.response.data);
-            }
-
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? null, httpStatus: error.status };
         }
     }
 
@@ -461,13 +460,7 @@ class ChapterApiProvider {
             }
         } catch (error) {
             console.error("Error fetching refferal list member:", error);
-
-            if (error.response && error.response.status === 401) {
-                console.error("Unauthorized access - check your token.");
-                console.error("Error Response:", error.response.data);
-            }
-
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? null, httpStatus: error.status };
         }
     }
 
@@ -507,13 +500,7 @@ class ChapterApiProvider {
             }
         } catch (error) {
             console.error("Error fetching testimonial slip list member:", error);
-
-            if (error.response && error.response.status === 401) {
-                console.error("Unauthorized access - check your token.");
-                console.error("Error Response:", error.response.data);
-            }
-
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? null, httpStatus: error.status };
         }
     }
 
@@ -555,13 +542,7 @@ class ChapterApiProvider {
             }
         } catch (error) {
             console.error("Error fetching visitors slip list member:", error);
-
-            if (error.response && error.response.status === 401) {
-                console.error("Unauthorized access - check your token.");
-                console.error("Error Response:", error.response.data);
-            }
-
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? null, httpStatus: error.status };
         }
     }
     async monthlyRevenueBasedonChapter(input) {
@@ -621,13 +602,7 @@ class ChapterApiProvider {
             }
         } catch (error) {
             console.error("Error fetching one to one slip list member:", error);
-
-            if (error.response && error.response.status === 401) {
-                console.error("Unauthorized access - check your token.");
-                console.error("Error Response:", error.response.data);
-            }
-
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? null, httpStatus: error.status };
         }
     }
 

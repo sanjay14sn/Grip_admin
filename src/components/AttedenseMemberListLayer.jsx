@@ -180,6 +180,8 @@ const AttedenseMemberListLayer = () => {
         return punchTimeStr;
     };
 
+    const hasEditPermission = hasPermission("meeting-update");
+
     if (loading)
         return (
             <div className="text-center py-5">
@@ -217,8 +219,8 @@ const AttedenseMemberListLayer = () => {
                                 <th>Category</th>
                                 <th>Status</th>
                                 <th>Punch Time</th>
-                                {/* ✅ Only show Action column if at least one member has status */}
-                                {members.some((m) => m.status) && <th>Action</th>}
+                                {/* ✅ Only show Action column if at least one member has status AND user has edit permission */}
+                                {hasEditPermission && members.some((m) => m.status) && <th>Action</th>}
                             </tr>
                         </thead>
 
@@ -252,13 +254,17 @@ const AttedenseMemberListLayer = () => {
                                                 member.status
                                             )
                                         ) : (
-                                            // 🟥 If no status yet, show "Mark Attendance" button
-                                            <button
-                                                className="btn btn-sm btn-outline-danger"
-                                                onClick={() => handleAttendanceClick(member)}
-                                            >
-                                                Mark Attendance
-                                            </button>
+                                            // 🟥 If no status yet, show "Mark Attendance" button only if user has edit permission
+                                            hasEditPermission ? (
+                                                <button
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    onClick={() => handleAttendanceClick(member)}
+                                                >
+                                                    Mark Attendance
+                                                </button>
+                                            ) : (
+                                                <span className="text-secondary-light">Not Marked</span>
+                                            )
                                         )}
                                     </td>
                                     
@@ -266,8 +272,8 @@ const AttedenseMemberListLayer = () => {
                                         {getPunchTimeDisplay(member)}
                                     </td>
 
-                                    {/* ✅ Show Action column only when member has status */}
-                                    {hasPermission("payments-update") && member.status && (
+                                    {/* ✅ Show Action column only when member has status and user has edit permission */}
+                                    {hasEditPermission && member.status && (
                                         <td>
                                             <button
                                                 type="button"

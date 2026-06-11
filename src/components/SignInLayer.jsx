@@ -90,6 +90,7 @@ const SignInLayer = () => {
         if (token && user) {
           sessionStorage.setItem("authToken", token);
           sessionStorage.setItem("userData", JSON.stringify(user));
+          setCurrentUser({ data: user });
           fetchUserOnLoad(user?.id);
         }
 

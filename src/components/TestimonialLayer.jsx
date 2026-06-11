@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import chapterApiProvider from '../apiProvider/chapterApi';
 import { IMAGE_BASE_URL } from '../network/apiClient';
 import { toast } from 'react-toastify';
@@ -12,6 +12,7 @@ import { hasDeletePermission } from '../utils/auth';
 const TestimonialLayer = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState('');
+    const [accessDenied, setAccessDenied] = useState(false);
 
     const handleShowDoc = (docUrl) => {
         setSelectedDoc(docUrl);
@@ -29,6 +30,7 @@ const TestimonialLayer = () => {
     const isPdf = (url) => /\.(pdf)$/i.test(url || '');
 
     const { id } = useParams();
+    const navigate = useNavigate();
 
     // ------------------ PAGINATION STATE ------------------
     const [pagination, setPagination] = useState({
@@ -47,6 +49,18 @@ const TestimonialLayer = () => {
             };
 
             const response = await chapterApiProvider.testimonialSlipListMember(id, input);
+
+            // Handle 403 Access Denied
+            if (!response?.status && (response?.httpStatus === 403 || response?.response?.message?.includes('Access Denied'))) {
+                setAccessDenied(true);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'You are not authorized to view this chapter.',
+                    confirmButtonText: 'Go Back',
+                }).then(() => navigate(-1));
+                return;
+            }
 
             const mainData = response?.response?.data;
             const paginationData = mainData?.pagination || {};

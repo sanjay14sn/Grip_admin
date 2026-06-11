@@ -3,10 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Modal, Button } from 'react-bootstrap';
 import memberApiProvider from '../apiProvider/memberApi';
+import chapterApiProvider from '../apiProvider/chapterApi';
+import { getCurrentUser } from '../utils/auth';
 
 const MemberListLayer = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [accessChecked, setAccessChecked] = useState(false);
 
   const [resetStep, setResetStep] = useState(0);
   const [mobile, setMobile] = useState('');
@@ -59,10 +62,74 @@ const MemberListLayer = () => {
   };
 
   useEffect(() => {
-    if (id) {
+    const checkAccess = async () => {
+      if (!id) return;
+      try {
+        const user = getCurrentUser()?.data;
+        if (!user) {
+          navigate('/sign-in');
+          return;
+        }
+
+        const rawRole = user?.role;
+        const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+        const roleNameLower = roleName.toLowerCase();
+        const isSuperAdmin = roleNameLower === 'admin' || roleNameLower === 'super admin' || roleNameLower === 'super-admin';
+        const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
+        const isZoneAdmin = roleNameLower === 'zone-admin';
+        const isZoneLevel = isZoneAdmin || isED;
+        const isChapterUser = !isSuperAdmin && !isZoneLevel;
+
+        if (isSuperAdmin) {
+          setAccessChecked(true);
+          return;
+        }
+
+        if (isChapterUser) {
+          const userChapterIds = user?.chapterIds || [];
+          const allowedChapterIds = Array.isArray(userChapterIds)
+            ? userChapterIds.map(c => typeof c === 'object' ? c?._id || c?.id : c)
+            : [];
+          const hasAccess = allowedChapterIds.some(cid => String(cid) === String(id));
+          if (!hasAccess) {
+            navigate('/access-denied');
+          } else {
+            setAccessChecked(true);
+          }
+          return;
+        }
+
+        const res = await chapterApiProvider.getChaptersById(id);
+        if (res && res.status && res.response?.data) {
+          const chapter = res.response.data;
+          const rawZoneId = user?.zoneId;
+          const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId;
+
+          const rawChapterZoneId = chapter?.zoneId;
+          const chapterZoneId = typeof rawChapterZoneId === 'object' ? rawChapterZoneId?._id || rawChapterZoneId?.id : rawChapterZoneId;
+
+          if (String(chapterZoneId) !== String(userZoneId)) {
+            navigate('/access-denied');
+          } else {
+            setAccessChecked(true);
+          }
+        } else {
+          navigate('/access-denied');
+        }
+      } catch (err) {
+        console.error("Error during access check:", err);
+        navigate('/access-denied');
+      }
+    };
+
+    checkAccess();
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (id && accessChecked) {
       fetchData(id);
     }
-  }, [id, search, pagination.page, pagination.limit, showDeactivated]);
+  }, [id, search, pagination.page, pagination.limit, showDeactivated, accessChecked]);
 
   const handleActivateMember = async (memberId) => {
     setActivating(memberId);
@@ -79,6 +146,7 @@ const MemberListLayer = () => {
   };
 
   const fetchData = async (chapterId) => {
+    if (!accessChecked) return;
     setLoading(true);
     try {
       const params = {
@@ -110,6 +178,16 @@ const MemberListLayer = () => {
       setPagination((prev) => ({ ...prev, page: newPage }));
     }
   };
+
+  if (!accessChecked) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card h-100 p-0 radius-12">

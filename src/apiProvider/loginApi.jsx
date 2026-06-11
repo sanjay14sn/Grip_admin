@@ -118,7 +118,47 @@ class LoginApiProvider {
     //     }
     // }
 
+    async forgotPinRequest(input) {
+        try {
+            const response = await apiClient.post(`/forgot-pin/request`, input);
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                return { status: false, response: response, message: response.message ?? "Request failed" };
+            }
+        } catch (error) {
+            console.error("Error in forgotPinRequest:", error);
+            return { status: false, response: error ?? null, message: error.message || "Failed to request OTP" };
+        }
+    }
 
+    async forgotPinVerify(input) {
+        try {
+            const response = await apiClient.post(`/forgot-pin/verify`, input);
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                return { status: false, response: response, message: response.message ?? "Verification failed" };
+            }
+        } catch (error) {
+            console.error("Error in forgotPinVerify:", error);
+            return { status: false, response: error ?? null, message: error.message || "Failed to verify OTP" };
+        }
+    }
+
+    async forgotPinReset(input) {
+        try {
+            const response = await apiClient.post(`/forgot-pin/reset`, input);
+            if (response.status === 200 || response.status === 201) {
+                return { status: true, response: response.data };
+            } else {
+                return { status: false, response: response, message: response.message ?? "Reset failed" };
+            }
+        } catch (error) {
+            console.error("Error in forgotPinReset:", error);
+            return { status: false, response: error ?? null, message: error.message || "Failed to reset PIN" };
+        }
+    }
 }
 const loginApiProvider = new LoginApiProvider()
 export default loginApiProvider

@@ -472,9 +472,10 @@ const InputStatus = () => {
     };
     const getChapters = async (newValue) => {
         console.log("enter here", newValue, newValue)
+        const zoneId = (newValue && typeof newValue === 'object') ? newValue._id : newValue;
         setLoadingChapters(true);
         try {
-            const response = await chapterApiProvider.getChaptersByZone(newValue._id);
+            const response = await chapterApiProvider.getChaptersByZone(zoneId);
             if (response && response.status) {
                 const chaptersData = response.response.data || [];
                 setChapters(chaptersData);

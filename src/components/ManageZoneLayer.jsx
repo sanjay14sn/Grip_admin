@@ -44,7 +44,7 @@ const ManageZoneLayer = ({ isModal, zoneId: propZoneId }) => {
     setLoading(true);
     try {
       const targetRoles = [
-        getRoleIdByName("FED/ED"),
+        getRoleIdByName("ED"),
         getRoleIdByName("Mentor"),
         getRoleIdByName("RD")
       ].filter(Boolean).join(',');
@@ -170,12 +170,12 @@ const ManageZoneLayer = ({ isModal, zoneId: propZoneId }) => {
             </button>
           )}
           <Link
-            to={`/add-user?role=${getRoleIdByName("FED/ED")}&zoneId=${zoneId}`}
+            to={`/add-user?role=${getRoleIdByName("ED")}&zoneId=${zoneId}`}
             className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
             onClick={() => document.querySelector('.modal-backdrop')?.remove()}
           >
             <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
-            Add FED/ED
+            Add ED
           </Link>
           <Link
             to={`/add-user?role=${getRoleIdByName("Mentor")}&zoneId=${zoneId}`}

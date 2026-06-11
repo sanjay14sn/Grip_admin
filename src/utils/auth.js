@@ -7,15 +7,100 @@ export const getCurrentUser = () => {
   // Check specific permission
  export const hasPermission = (permissionKey) => {
     const user = getCurrentUser();
-    // console.log(user,"useruser");
-    const permissions = user?.data?.role?.permissions;
-    console.log("permissionssssssss",permissions)
-    // console.log(permissions,"permissionspermissions");
-    return permissions?.some(p => p.key === permissionKey);
+    
+    // Zone admin specific permissions
+    if (user?.data?.role === 'zone-admin') {
+      const allowedForZoneAdmin = [
+        "dashboard-list",
+        "users-list", "users-create", "users-update",   // Needed to show and manage Admin Users
+                "roles-list", "roles-create", "roles-update", "roles-delete",    // Needed to show Role menu and manage roles
+                "chapters-list", "chapters-create", "chapters-update", // Needed to show Chapters under this menu and manage them
+        "performers-list",
+        "payments-list", "payments-create",
+        // New permissions added
+        "meeting-list", "meeting-create", "meeting-update", "meeting-delete",
+        "events-list", "events-create", "events-update", "events-delete",
+        "training-list", "training-create", "training-update", "training-delete",
+        "121s-list", "121s-create", "121s-update", "121s-delete",
+        "referrals-list", "referrals-create", "referrals-update", "referrals-delete",
+        "thank-you-slip-list", "thank-you-slip-create", "thank-you-slip-update", "thank-you-slip-delete",
+        "testimonial-list", "testimonial-create", "testimonial-update", "testimonial-delete",
+        "visitor-guest-list", "visitor-guest-create", "visitor-guest-update", "visitor-guest-delete",
+        "expected-visitors-list", "expected-visitors-create", "expected-visitors-update", "expected-visitors-delete",
+        "associates-list", "associates-create", "associates-update", "associates-delete",
+      ];
+      return allowedForZoneAdmin.includes(permissionKey);
+    }
+
+    // Detect role name regardless of whether role is an object or a plain string
+    // (Same pattern used in DashBoardLayer.jsx and AnalyticsFilterModal.jsx)
+    const rawRole = user?.data?.role;
+    const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+    const roleNameLower = roleName.toLowerCase();
+
+    // Super Admin / Admin → full access to everything, always
+    const isSuperAdmin = roleNameLower === 'admin'
+                      || roleNameLower === 'super admin'
+                      || roleNameLower === 'super-admin';
+    if (isSuperAdmin) return true;
+
+    // ED → read-only access: can view roles, access-requests, and standard zone-admin permissions
+    const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
+    if (isED) {
+      const allowedForED = [
+        "dashboard-list", "users-list", "users-update", "users-delete", "roles-list",
+        "chapters-list", "chapters-create", "chapters-update", "performers-list", "payments-list", "payments-create",
+        "meeting-list", "meeting-create", "events-list", "events-create", "training-list", "training-create",
+        "121s-list", "referrals-list", "thank-you-slip-list",
+        "testimonial-list", "visitor-guest-list", "expected-visitors-list",
+        "associates-list",
+      ];
+      return allowedForED.includes(permissionKey);
+    }
+
+    // Chapter-level roles (RD, Mentor, etc.) — users who have chapterId in their session
+    // NOTE: only use chapterId presence to detect chapter-level users, NOT role.name,
+    // to avoid falsely matching Admin role objects that haven't been populated yet.
+    const sessionUser = user?.data;
+    const isChapterLevelUser = sessionUser?.chapterId && (Array.isArray(sessionUser.chapterId) ? sessionUser.chapterId.length > 0 : true);
+    
+    if (isChapterLevelUser) {
+      const allowedForChapterUser = [
+        "dashboard-list",
+        "performers-list",
+        "121s-list", "121s-create",
+        "referrals-list", "referrals-create",
+        "thank-you-slip-list", "thank-you-slip-create",
+        "testimonial-list", "testimonial-create",
+        "visitor-guest-list", "visitor-guest-create",
+        "expected-visitors-list", "expected-visitors-create",
+        "associates-list",
+      ];
+      // Check if the permission is in the default chapter-user list
+      if (allowedForChapterUser.includes(permissionKey)) return true;
+
+      // Or in the role's specific permissions
+      const permissions = user?.data?.role?.permissions;
+      if (permissions && Array.isArray(permissions)) {
+        return permissions.some(p => p.key === permissionKey);
+      }
+    } else {
+      // Role-object with permissions array (populated after MasterLayout fetchUserData) for non-chapter-level custom roles
+      const permissions = user?.data?.role?.permissions;
+      if (permissions && Array.isArray(permissions)) {
+        return permissions.some(p => p.key === permissionKey);
+      }
+    }
+
+    return false;
   }; 
 
   export const hasDeletePermission = (permissionKey) => {
   const user = getCurrentUser();
+  if (user?.data?.role === 'zone-admin') {
+    return false; // Or true depending on if they can delete. Let's return false by default for now unless specified.
+  }
+
   const permissions = user?.data?.role?.permissions;
 
   return permissions?.some((p) => {

@@ -74,6 +74,13 @@ const UsersListLayer = () => {
     }, [pagination.page, pagination.limit, debouncedSearch]);
 
     const handleView = (user) => {
+        const roleName = user.role?.name?.toLowerCase() || "";
+        const isAdmin = roleName === "admin" || roleName === "super admin" || roleName === "super-admin";
+        const isED = roleName === "ed" || roleName === "executive director";
+        
+        const displayZone = isAdmin ? "All Zones" : (user.zoneId?.zoneName || "N/A");
+        const displayChapter = (isAdmin || isED || user.allChapters) ? "All Chapters" : (user.chapters && user.chapters.length > 0 ? user.chapters.join(', ') : "N/A");
+
         Swal.fire({
             title: `<div style="font-size: 24px; color: #2c3e50; margin-bottom: 20px;">${user.name}</div>`,
             html: `
@@ -88,11 +95,15 @@ const UsersListLayer = () => {
                     </div>
                     <div style="display: flex; margin-bottom: 12px;">
                         <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Role:</div>
-                        <div style="flex: 1;">${user.role?.name || 'N/A'}</div>
+                        <div style="flex: 1;">${isAdmin ? `<span style="font-weight: bold; color: #0d6efd;">${user.role?.name || 'Admin'}</span>` : (user.role?.name || 'N/A')}</div>
                     </div>
                     <div style="display: flex; margin-bottom: 12px;">
                         <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Zone:</div>
-                        <div style="flex: 1;">${user.zoneId?.zoneName || 'N/A'}</div>
+                        <div style="flex: 1;">${displayZone}</div>
+                    </div>
+                    <div style="display: flex; margin-bottom: 12px;">
+                        <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Chapters:</div>
+                        <div style="flex: 1;">${displayChapter}</div>
                     </div>
                     <div style="display: flex; margin-bottom: 12px;">
                         <div style="flex: 0 0 120px; color: #7e8e9f; font-weight: 500;">Status:</div>
@@ -203,27 +214,45 @@ const UsersListLayer = () => {
                                 <th>Mobile Number</th>
                                 <th>Role</th>
                                 <th>Zone</th>
+                                <th>Chapter</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-5">
+                                    <td colSpan="8" className="text-center py-5">
                                         <div className="spinner-border text-primary" role="status">
                                             <span className="visually-hidden">Loading...</span>
                                         </div>
                                     </td>
                                 </tr>
                             ) : userList.length > 0 ? (
-                                userList.map((user, index) => (
+                                userList.map((user, index) => {
+                                    const roleName = user.role?.name?.toLowerCase() || "";
+                                    const isAdmin = roleName === "admin" || roleName === "super admin" || roleName === "super-admin";
+                                    const isED = roleName === "ed" || roleName === "executive director";
+
+                                    const displayZone = isAdmin ? "All Zones" : (user.zoneId?.zoneName || "N/A");
+                                    const displayChapter = (isAdmin || isED || user.allChapters) ? "All Chapters" : (user.chapters && user.chapters.length > 0 ? user.chapters.join(', ') : "N/A");
+
+                                    return (
                                     <tr key={user._id}>
                                         <td>{(pagination.page - 1) * pagination.limit + index + 1}.</td>
                                         <td>{user.name}</td>
                                         <td>{user.email}</td>
                                         <td>{user.mobileNumber}</td>
-                                        <td>{user.role?.name || "N/A"}</td>
-                                        <td>{user.zoneId?.zoneName || "N/A"}</td>
+                                        <td>
+                                            {isAdmin ? (
+                                                <span className="text-primary-600 fw-bold">
+                                                    {user.role?.name || "Admin"}
+                                                </span>
+                                            ) : (
+                                                user.role?.name || "N/A"
+                                            )}
+                                        </td>
+                                        <td>{displayZone}</td>
+                                        <td>{displayChapter}</td>
                                         <td>
                                             <div className="d-flex align-items-center gap-10">
                                                 <button
@@ -257,10 +286,11 @@ const UsersListLayer = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-4">
+                                    <td colSpan="8" className="text-center py-4">
                                         No users found
                                     </td>
                                 </tr>

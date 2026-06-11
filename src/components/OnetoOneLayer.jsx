@@ -1,29 +1,71 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import chapterApiProvider from '../apiProvider/chapterApi';
+import AnalyticsFilterModal from './child/AnalyticsFilterModal';
 import { IMAGE_BASE_URL } from '../network/apiClient';
 
 const OnetoOneLayer = () => {
+  const navigate = useNavigate();
   // Dynamic data in JSON format
   const [onetoone, setonetoone] = useState([])
+  const [loading, setLoading] = useState(true);
+  const [showFilterModal, setShowFilterModal] = useState(false);
  
   const fetchChapters = async () => {
     try {
+      setLoading(true);
       const response = await chapterApiProvider.onetooneSlipList();
       console.log(response, "responce-chapterApiProvider");
       setonetoone(response?.response?.data)
-      // You can set the response to state here if needed
     } catch (error) {
       console.error("Error fetching chapters:", error);
-      // Handle the error (e.g., show error message to user)
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
     fetchChapters();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
+      {/* 121's Dashboard Header Bar */}
+      <div className="d-flex align-items-center justify-content-between mb-24 p-24 shadow-sm flex-wrap gap-3" style={{
+        background: '#fff',
+        borderRadius: '16px',
+        border: '1px solid #f3f4f6'
+      }}>
+        <div>
+          <h5 className="fw-bold mb-1" style={{ color: '#1f2937' }}>Chapter Performance Overview</h5>
+          <span className="text-secondary-light text-sm">Select a chapter below to view individual performer details</span>
+        </div>
+        <button onClick={() => setShowFilterModal(true)} className="btn btn-primary grip text-sm px-20 py-11 radius-8 d-flex align-items-center gap-2">
+          <Icon icon="solar:graph-bold" style={{ fontSize: '18px' }} />
+          View Analytics
+        </button>
+      </div>
+
+      <AnalyticsFilterModal
+        show={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onConfirm={(chapterId) => {
+          setShowFilterModal(false);
+          navigate(`/121-analytics/${chapterId}`);
+        }}
+        title="Select Zone & Chapter for 121's Analytics"
+      />
+
       <div className="cardd h-100 p-0 radius-12">
         {/* <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between"> */}
           {/* <div className="d-flex align-items-center flex-wrap gap-3"> */}
@@ -117,10 +159,13 @@ const OnetoOneLayer = () => {
                           display: 'inline-flex',
                           alignItems: 'center',
                           marginTop: '8px',
-                          gap: '4px'
+                          gap: '6px',
+                          textTransform: 'uppercase',
+                          fontWeight: '600'
                         }}>
-                          View Performers
+                          VIEW PERFORMERS
                           <Icon icon="solar:arrow-right-linear" style={{ fontSize: '14px' }} />
+                          <Icon icon="solar:users-group-rounded-linear" style={{ fontSize: '20px', opacity: 0.3, marginLeft: '2px' }} />
                         </span>
                       </div>
                       <div 
@@ -137,7 +182,7 @@ const OnetoOneLayer = () => {
                           flexShrink: 0
                         }}
                       >
-                        {chapter.members.length}
+                        {chapter.overallChapterCount ?? 0}
                       </div>
                     </div>
                   </div>

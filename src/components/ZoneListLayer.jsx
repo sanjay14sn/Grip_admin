@@ -31,6 +31,10 @@ const ZoneListLayer = () => {
     countryName: "",
     stateName: "",
     zoneName: "",
+    name: "",
+    email: "",
+    mobileNumber: "",
+    password: "",
     dob: "",
   });
 
@@ -88,6 +92,10 @@ const ZoneListLayer = () => {
       countryName: zone.countryName || "",
       stateName: zone.stateName || "",
       zoneName: zone.zoneName || "",
+      name: zone.name || "",
+      email: zone.email || "",
+      mobileNumber: zone.mobileNumber || "",
+      password: "",
       dob: formattedDob,
     });
     setErrors({});
@@ -99,6 +107,10 @@ const ZoneListLayer = () => {
       countryName: "",
       stateName: "",
       zoneName: "",
+      name: "",
+      email: "",
+      mobileNumber: "",
+      password: "",
       dob: "",
     });
     setErrors({});
@@ -110,6 +122,26 @@ const ZoneListLayer = () => {
 
     if (!zoneFormData.zoneName || zoneFormData.zoneName.trim() === "") {
       newErrors.zoneName = "Zone name is required";
+    }
+
+    if (!zoneFormData.name || zoneFormData.name.trim() === "") {
+      newErrors.name = "Name is required";
+    }
+
+    if (!zoneFormData.email || zoneFormData.email.trim() === "") {
+      newErrors.email = "Email is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(zoneFormData.email)) {
+      newErrors.email = "Email is invalid";
+    }
+
+    if (!zoneFormData.mobileNumber || zoneFormData.mobileNumber.trim() === "") {
+      newErrors.mobileNumber = "Mobile number is required";
+    } else if (!/^\d{10,15}$/.test(zoneFormData.mobileNumber.trim())) {
+      newErrors.mobileNumber = "Mobile number is invalid";
+    }
+
+    if (!selectedZone && (!zoneFormData.password || zoneFormData.password.trim() === "")) {
+      newErrors.password = "Password is required";
     }
 
     if (!zoneFormData.countryName) {
@@ -552,6 +584,100 @@ const ZoneListLayer = () => {
                       <div className="text-danger mt-1">{errors.zoneName}</div>
                     )}
                   </div>
+
+                  {/* Name */}
+                  <div className="col-12 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Name <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                      name="name"
+                      value={zoneFormData.name}
+                      onChange={(e) => {
+                        handleZoneInputChange(e);
+                        if (errors.name) {
+                          setErrors((prev) => ({ ...prev, name: "" }));
+                        }
+                      }}
+                      placeholder="Enter Name"
+                    />
+                    {errors.name && (
+                      <div className="text-danger mt-1">{errors.name}</div>
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div className="col-12 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Email <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                      name="email"
+                      value={zoneFormData.email}
+                      onChange={(e) => {
+                        handleZoneInputChange(e);
+                        if (errors.email) {
+                          setErrors((prev) => ({ ...prev, email: "" }));
+                        }
+                      }}
+                      placeholder="Enter Email"
+                    />
+                    {errors.email && (
+                      <div className="text-danger mt-1">{errors.email}</div>
+                    )}
+                  </div>
+
+                  {/* Mobile Number */}
+                  <div className="col-12 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Mobile Number <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`form-control ${errors.mobileNumber ? "is-invalid" : ""}`}
+                      name="mobileNumber"
+                      value={zoneFormData.mobileNumber}
+                      onChange={(e) => {
+                        handleZoneInputChange(e);
+                        if (errors.mobileNumber) {
+                          setErrors((prev) => ({ ...prev, mobileNumber: "" }));
+                        }
+                      }}
+                      placeholder="Enter Mobile Number"
+                    />
+                    {errors.mobileNumber && (
+                      <div className="text-danger mt-1">{errors.mobileNumber}</div>
+                    )}
+                  </div>
+
+                  {/* Password */}
+                  {!selectedZone && (
+                    <div className="col-12 mb-20">
+                      <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                        Password <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                        name="password"
+                        value={zoneFormData.password}
+                        onChange={(e) => {
+                          handleZoneInputChange(e);
+                          if (errors.password) {
+                            setErrors((prev) => ({ ...prev, password: "" }));
+                          }
+                        }}
+                        placeholder="Enter Password"
+                      />
+                      {errors.password && (
+                        <div className="text-danger mt-1">{errors.password}</div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Country */}
                   <div className="col-12 mb-20">

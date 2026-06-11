@@ -62,9 +62,9 @@ const UnitCountSix = ({countData}) => {
                   <i className='ri-group-fill' />
                 </span>
                 <div>
-                  <h6 className='fw-semibold mb-2'>{countData?.cidCount}</h6>
+                  <h6 className='fw-semibold mb-2'>{countData?.mentorCount}</h6>
                   <span className='fw-medium text-secondary-light text-sm'>
-                 CID
+                 Mentor
                   </span>
                 </div>
               </div>

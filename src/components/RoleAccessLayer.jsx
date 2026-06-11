@@ -7,7 +7,7 @@ import { Country, State } from "country-state-city";
 import userApiProvider from "../apiProvider/userApi";
 import chapterApiProvider from "../apiProvider/chapterApi";
 import Swal from "sweetalert2";
-import { hasPermission } from "../utils/auth";
+import { hasPermission, getCurrentUser } from "../utils/auth";
 import Select from "react-select";
 import { Tag, Tooltip } from "antd";
 import debounce from "lodash.debounce";
@@ -17,6 +17,21 @@ import roleApiProvider from '../apiProvider/roleApi';
 import ManageZoneLayer from "./ManageZoneLayer";
 
 const ChapterAccessLayer = () => {
+  const currentUser = getCurrentUser()?.data;
+  const rawRole = currentUser?.role;
+  const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+  const roleNameLower = roleName.toLowerCase();
+  const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
+  const isZoneAdmin = rawRole === 'zone-admin';
+  const isSuperAdmin = roleNameLower === 'admin' || roleNameLower === 'super admin' || roleNameLower === 'super-admin';
+
+  const getZoneAdminZoneId = () => {
+    if (isZoneAdmin || isED) {
+       return currentUser.zoneId?._id || currentUser.zoneId || currentUser.id;
+    }
+    return null;
+  };
+
   const { zoneId } = useParams();
   // Zone Modal State
   const [zoneFormData, setZoneFormData] = useState({
@@ -32,7 +47,7 @@ const ChapterAccessLayer = () => {
     chapterName: "",
     countryName: "",
     stateName: "",
-    zoneId: zoneId || "",
+    zoneId: zoneId || getZoneAdminZoneId() || "",
     mentorId: [],
     meetingVenue: "",
     chapterCreatedDate: "",
@@ -92,7 +107,8 @@ const ChapterAccessLayer = () => {
   };
 
   const fetchZones = async () => {
-    const response = await chapterApiProvider.getZones({ limit: 1000 });
+    const response = await chapterApiProvider.getZones({ limit: 100 });
+    
     if (response && response.status) {
       const zoneOptions = response.response.data.map((zone) => ({
         value: zone._id,
@@ -117,7 +133,7 @@ const ChapterAccessLayer = () => {
     }
   };
 
-  const fetchMentors = async (zoneIdParam = zoneId) => {
+  const fetchMentors = async (zoneIdParam = zoneId || getZoneAdminZoneId()) => {
     const params = { role: "MENTOR" };
     if (zoneIdParam) {
       params.zoneId = zoneIdParam;
@@ -164,6 +180,21 @@ const ChapterAccessLayer = () => {
     [fetchChapters]
   );
 
+  
+  const handleApproveChapter = async (chapterId) => {
+    try {
+      const response = await apiClient.put(`/chapters/${chapterId}/approve`);
+      if (response && response.status === 200) {
+        toast.success("Chapter approved successfully!");
+        fetchChapters();
+      } else {
+        toast.error("Failed to approve chapter.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to approve chapter.");
+    }
+  };
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -171,28 +202,48 @@ const ChapterAccessLayer = () => {
   };
 
   // Fetch initial data
+  
+  useEffect(() => {
+    console.log("Current User from auth:", getCurrentUser());
+    console.log("Is Zone Admin?", getCurrentUser()?.data?.role === 'zone-admin');
+    console.log("getZoneAdminZoneId:", getZoneAdminZoneId());
+    console.log("Zones array:", zones);
+  }, [zones]);
+
   useEffect(() => {
     fetchCountries();
     fetchChapters();
     fetchRoles();
     fetchZones();
-    fetchMentors();
   }, [fetchChapters]);
 
   // Sync zoneId with chapterFormData
   useEffect(() => {
-    if (zoneId && zones.length > 0) {
-      const selectedZone = zones.find((z) => z.value === zoneId);
+    const currentZoneId = zoneId || getZoneAdminZoneId();
+    if (currentZoneId && zones.length > 0) {
+      const selectedZone = zones.find((z) => z.value === currentZoneId);
       if (selectedZone) {
         setChapterFormData((prev) => ({
           ...prev,
-          zoneId: zoneId,
+          zoneId: currentZoneId,
           countryName: selectedZone.countryName,
           stateName: selectedZone.stateName,
         }));
       }
     }
   }, [zoneId, zones]);
+
+  // Fetch mentors dynamically based on selectedChapter's zone
+  useEffect(() => {
+    if (selectedChapter) {
+      const selectedChapterZoneId = selectedChapter.zoneId?._id || selectedChapter.zoneId;
+      if (selectedChapterZoneId) {
+        fetchMentors(selectedChapterZoneId);
+      }
+    } else {
+      fetchMentors();
+    }
+  }, [selectedChapter]);
 
   // Zone Form Handlers
   const handleZoneCountryChange = (e) => {
@@ -476,7 +527,7 @@ const ChapterAccessLayer = () => {
   const handleChapterSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    let submitZoneId = chapterFormData.zoneId || zoneId;
+    let submitZoneId = chapterFormData.zoneId || zoneId || getZoneAdminZoneId();
     let finalCountryName = chapterFormData.countryName;
     let finalStateName = chapterFormData.stateName;
 
@@ -595,7 +646,7 @@ const ChapterAccessLayer = () => {
           chapterName: "",
           countryName: zoneId ? chapterFormData.countryName : "",
           stateName: zoneId ? chapterFormData.stateName : "",
-          zoneId: zoneId || "",
+          zoneId: zoneId || getZoneAdminZoneId() || "",
           mentorId: [],
           meetingVenue: "",
           chapterCreatedDate: "",
@@ -685,12 +736,13 @@ const ChapterAccessLayer = () => {
               Manage Zone
             </button>
           )}
-          {hasPermission("chapters-create") && zoneId && (
+          {hasPermission("chapters-create") && (getCurrentUser()?.data?.role === "zone-admin" || isED || isSuperAdmin) && (
             <button
               type="button"
               className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
               data-bs-toggle="modal"
               data-bs-target="#exampleModal"
+              onClick={() => setSelectedChapter(null)}
             >
               <Icon
                 icon="ic:baseline-plus"
@@ -705,14 +757,14 @@ const ChapterAccessLayer = () => {
       <div className="card h-100 p-0 radius-12">
         <div className="card-body p-24">
           <div className="row gy-4">
-            {chapters.filter((chapter) => chapter.isActive === 1).length === 0 ? (
+            {chapters.filter((chapter) => chapter.isActive === 1 || chapter.approvalStatus === "waiting_for_approval").length === 0 ? (
               <div className="col-12 text-center py-5">
                 <div className="text-muted fs-5 fw-semibold py-24">
                   {zoneId ? "No active chapters found under this zone." : "No active chapters found."}
                 </div>
               </div>
             ) : (
-              chapters.filter((chapter) => chapter.isActive === 1).map((chapter) => (
+              chapters.filter((chapter) => chapter.isActive === 1 || chapter.approvalStatus === "waiting_for_approval").map((chapter) => (
                 <div
                   className="col-12 col-xxl-4 col-lg-4 col-sm-6 mb-0"
                   key={chapter._id}
@@ -750,20 +802,28 @@ const ChapterAccessLayer = () => {
                             <strong>Mentor:</strong>
                           </td>
                           <td style={{ padding: "8px 0" }}>
-                            {chapter.mentorId?.length > 0 ? (
-                              <>
-                                <Tag color="#c02222">{chapter.mentorId[0]?.name}</Tag>
-                                {chapter.mentorId.length > 1 && (
-                                  <Tooltip
-                                    title={chapter.mentorId
-                                      .slice(1)
-                                      .map((m) => m.name)
-                                      .join(", ")}
-                                  >
-                                    <Tag color="#c02222">+{chapter.mentorId.length - 1}</Tag>
-                                  </Tooltip>
-                                )}
-                              </>
+                            {chapter.mentorId ? (
+                              Array.isArray(chapter.mentorId) ? (
+                                chapter.mentorId.length > 0 ? (
+                                  <>
+                                    <Tag color="#c02222">{chapter.mentorId[0]?.name || chapter.mentorId[0]}</Tag>
+                                    {chapter.mentorId.length > 1 && (
+                                      <Tooltip
+                                        title={chapter.mentorId
+                                          .slice(1)
+                                          .map((m) => m.name || m)
+                                          .join(", ")}
+                                      >
+                                        <Tag color="#c02222">+{chapter.mentorId.length - 1}</Tag>
+                                      </Tooltip>
+                                    )}
+                                  </>
+                                ) : (
+                                  "N/A"
+                                )
+                              ) : (
+                                <Tag color="#c02222">{chapter.mentorId.name || chapter.mentorId}</Tag>
+                              )
                             ) : (
                               "N/A"
                             )}
@@ -785,18 +845,27 @@ const ChapterAccessLayer = () => {
                     <div className="d-flex align-items-center justify-content-between pt-3">
                       <span className="start-date text-secondary-light">
                         Status:{" "}
-                        <span
-                          className={
-                            chapter.isActive == 1
-                              ? "text-success-600"
-                              : "text-danger-600"
-                          }
-                        >
-                          {chapter.isActive == 1 ? "Active" : "Inactive"}
-                        </span>
+                        {chapter.approvalStatus === 'waiting_for_approval' ? (
+                            <span className="text-warning-600">Pending Approval</span>
+                        ) : (
+                            <span className={chapter.isActive == 1 ? "text-success-600" : "text-danger-600"}>
+                              {chapter.isActive == 1 ? "Active" : "Inactive"}
+                            </span>
+                        )}
                       </span>
 
                       <div className="d-flex align-items-center gap-2">
+                        {chapter.approvalStatus === 'waiting_for_approval' && getCurrentUser()?.data?.role !== 'zone-admin' && (
+                          <button
+                            type="button"
+                            className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                            onClick={() => handleApproveChapter(chapter._id)}
+                            title="Approve Chapter"
+                          >
+                            <Icon icon="mdi:check-circle" className="menu-icon" />
+                          </button>
+                        )}
+
                         {hasPermission("chapters-list") && (
                           <button
                             type="button"
@@ -1027,6 +1096,8 @@ const ChapterAccessLayer = () => {
             </div>
             <div className="modal-body p-24">
               <form onSubmit={handleChapterSubmit}>
+                  
+
                 <div className="row">
                   {/* Chapter Name */}
                   <div className="col-md-6 mb-20">
@@ -1056,6 +1127,7 @@ const ChapterAccessLayer = () => {
                         name="zoneId"
                         value={chapterFormData.zoneId}
                         onChange={handleChapterZoneChange}
+                        disabled={isZoneAdmin}
                       >
                         <option value="">Select Zone</option>
                         {zones.map((zone) => (
@@ -1223,7 +1295,7 @@ const ChapterAccessLayer = () => {
                           weekday: selectedChapter.weekday,
                           mentorId: Array.isArray(selectedChapter.mentorId)
                             ? selectedChapter.mentorId.map(m => m._id || m)
-                            : []
+                            : (selectedChapter.mentorId ? [selectedChapter.mentorId._id || selectedChapter.mentorId] : [])
                         }
                       );
 
@@ -1331,9 +1403,12 @@ const ChapterAccessLayer = () => {
                             className="react-select-container"
                             classNamePrefix="react-select"
                             options={mentors}
-                            value={mentors.filter((mentor) =>
-                              Array.isArray(selectedChapter.mentorId) && selectedChapter.mentorId.some(m => (m._id || m) === mentor.value)
-                            )}
+                            value={mentors.filter((mentor) => {
+                              if (Array.isArray(selectedChapter.mentorId)) {
+                                return selectedChapter.mentorId.some(m => (m._id || m) === mentor.value);
+                              }
+                              return (selectedChapter.mentorId?._id || selectedChapter.mentorId) === mentor.value;
+                            })}
                             onChange={(selectedOptions) => {
                               const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
                               setSelectedChapter({

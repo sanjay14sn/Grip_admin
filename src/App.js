@@ -26,6 +26,7 @@ import DropdownPage from "./pages/DropdownPage";
 import ErrorPage from "./pages/ErrorPage";
 import FaqPage from "./pages/FaqPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ForgotPinPage from "./pages/ForgotPinPage";
 import FormLayoutPage from "./pages/FormLayoutPage";
 import FormValidationPage from "./pages/FormValidationPage";
 import FormPage from "./pages/FormPage";
@@ -117,6 +118,13 @@ import TestimonialOverallPage from "./pages/TestimonialOverallPage";
 import VisitorOverallpage from "./pages/VisitorOverallpage";
 import ExpectedVisitorsOverallPage from "./pages/ExpectedVisitorsOverallpage";
 import EnquiryListPage from "./pages/EnquiryListPage";
+
+import OnetoOneAnalyticsPage from "./pages/OnetoOneAnalyticsPage";
+import ReferralAnalyticsPage from "./pages/ReferralAnalyticsPage";
+import ThankyouAnalyticsPage from "./pages/ThankyouAnalyticsPage";
+import TestimonialAnalyticsPage from "./pages/TestimonialAnalyticsPage";
+import VisitorAnalyticsPage from "./pages/VisitorAnalyticsPage";
+import ExpectedVisitorsAnalyticsPage from "./pages/ExpectedVisitorsAnalyticsPage";
 import PaymentListPage from "./pages/PaymentListPage";
 import TransactionListPage from "./pages/TransactionListPage";
 import UserRegisterMemberListLayer from "./pages/UserRegisterlistPage";
@@ -126,6 +134,7 @@ import AttedenseMemberListPage from "./pages/AttedenceMemberPage";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import TrainingListPage from "./pages/TrainingPage";
 import MemberSixMonthReport from "./components/AssociatePerformanceReport";
+import AccessRequestsPage from "./pages/AccessRequestsPage";
 
 function App() {
   // Initialize auth state from sessionStorage so we know the value during the first render
@@ -149,7 +158,10 @@ function App() {
       if (userDataFromStorage) {
         try {
           const user = JSON.parse(userDataFromStorage);
-          if (user && user.id) {
+          if (user && user.role === 'zone-admin') {
+            // Zone admins don't exist in the users table, so we restore session directly
+            setCurrentUser({ data: user });
+          } else if (user && user.id) {
             const response = await userApiProvider.getUserById(user.id);
             if (response.status) {
               setCurrentUser(response.response);
@@ -176,6 +188,16 @@ function App() {
           element={
             isAuthenticated ? <Navigate to="/dashboard" /> : <SignInPage />
           }
+        />
+        <Route
+          exact
+          path="/forgot-password"
+          element={<ForgotPasswordPage />}
+        />
+        <Route
+          exact
+          path="/forgot-pin"
+          element={<ForgotPinPage />}
         />
         <Route
           path="/dashboard"
@@ -207,15 +229,15 @@ function App() {
           <Route
             exact
             path="/add-primarymember"
-            element={<AddPrimaryMemberPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><AddPrimaryMemberPage /></ProtectedRoute>}
           />
           <Route
             exact
             path="/edit-primarymember/:id"
-            element={<AddPrimaryMemberPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><AddPrimaryMemberPage /></ProtectedRoute>}
           />
 
-          <Route exact path="/chapterwise" element={<ChapterwisePage />} />
+          <Route exact path="/chapterwise" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="chapters-list"><ChapterwisePage /></ProtectedRoute>} />
           <Route exact path="/chapterpin" element={<ChapterpinPage />} />
 
           <Route
@@ -228,7 +250,7 @@ function App() {
           <Route
             exact
             path="/referral-list/:id?"
-            element={<ReferralListPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="referrals-list"><ReferralListPage /></ProtectedRoute>}
           />
 
           <Route
@@ -245,7 +267,7 @@ function App() {
           <Route
             exact
             path="/visitors-list/:id?"
-            element={<VisitorsListPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="visitor-guest-list"><VisitorsListPage /></ProtectedRoute>}
           />
 
           <Route exact path="/powerdate" element={<PowerDatePage />} />
@@ -255,16 +277,19 @@ function App() {
           <Route
             exact
             path="/thankyou-slip/:id?"
-            element={<ThankyouNotePage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="thank-you-slip-list"><ThankyouNotePage /></ProtectedRoute>}
           />
 
-          <Route exact path="/121-list" element={<OnetoOnePage />} />
+          <Route exact path="/121-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="121s-list"><OnetoOnePage /></ProtectedRoute>} />
+          <Route exact path="/121-analytics/:chapterId?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="121s-list"><OnetoOneAnalyticsPage /></ProtectedRoute>} />
 
-          <Route exact path="/referral" element={<ReferralOverallpage />} />
+          <Route exact path="/referral" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="referrals-list"><ReferralOverallpage /></ProtectedRoute>} />
+          <Route exact path="/referral-analytics/:chapterId?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="referrals-list"><ReferralAnalyticsPage /></ProtectedRoute>} />
 
           <Route exact path="/enquiries" element={<EnquiryListPage />} />
 
-          <Route exact path="/thankyou" element={<ThankyouOverallPage />} />
+          <Route exact path="/thankyou" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="thank-you-slip-list"><ThankyouOverallPage /></ProtectedRoute>} />
+          <Route exact path="/thankyou-analytics/:chapterId?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="thank-you-slip-list"><ThankyouAnalyticsPage /></ProtectedRoute>} />
 
           <Route exact path="/associate/:id/report" element={<MemberSixMonthReport />} />
 
@@ -278,53 +303,59 @@ function App() {
           <Route
             exact
             path="/testimonial-list/:id?"
-            element={<TestimonialPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="testimonial-list"><TestimonialPage /></ProtectedRoute>}
           />
 
-          <Route exact path="/visitor" element={<VisitorOverallpage />} />
-          <Route exact path="/expected-visitors" element={<ExpectedVisitorsOverallPage />} />
+          <Route exact path="/visitor" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="visitor-guest-list"><VisitorOverallpage /></ProtectedRoute>} />
+          <Route exact path="/visitor-analytics/:chapterId?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="visitor-guest-list"><VisitorAnalyticsPage /></ProtectedRoute>} />
+          
+          <Route exact path="/expected-visitors" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="expected-visitors-list"><ExpectedVisitorsOverallPage /></ProtectedRoute>} />
+          <Route exact path="/expected-visitors-analytics/:chapterId?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="expected-visitors-list"><ExpectedVisitorsAnalyticsPage /></ProtectedRoute>} />
+          
           <Route
-  exact
-  path="/expected-visitors/:chapterId"
-  element={<ExpectedVisitorsListPage />}
-/>
+            exact
+            path="/expected-visitors/:chapterId"
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="expected-visitors-list"><ExpectedVisitorsListPage /></ProtectedRoute>}
+          />
 
           <Route
             exact
             path="/testimoniall"
-            element={<TestimonialOverallPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="testimonial-list"><TestimonialOverallPage /></ProtectedRoute>}
           />
+          <Route exact path="/testimonial-analytics/:chapterId?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="testimonial-list"><TestimonialAnalyticsPage /></ProtectedRoute>} />
 
           <Route exact path="/member-list/:id?" element={<MemberListPage />} />
           <Route
             exact
             path="/user-member-list"
-            element={<UserRegisterMemberListLayer />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="associates-list"><UserRegisterMemberListLayer /></ProtectedRoute>}
           />
 
           <Route
             exact
             path="/primarymember-list"
-            element={<PrimaryMemberListPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><PrimaryMemberListPage /></ProtectedRoute>}
           />
 
-          <Route exact path="/payment-list" element={<PaymentListPage />} />
-          <Route exact path="/attedence-list" element={<AttedenceListPage />} />
-          <Route exact path="/training-list" element={<TrainingListPage />} />
+          <Route exact path="/payment-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="meeting-list"><PaymentListPage /></ProtectedRoute>} />
+          <Route exact path="/attedence-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="events-list"><AttedenceListPage /></ProtectedRoute>} />
+          <Route exact path="/training-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="training-list"><TrainingListPage /></ProtectedRoute>} />
 
           <Route
             exact
             path="/primarymember-list"
-            element={<PrimaryMemberListPage />}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><PrimaryMemberListPage /></ProtectedRoute>}
           />
 
-          <Route exact path="/roles-list" element={<RoleListPage />} />
+          <Route exact path="/roles-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="roles-list"><RoleListPage /></ProtectedRoute>} />
+          <Route exact path="/access-requests" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="roles-list"><AccessRequestsPage /></ProtectedRoute>} />
 
           {/* ✅ Pin list page */}
           <Route path="/pin-list" element={<PinListPage />} />
 
           {/* ✅ Zone list page */}
-          <Route path="/zone-list" element={<ZoneListPage />} />
+          <Route path="/zone-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="chapters-list"><ZoneListPage /></ProtectedRoute>} />
 
           {/* ✅ Add new pin */}
           <Route path="/pins/add" element={<AddPinLayer />} />
@@ -333,12 +364,12 @@ function App() {
           <Route path="/pins/edit/:id" element={<AddPinLayer />} />
 
           {/* existing routes */}
-          <Route exact path="/roles-access/:id?" element={<RoleAcessPage />} />
+          <Route exact path="/roles-access/:id?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="roles-list"><RoleAcessPage /></ProtectedRoute>} />
 
-          <Route exact path="/roles-access/:id?" element={<RoleAcessPage />} />
+          <Route exact path="/roles-access/:id?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="roles-list"><RoleAcessPage /></ProtectedRoute>} />
 
           {/* SL */}
-          <Route exact path="/add-user/:id?" element={<AddUserPage />} />
+          <Route exact path="/add-user/:id?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><AddUserPage /></ProtectedRoute>} />
           <Route exact path="/add-pin/:id?" element={<AddPinPage />} />
           <Route exact path="/alert" element={<AlertPage />} />
           <Route exact path="/assign-role" element={<AssignRolePage />} />
@@ -365,11 +396,7 @@ function App() {
           <Route exact path="/dropdown" element={<DropdownPage />} />
           <Route exact path="/email" element={<EmailPage />} />
           <Route exact path="/faq" element={<FaqPage />} />
-          <Route
-            exact
-            path="/forgot-password"
-            element={<ForgotPasswordPage />}
-          />
+
           <Route exact path="/form-layout" element={<FormLayoutPage />} />
           <Route
             exact
@@ -438,8 +465,8 @@ function App() {
           <Route exact path="/pricing" element={<PricingPage />} />
           <Route exact path="/progress" element={<ProgressPage />} />
           <Route exact path="/radio" element={<RadioPage />} />
-          <Route exact path="/chapter" element={<RoleAccessPage />} />
-          <Route exact path="/chapter/zone/:zoneId" element={<RoleAccessPage />} />
+          <Route exact path="/chapter" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="chapters-list"><RoleAccessPage /></ProtectedRoute>} />
+          <Route exact path="/chapter/zone/:zoneId" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="chapters-list"><RoleAccessPage /></ProtectedRoute>} />
           <Route exact path="/sign-in" element={<SignInPage />} />
           <Route exact path="/sign-up" element={<SignUpPage />} />
           <Route
@@ -469,7 +496,7 @@ function App() {
           <Route exact path="/tooltip" element={<TooltipPage />} />
           <Route exact path="/typography" element={<TypographyPage />} />
 
-          <Route exact path="/users-list" element={<UsersListPage />} />
+          <Route exact path="/users-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><UsersListPage /></ProtectedRoute>} />
           <Route exact path="/view-details" element={<ViewDetailsPage />} />
           <Route
             exact

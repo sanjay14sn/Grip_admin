@@ -1,8 +1,7 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useEffect, useState } from 'react';
 import Modal from 'react-bootstrap/Modal';
-import Button from 'react-bootstrap/Button';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import chapterApiProvider from '../apiProvider/chapterApi';
 import { IMAGE_BASE_URL } from '../network/apiClient';
 import { toast } from 'react-toastify';
@@ -14,16 +13,71 @@ const UsersListLayer = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState('');
     const [chapterMembers, setchapterMembers] = useState([]);
+    const [accessDenied, setAccessDenied] = useState(false);
 
     const { id } = useParams();
+    const navigate = useNavigate();
 
-    // 🔥 PAGINATION STATE ADDED
+    // Filter state
+    const [preset, setPreset] = useState('overall');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+
+    // Pagination state
     const [pagination, setPagination] = useState({
         page: 1,
         limit: 10,
         total: 0,
         totalPages: 1
     });
+
+    const [chapterName, setChapterName] = useState("");
+
+    const formatDateToISO = (date) => date.toISOString().split('T')[0];
+
+    const handlePresetChange = (e) => {
+        const value = e.target.value;
+        setPreset(value);
+
+        const now = new Date();
+        let from = '';
+        let to = formatDateToISO(now);
+
+        if (value === 'overall' || value === 'custom') {
+            setFromDate('');
+            setToDate('');
+            return;
+        } else if (value === 'this_week') {
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            from = formatDateToISO(new Date(now.setDate(diff)));
+        } else if (value === 'this_month') {
+            from = formatDateToISO(new Date(now.getFullYear(), now.getMonth(), 1));
+        } else if (value === '3_months') {
+            const d = new Date();
+            d.setMonth(d.getMonth() - 3);
+            from = formatDateToISO(d);
+        } else if (value === '6_months') {
+            const d = new Date();
+            d.setMonth(d.getMonth() - 6);
+            from = formatDateToISO(d);
+        } else if (value === '12_months') {
+            const d = new Date();
+            d.setFullYear(d.getFullYear() - 1);
+            from = formatDateToISO(d);
+        }
+
+        setFromDate(from);
+        setToDate(to);
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
+
+    const handleClearFilters = () => {
+        setPreset('overall');
+        setFromDate('');
+        setToDate('');
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
 
     const handleShowImage = (image) => {
         setSelectedImage(image);
@@ -34,26 +88,35 @@ const UsersListLayer = () => {
         setShowModal(false);
         setSelectedImage('');
     };
-    const [chapterName, setChapterName] = useState("");
-    // 🔥 UPDATED API CALL (NOW SENDS PAGE + LIMIT)
+
     const fetchChapters = async (id) => {
         try {
             const input = {
                 page: pagination.page,
-                limit: pagination.limit
+                limit: pagination.limit,
+                ...(fromDate && { fromDate }),
+                ...(toDate && { toDate }),
             };
 
             const response = await chapterApiProvider.onetooneSlipListMember(id, input);
 
+            if (!response?.status && (response?.httpStatus === 403 || response?.response?.message?.includes('Access Denied'))) {
+                setAccessDenied(true);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'You are not authorized to view this chapter.',
+                    confirmButtonText: 'Go Back',
+                }).then(() => navigate(-1));
+                return;
+            }
+
             const listData = response?.response?.data?.records || [];
             const paginationData = response?.response?.data?.pagination || {};
-            const chapter = response?.response?.data?.chapter;   // 👈 ADD THIS
-
-            setchapterMembers(listData); // this stays SAME
-
-            setChapterName(chapter?.chapterName || "-");  // 👈 STORE ONLY CHAPTER NAME
+            const chapter = response?.response?.data?.chapter;
 
             setchapterMembers(listData);
+            setChapterName(chapter?.chapterName || "-");
 
             setPagination((prev) => ({
                 ...prev,
@@ -95,41 +158,116 @@ const UsersListLayer = () => {
         }
     };
 
-    const handleStatusChange = async (status, recordId) => {
-        try {
-            let input = {
-                status: status,
-                id: recordId,
-                formName: "onetoone"
-            };
-            const response = await chapterApiProvider.changeStatus(input);
-
-            if (response) {
-                toast("Status updated successfully");
-                fetchChapters(id);
-            } else {
-                toast("Failed to update status");
-            }
-
-        } catch (error) {
-            console.error('Error updating status:', error);
-        }
-    };
-
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             setPagination((prev) => ({ ...prev, page: newPage }));
         }
     };
 
-    // 🔥 REFETCH WHEN PAGE CHANGES
+    // Refetch when page, fromDate or toDate changes
     useEffect(() => {
         fetchChapters(id);
-    }, [id, pagination.page]);
+    }, [id, pagination.page, fromDate, toDate]);
 
     return (
         <div className="card h-100 p-0 radius-12">
             <div className="card-body p-24">
+
+                {/* ── Filter Bar ── */}
+                <div
+                    className="d-flex flex-wrap align-items-end gap-3 mb-4 p-3 radius-8"
+                    style={{ background: 'var(--bg-body, #f8f9fa)', border: '1px solid var(--border-color, #dee2e6)' }}
+                >
+                    {/* Preset Dropdown */}
+                    <div className="d-flex flex-column gap-1">
+                        <label className="fw-semibold text-secondary-light text-sm mb-0">Filter Period</label>
+                        <select
+                            className="form-select form-select-sm radius-8"
+                            style={{ minWidth: 160 }}
+                            value={preset}
+                            onChange={handlePresetChange}
+                        >
+                            <option value="overall">Overall</option>
+                            <option value="this_week">This Week</option>
+                            <option value="this_month">This Month</option>
+                            <option value="3_months">Last 3 Months</option>
+                            <option value="6_months">Last 6 Months</option>
+                            <option value="12_months">Last 12 Months</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    {/* Custom Date Pickers (shown only when preset === 'custom') */}
+                    {preset === 'custom' && (
+                        <>
+                            <div className="d-flex flex-column gap-1">
+                                <label className="fw-semibold text-secondary-light text-sm mb-0">From Date</label>
+                                <input
+                                    type="date"
+                                    className="form-control form-control-sm radius-8"
+                                    style={{ minWidth: 150 }}
+                                    value={fromDate}
+                                    max={toDate || undefined}
+                                    onChange={(e) => {
+                                        setFromDate(e.target.value);
+                                        setPagination(prev => ({ ...prev, page: 1 }));
+                                    }}
+                                />
+                            </div>
+                            <div className="d-flex flex-column gap-1">
+                                <label className="fw-semibold text-secondary-light text-sm mb-0">To Date</label>
+                                <input
+                                    type="date"
+                                    className="form-control form-control-sm radius-8"
+                                    style={{ minWidth: 150 }}
+                                    value={toDate}
+                                    min={fromDate || undefined}
+                                    onChange={(e) => {
+                                        setToDate(e.target.value);
+                                        setPagination(prev => ({ ...prev, page: 1 }));
+                                    }}
+                                />
+                            </div>
+                            <button
+                                className="btn btn-sm btn-outline-secondary radius-8 align-self-end"
+                                onClick={handleClearFilters}
+                            >
+                                <Icon icon="mdi:close-circle-outline" className="me-1" />
+                                Clear
+                            </button>
+                        </>
+                    )}
+
+                    {/* Active filter badge */}
+                    {preset !== 'overall' && preset !== 'custom' && (
+                        <div className="align-self-end">
+                            <span className="badge text-sm fw-medium px-3 py-2 radius-8"
+                                style={{ background: '#e8f4fd', color: '#0d6efd' }}>
+                                <Icon icon="mdi:calendar-range" className="me-1" />
+                                {preset === 'this_week' && 'This Week'}
+                                {preset === 'this_month' && 'This Month'}
+                                {preset === '3_months' && 'Last 3 Months'}
+                                {preset === '6_months' && 'Last 6 Months'}
+                                {preset === '12_months' && 'Last 12 Months'}
+                                &nbsp;·&nbsp;
+                                <span
+                                    role="button"
+                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                    onClick={handleClearFilters}
+                                >
+                                    Reset
+                                </span>
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Results count */}
+                    <div className="ms-auto align-self-end text-secondary-light text-sm">
+                        {pagination.total} record{pagination.total !== 1 ? 's' : ''}
+                    </div>
+                </div>
+
+                {/* ── Table ── */}
                 <div className="table-responsive scroll-sm">
                     <table className="table bordered-table sm-table mb-0">
                         <thead>
@@ -146,67 +284,75 @@ const UsersListLayer = () => {
                         </thead>
 
                         <tbody>
-                            {chapterMembers?.map((item, index) => (
-                                <tr key={item._id}>
-                                    <td>{(pagination.page - 1) * pagination.limit + index + 1}.</td>
-                                    <td>{new Date(item.date).toLocaleDateString('en-IN')}</td>
-
-                                    <td>{item.fromMember?.name || 'N/A'}</td>
-
-                                    <td>{item.toMember?.name || 'N/A'}</td>
-
-                                    <td>
-                                        {item.whereDidYouMeet
-                                            ? item.whereDidYouMeet.charAt(0).toUpperCase() + item.whereDidYouMeet.slice(1).toLowerCase()
-                                            : '-'}
-                                    </td>
-
-                                    <td>{chapterName||'-'}</td>
-
-                                    <td>
-                                        {item.images?.length > 0 ? (
-                                            <button
-                                                className="btn btn-sm btn-outline-info"
-                                                onClick={() =>
-                                                    handleShowImage(
-                                                        `${IMAGE_BASE_URL}/${item.images[0].docPath}/${item.images[0].docName}`
-                                                    )
-                                                }
-                                            >
-                                                View
-                                            </button>
-                                        ) : (
-                                            <span className="text-muted">No Image</span>
-                                        )}
-                                    </td>
-
-
-
-                                    <td>
-                                        {hasDeletePermission("delete") && (
-                                            <button
-                                                type="button"
-                                                className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                                                onClick={() => deleteOneToOne(item._id)}
-                                            >
-                                                <Icon icon="mdi:trash-can-outline" className="menu-icon" />
-                                            </button>
-                                        )}
+                            {chapterMembers?.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="text-center text-muted py-4">
+                                        No records found for the selected period.
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                chapterMembers?.map((item, index) => (
+                                    <tr key={item._id}>
+                                        <td>{(pagination.page - 1) * pagination.limit + index + 1}.</td>
+                                        <td>{new Date(item.date).toLocaleDateString('en-IN')}</td>
+
+                                        <td>{item.fromMember?.name || 'N/A'}</td>
+
+                                        <td>{item.toMember?.name || 'N/A'}</td>
+
+                                        <td>
+                                            {item.whereDidYouMeet
+                                                ? item.whereDidYouMeet.charAt(0).toUpperCase() + item.whereDidYouMeet.slice(1).toLowerCase()
+                                                : '-'}
+                                        </td>
+
+                                        <td>{chapterName || '-'}</td>
+
+                                        <td>
+                                            {item.images?.length > 0 ? (
+                                                <button
+                                                    className="btn btn-sm btn-outline-info"
+                                                    onClick={() =>
+                                                        handleShowImage(
+                                                            `${IMAGE_BASE_URL}/${item.images[0].docPath}/${item.images[0].docName}`
+                                                        )
+                                                    }
+                                                >
+                                                    View
+                                                </button>
+                                            ) : (
+                                                <span className="text-muted">No Image</span>
+                                            )}
+                                        </td>
+
+                                        <td>
+                                            {hasDeletePermission("delete") && (
+                                                <button
+                                                    type="button"
+                                                    className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                                    onClick={() => deleteOneToOne(item._id)}
+                                                >
+                                                    <Icon icon="mdi:trash-can-outline" className="menu-icon" />
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
 
-                {/* 🔥 PAGINATION UI */}
-                {pagination.totalPages > 1 && (
-                    <div className="d-flex justify-content-between align-items-center mt-3">
-                        <div>
-                            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                            {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-                            of {pagination.total} entries
-                        </div>
+                {/* Showing entries info */}
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                    <div className="text-secondary-light text-sm">
+                        {pagination.total > 0
+                            ? `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} entries`
+                            : 'No entries'}
+                    </div>
+
+                    {/* Pagination */}
+                    {pagination.totalPages > 1 && (
                         <div className="d-flex gap-2">
                             <button
                                 className="btn btn-sm btn-outline-danger"
@@ -264,8 +410,8 @@ const UsersListLayer = () => {
                                 Last
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {/* Image Modal */}
                 <Modal show={showModal} onHide={handleClose} centered>

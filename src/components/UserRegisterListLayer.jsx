@@ -1,7 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
-import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
 import memberApiProvider from "../apiProvider/memberApi";
 import Swal from "sweetalert2";
@@ -14,21 +13,13 @@ const UserRegisterMemberListLayer = () => {
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const { id } = useParams();
     const [membersData, setMembersData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState(null);
     const [showMemberModal, setShowMemberModal] = useState(false);
-    const [showDeclinedModal, setShowDeclinedModal] = useState(false);
-    const [declinedMembersData, setDeclinedMembersData] = useState([]);
-    const [loadingDeclined, setLoadingDeclined] = useState(false);
-    const [declinedPagination, setDeclinedPagination] = useState({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 1,
-    });
-    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState("active");
+    const [searchParams] = useSearchParams();
+    const [search, setSearch] = useState(searchParams.get("search") || "");
     const [pagination, setPagination] = useState({
         page: 1,
         limit: 10,
@@ -90,32 +81,7 @@ const UserRegisterMemberListLayer = () => {
         }
     };
 
-    const fetchDeclinedData = async (page = 1) => {
-        setLoadingDeclined(true);
-        try {
-            const params = {
-                page: page,
-                limit: declinedPagination.limit,
-                status: "decline",
-            };
-            const response = await memberApiProvider.getRegisterUserList(params);
-            if (response && response.status) {
-                setDeclinedMembersData(response.data.data.members || []);
-                setDeclinedPagination({
-                    page,
-                    limit: declinedPagination.limit,
-                    total: response.data.data.pagination?.total || 0,
-                    totalPages: Math.ceil(
-                        (response.data.data.pagination?.total || 0) / declinedPagination.limit
-                    ),
-                });
-            }
-        } catch (error) {
-            console.error("Error fetching declined members:", error);
-        } finally {
-            setLoadingDeclined(false);
-        }
-    };
+
 
     const handleViewMember = (member) => {
         setSelectedMember(member);
@@ -126,18 +92,14 @@ const UserRegisterMemberListLayer = () => {
         navigate(`/edit-primarymember/${memberId}`);
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [search, pagination.page, pagination.limit]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const params = {
                 page: pagination.page,
                 limit: pagination.limit,
                 search: search.trim() || undefined,
-                status: "pending",
+                status: statusFilter,
             };
             const response = await memberApiProvider.getRegisterUserList(params);
             if (response && response.status) {
@@ -155,7 +117,17 @@ const UserRegisterMemberListLayer = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pagination.page, pagination.limit, search, statusFilter]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        const querySearch = searchParams.get("search") || "";
+        setSearch(querySearch);
+        setPagination((prev) => ({ ...prev, page: 1 }));
+    }, [searchParams]);
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             setPagination((prev) => ({ ...prev, page: newPage }));
@@ -177,24 +149,41 @@ const UserRegisterMemberListLayer = () => {
                         />
                         <Icon icon="ion:search-outline" className="icon" />
                     </div>
-
-                    {hasPermission("associates-list") && (
+                    <div className="d-flex align-items-center gap-2">
                         <button
                             type="button"
-                            className="btn btn-warning grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2 text-white"
-                            style={{ backgroundColor: "#ff9800", borderColor: "#ff9800" }}
+                            className={`btn btn-sm radius-8 px-16 py-10 d-flex align-items-center gap-2 ${statusFilter === "active" ? "btn-primary grip text-white" : "btn-outline-primary"}`}
                             onClick={() => {
-                                setShowDeclinedModal(true);
-                                fetchDeclinedData(1);
+                                setStatusFilter("active");
+                                setPagination((prev) => ({ ...prev, page: 1 }));
                             }}
                         >
-                            <Icon
-                                icon="mdi:account-cancel-outline"
-                                className="icon text-xl line-height-1"
-                            />
-                            Declined Associates
+                            <Icon icon="mdi:account-check-outline" className="text-xl" />
+                            Active
                         </button>
-                    )}
+                        <button
+                            type="button"
+                            className={`btn btn-sm radius-8 px-16 py-10 d-flex align-items-center gap-2 ${statusFilter === "pending" ? "btn-warning text-white" : "btn-outline-warning"}`}
+                            onClick={() => {
+                                setStatusFilter("pending");
+                                setPagination((prev) => ({ ...prev, page: 1 }));
+                            }}
+                        >
+                            <Icon icon="mdi:account-clock-outline" className="text-xl" />
+                            Pending
+                        </button>
+                        <button
+                            type="button"
+                            className={`btn btn-sm radius-8 px-16 py-10 d-flex align-items-center gap-2 ${statusFilter === "decline" ? "btn-danger text-white" : "btn-outline-danger"}`}
+                            onClick={() => {
+                                setStatusFilter("decline");
+                                setPagination((prev) => ({ ...prev, page: 1 }));
+                            }}
+                        >
+                            <Icon icon="mdi:account-cancel-outline" className="text-xl" />
+                            Declined
+                        </button>
+                    </div>
 
                     {/* <select
                         className="form-select form-select-sm w-auto"
@@ -264,16 +253,16 @@ const UserRegisterMemberListLayer = () => {
                                                         ? "status-activate"
                                                         : member.status === "decline"
                                                             ? "status-decline"
-                                                            : ""
+                                                            : "status-pending"
                                                         }`}
                                                     value={member.status}
                                                     onChange={(e) =>
                                                         handleStatusChange(member._id, e.target.value)
                                                     }
                                                 >
-                                                    <option value="">Select Action</option>
-                                                    <option value="active">Activate</option>
-                                                    <option value="decline">Decline</option>
+                                                    <option value="active">Active</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="decline">Declined</option>
                                                 </select>
                                             </td>
                                             <td className="text-center text-nowrap">
@@ -511,127 +500,7 @@ const UserRegisterMemberListLayer = () => {
                 </Modal.Footer>
             </Modal>
 
-            {/* Declined Associates Modal */}
-            <Modal
-                show={showDeclinedModal}
-                onHide={() => setShowDeclinedModal(false)}
-                size="lg"
-                centered
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>Declined Associates</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {loadingDeclined ? (
-                        <div className="text-center py-5">
-                            <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="table-responsive scroll-sm">
-                            <table className="table bordered-table sm-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Company name</th>
-                                        <th className="text-nowrap">Mobile Number</th>
-                                        <th className="text-center text-nowrap">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {declinedMembersData && declinedMembersData.length > 0 ? (
-                                        declinedMembersData.map((member) => (
-                                            <tr key={member._id}>
-                                                <td>{member.name}</td>
-                                                <td>{member.personalDetails?.companyName || "N/A"}</td>
-                                                <td className="text-nowrap">{member.contactDetails?.mobileNumber || "N/A"}</td>
-                                                <td className="text-center text-nowrap">
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-sm btn-success"
-                                                        onClick={async () => {
-                                                            try {
-                                                                const result = await Swal.fire({
-                                                                    title: "Are you sure?",
-                                                                    text: `You are about to activate this member`,
-                                                                    icon: "warning",
-                                                                    showCancelButton: true,
-                                                                    confirmButtonColor: "#3085d6",
-                                                                    cancelButtonColor: "#d33",
-                                                                    confirmButtonText: "Yes, activate it!",
-                                                                });
 
-                                                                if (result.isConfirmed) {
-                                                                    const response = await memberApiProvider.updateMemberStatus(member._id, {
-                                                                        status: "active",
-                                                                    });
-
-                                                                    if (response && response.status) {
-                                                                        Swal.fire(
-                                                                            "Success!",
-                                                                            "Member has been activated.",
-                                                                            "success"
-                                                                        );
-                                                                        fetchDeclinedData(declinedPagination.page);
-                                                                        fetchData();
-                                                                    }
-                                                                }
-                                                            } catch (error) {
-                                                                console.error("Error activating member:", error);
-                                                                Swal.fire("Error!", "Failed to activate associate.", "error");
-                                                            }
-                                                        }}
-                                                    >
-                                                        Activate
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="4" className="text-center py-4">
-                                                No declined associates found
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {declinedPagination.totalPages > 1 && (
-                        <div className="d-flex justify-content-between align-items-center mt-3">
-                            <div>
-                                Showing {(declinedPagination.page - 1) * declinedPagination.limit + 1} to{" "}
-                                {Math.min(declinedPagination.page * declinedPagination.limit, declinedPagination.total)}{" "}
-                                of {declinedPagination.total} entries
-                            </div>
-                            <div className="d-flex gap-2">
-                                <button
-                                    className="btn btn-sm btn-outline-danger"
-                                    disabled={declinedPagination.page === 1}
-                                    onClick={() => fetchDeclinedData(declinedPagination.page - 1)}
-                                >
-                                    Previous
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-outline-danger"
-                                    disabled={declinedPagination.page === declinedPagination.totalPages}
-                                    onClick={() => fetchDeclinedData(declinedPagination.page + 1)}
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDeclinedModal(false)}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
 
 
             {/* Password Reset Modal */}
@@ -730,6 +599,10 @@ const UserRegisterMemberListLayer = () => {
                 .status-decline {
                     background-color: #ffebee;
                     color: #c62828;
+                }
+                .status-pending {
+                    background-color: #fff8e1;
+                    color: #f57f17;
                 }
             `}</style>
         </div>

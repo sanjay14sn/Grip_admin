@@ -8,7 +8,7 @@ import makeAnimated from "react-select/animated";
 import paymentApiProvider from "../apiProvider/paymentApi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
-import { hasPermission } from "../utils/auth";
+import { hasPermission, getCurrentUser } from "../utils/auth";
 import { formatDate, toLocalISOString } from "../utils/dateFormatter";
 import config from "../config/config";
 import TrainingApi from "../apiProvider/TrainingApi";
@@ -30,6 +30,7 @@ const defaultCenter = {
 const EventListLayer = () => {
     const [paymentDetails, setPaymentDetails] = useState([]);
     const [chapterList, setChapterList] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         zone: "",
         trainingType:"",
@@ -78,7 +79,21 @@ const EventListLayer = () => {
             try {
                 const response = await TrainingApi.getPublicZones();
                 if (response.status && response.response.success) {
-                    setZones(response.response.data);
+                    const zonesData = response.response.data;
+                    setZones(zonesData);
+                    
+                    const user = getCurrentUser();
+                    const rawZoneId = user?.data?.zoneId;
+                    const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId;
+                    if (userZoneId) {
+                        const userZone = zonesData.find(z => z._id === userZoneId);
+                        if (userZone) {
+                            setFormData(prev => ({
+                                ...prev,
+                                zone: userZone.zoneName
+                            }));
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch zones:", error);
@@ -138,6 +153,7 @@ const EventListLayer = () => {
                         ...data.map((chapter) => ({
                             value: chapter._id,
                             label: chapter.chapterName,
+                            zoneId: chapter.zoneId?._id || chapter.zoneId,
                         })),
                     ];
                     setChapterList(formattedChapters);
@@ -150,6 +166,7 @@ const EventListLayer = () => {
 
     const fetchPaymentData = async () => {
         try {
+            setLoading(true);
             const input = {
                 page: pagination.page,
                 limit: pagination.limit,
@@ -171,6 +188,8 @@ const EventListLayer = () => {
             }
         } catch (error) {
             console.error("Error fetching payments:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -390,7 +409,13 @@ const EventListLayer = () => {
 
     // Reset form and modal state
     const resetForm = () => {
+        const user = getCurrentUser();
+        const rawZoneId = user?.data?.zoneId;
+        const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId;
+        const userZoneObj = zones.find(z => z._id === userZoneId);
         setFormData({
+            zone: userZoneObj ? userZoneObj.zoneName : "",
+            trainingType:"",
             topic: "",
             amount: "",
             chapters: [],
@@ -466,6 +491,28 @@ const EventListLayer = () => {
         });
     };
 
+    const getFilteredChapters = () => {
+        const user = getCurrentUser();
+        const selectedZone = zones.find(z => z.zoneName === formData.zone);
+        const selectedZoneId = selectedZone?._id;
+
+        return chapterList.filter(c => {
+            if (c.value === 'all') {
+                if (user?.data?.chapterIds && user?.data?.chapterIds.length <= 1) {
+                    return false;
+                }
+                return true;
+            }
+            if (user?.data?.chapterIds && user?.data?.chapterIds.length > 0) {
+                if (!user.data.chapterIds.includes(c.value)) return false;
+            }
+            if (selectedZoneId && c.zoneId !== selectedZoneId) {
+                return false;
+            }
+            return true;
+        });
+    };
+
     const handleChapterChange = (selectedOptions) => {
         // Check if "All Chapters" was selected
         const allChaptersSelected =
@@ -474,7 +521,7 @@ const EventListLayer = () => {
 
         if (allChaptersSelected) {
             // Select all chapters except the "All Chapters" option
-            const allRealChapters = chapterList.filter(
+            const allRealChapters = getFilteredChapters().filter(
                 (chapter) => chapter.value !== "all"
             );
             setFormData({
@@ -645,6 +692,16 @@ const EventListLayer = () => {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="card h-100 p-0 radius-12">
             <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
@@ -661,7 +718,7 @@ const EventListLayer = () => {
                         <Icon icon="ion:search-outline" className="icon" />
                     </form>
                 </div>
-                {hasPermission("payments-create") && (
+                {(hasPermission("training-create") || hasPermission("payments-create")) && (
                     <Link
                         to="#"
                         className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
@@ -711,7 +768,7 @@ const EventListLayer = () => {
                                     <td>{formatDate(payment.endDate)}</td>
                                     <td className="text-center">
                                         <div className="d-flex align-items-center gap-10 justify-content-center">
-                                            {hasPermission("payments-list") && (
+                                            {(hasPermission("training-list") || hasPermission("payments-list")) && (
                                                 <button
                                                     type="button"
                                                     className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -727,7 +784,7 @@ const EventListLayer = () => {
                                                     </Link>
                                                 </button>
                                             )}
-                                            {hasPermission("payments-update") && (
+                                            {(hasPermission("training-update") || hasPermission("payments-update")) && (
                                                 <button
                                                     type="button"
                                                     className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -738,7 +795,7 @@ const EventListLayer = () => {
                                                     <Icon icon="lucide:edit" className="menu-icon" />
                                                 </button>
                                             )}
-                                            {hasPermission("payments-delete") && (
+                                            {(hasPermission("training-delete") || hasPermission("payments-delete")) && (
                                                 <button
                                                     type="button"
                                                     className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -960,6 +1017,7 @@ const EventListLayer = () => {
                                             name="zone"
                                             className={`form-control radius-8 ${errors.zone ? "is-invalid" : ""}`}
                                             value={formData.zone}
+                                            disabled={!!getCurrentUser()?.data?.zoneId}
                                             onChange={(e) => {
                                                 handleInputChange(e);
                                                 if (errors.zone) {
@@ -1015,7 +1073,7 @@ const EventListLayer = () => {
                                         <Select
                                             isMulti
                                             name="chapters"
-                                            options={chapterList}
+                                            options={getFilteredChapters()}
                                             components={animatedComponents}
                                             className={`react-select-container ${errors.chapters ? "is-invalid" : ""
                                                 }`}
@@ -1023,12 +1081,13 @@ const EventListLayer = () => {
                                             onChange={handleChapterChange}
                                             value={formData.chapters}
                                             styles={customStyles}
-                                            placeholder="Select chapters..."
+                                            placeholder={getFilteredChapters().length > 0 ? "Select chapters..." : "No chapters found"}
+                                            isDisabled={getFilteredChapters().length === 0}
                                             closeMenuOnSelect={false}
                                             hideSelectedOptions={false}
                                             isOptionSelected={(option) => {
                                                 if (option.value === "all") {
-                                                    const allRealChapters = chapterList.filter(
+                                                    const allRealChapters = getFilteredChapters().filter(
                                                         (ch) => ch.value !== "all"
                                                     );
                                                     return (

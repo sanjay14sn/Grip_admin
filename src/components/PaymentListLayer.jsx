@@ -9,7 +9,7 @@ import makeAnimated from "react-select/animated";
 import paymentApiProvider from "../apiProvider/paymentApi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
-import { hasPermission } from "../utils/auth";
+import { hasPermission, getCurrentUser } from "../utils/auth";
 import { formatDate, toLocalISOString } from "../utils/dateFormatter";
 import config from "../config/config";
 
@@ -27,13 +27,18 @@ const defaultCenter = {
 };
 
 const MeetingListLayer = () => {
+    const user = getCurrentUser();
+    const rawZoneId = user?.data?.zoneId;
+    const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId || "";
+
     const [paymentDetails, setPaymentDetails] = useState([]);
     const [chapterList, setChapterList] = useState([]);
     const [zoneList, setZoneList] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         topic: "",
         amount: "",
-        zoneId: "",
+        zoneId: userZoneId,
         chapters: [],
         hotelName: "",
         startDate: "",
@@ -188,6 +193,7 @@ const MeetingListLayer = () => {
 
     const fetchPaymentData = async () => {
         try {
+            setLoading(true);
             const input = {
                 page: pagination.page,
                 limit: pagination.limit,
@@ -208,6 +214,8 @@ const MeetingListLayer = () => {
             }
         } catch (error) {
             console.error("Error fetching payments:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -406,10 +414,13 @@ const MeetingListLayer = () => {
     };
 
     const resetForm = () => {
+        const user = getCurrentUser();
+        const rawZoneId = user?.data?.zoneId;
+        const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId || "";
         setFormData({
             topic: "",
             amount: "",
-            zoneId: "",
+            zoneId: userZoneId,
             chapters: [],
             startDate: "",
             endDate: "",
@@ -471,15 +482,33 @@ const MeetingListLayer = () => {
         }
     };
 
+    const getFilteredChapters = () => {
+        const user = getCurrentUser();
+        return chapterList.filter(c => {
+            if (c.value === 'all') {
+                if (user?.data?.chapterIds && user?.data?.chapterIds.length <= 1) {
+                    return false;
+                }
+                return true;
+            }
+            if (user?.data?.chapterIds && user?.data?.chapterIds.length > 0) {
+                if (!user.data.chapterIds.includes(c.value)) return false;
+            }
+            const currentZoneId = typeof formData.zoneId === 'object' ? formData.zoneId?._id || formData.zoneId?.id : formData.zoneId;
+            if (currentZoneId && c.zoneId !== currentZoneId) {
+                return false;
+            }
+            return true;
+        });
+    };
+
     const handleChapterChange = (selectedOptions) => {
         const allChaptersSelected =
             selectedOptions &&
             selectedOptions.some((option) => option.value === "all");
 
         if (allChaptersSelected) {
-            const allRealChapters = formData.zoneId
-                ? chapterList.filter((chapter) => chapter.value !== "all" && chapter.zoneId === formData.zoneId)
-                : chapterList.filter((chapter) => chapter.value !== "all");
+            const allRealChapters = getFilteredChapters().filter((chapter) => chapter.value !== "all");
             setFormData({
                 ...formData,
                 chapters: allRealChapters,
@@ -650,6 +679,16 @@ const MeetingListLayer = () => {
         }),
     };
 
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="card h-100 p-0 radius-12">
             <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
@@ -666,7 +705,7 @@ const MeetingListLayer = () => {
                         <Icon icon="ion:search-outline" className="icon" />
                     </form>
                 </div>
-                {hasPermission("payments-create") && (
+                {(hasPermission("meeting-create") || hasPermission("payments-create")) && (
                     <Link
                         to="#"
                         className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
@@ -742,7 +781,7 @@ const MeetingListLayer = () => {
                                     </td>
                                     <td>
                                         <div className="d-flex align-items-center gap-10 justify-content-center">
-                                            {hasPermission("payments-list") && (
+                                            {(hasPermission("meeting-list") || hasPermission("payments-list")) && (
                                                 <button
                                                     type="button"
                                                     className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -758,7 +797,7 @@ const MeetingListLayer = () => {
                                                     </Link>
                                                 </button>
                                             )}
-                                            {hasPermission("payments-update") && (
+                                            {(hasPermission("meeting-update") || hasPermission("payments-update")) && (
                                                 <button
                                                     type="button"
                                                     className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -767,7 +806,7 @@ const MeetingListLayer = () => {
                                                     <Icon icon="lucide:edit" className="menu-icon" />
                                                 </button>
                                             )}
-                                            {hasPermission("payments-delete") && (
+                                            {(hasPermission("meeting-delete") || hasPermission("payments-delete")) && (
                                                 <button
                                                     type="button"
                                                     className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -929,6 +968,7 @@ const MeetingListLayer = () => {
                                 name="zoneId"
                                 className={`form-control radius-8 ${errors.zoneId ? "is-invalid" : ""}`}
                                 value={formData.zoneId}
+                                disabled={!!getCurrentUser()?.data?.zoneId}
                                 onChange={(e) => {
                                     const { name, value } = e.target;
                                     setFormData(prev => ({
@@ -956,7 +996,7 @@ const MeetingListLayer = () => {
                             <Select
                                 isMulti
                                 name="chapters"
-                                options={formData.zoneId ? chapterList.filter(c => c.value === 'all' || c.zoneId === formData.zoneId) : []}
+                                options={getFilteredChapters()}
                                 components={animatedComponents}
                                 className={`react-select-container ${errors.chapters ? "is-invalid" : ""
                                     }`}
@@ -964,15 +1004,13 @@ const MeetingListLayer = () => {
                                 onChange={handleChapterChange}
                                 value={formData.chapters}
                                 styles={customStyles}
-                                placeholder={formData.zoneId ? "Select chapters..." : "Please select a zone first"}
-                                isDisabled={!formData.zoneId}
+                                placeholder={getFilteredChapters().length > 0 ? "Select chapters..." : (formData.zoneId ? "No chapters found" : "Please select a zone first")}
+                                isDisabled={getFilteredChapters().length === 0}
                                 closeMenuOnSelect={false}
                                 hideSelectedOptions={false}
                                 isOptionSelected={(option) => {
                                     if (option.value === "all") {
-                                        const allRealChapters = formData.zoneId
-                                            ? chapterList.filter((ch) => ch.value !== "all" && ch.zoneId === formData.zoneId)
-                                            : chapterList.filter((ch) => ch.value !== "all");
+                                        const allRealChapters = getFilteredChapters().filter((ch) => ch.value !== "all");
                                         return (
                                             formData.chapters.length === allRealChapters.length
                                         );

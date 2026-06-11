@@ -1,13 +1,16 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import AnalyticsFilterModal from "./child/AnalyticsFilterModal";
 import ExpectedVisitorsApiProvider from "../apiProvider/ExpectedVisitorsApiProvider";
 import chapterApiProvider from "../apiProvider/chapterApi";
-import { IMAGE_BASE_URL } from "../network/apiClient";
 
 const ExpectedVisitorsLayer = () => {
+  const navigate = useNavigate();
   const [chapters, setChapters] = useState([]);
   const [expectedVisitors, setExpectedVisitors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   // 1️⃣ Load ALL chapters (empty also needed)
   const fetchChapters = async () => {
@@ -22,10 +25,30 @@ const ExpectedVisitorsLayer = () => {
     console.log("resArish", res);
   };
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([fetchChapters(), fetchExpectedVisitors()]);
+    } catch (error) {
+      console.error("Error loading expected visitors data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchChapters();
-    fetchExpectedVisitors();
+    loadData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
 
   // 3️⃣ Group visitors by chapterId
@@ -48,6 +71,32 @@ const ExpectedVisitorsLayer = () => {
 
   return (
     <>
+      {/* Expected Visitors Dashboard Header Bar */}
+      <div className="d-flex align-items-center justify-content-between mb-24 p-24 shadow-sm flex-wrap gap-3" style={{
+        background: '#fff',
+        borderRadius: '16px',
+        border: '1px solid #f3f4f6'
+      }}>
+        <div>
+          <h5 className="fw-bold mb-1" style={{ color: '#1f2937' }}>Chapter Performance Overview</h5>
+          <span className="text-secondary-light text-sm">Select a chapter below to view individual performer details</span>
+        </div>
+        <button onClick={() => setShowFilterModal(true)} className="btn btn-primary grip text-sm px-20 py-11 radius-8 d-flex align-items-center gap-2">
+          <Icon icon="solar:graph-bold" style={{ fontSize: '18px' }} />
+          View Analytics
+        </button>
+      </div>
+
+      <AnalyticsFilterModal
+        show={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onConfirm={(chapterId) => {
+          setShowFilterModal(false);
+          navigate(`/expected-visitors-analytics/${chapterId}`);
+        }}
+        title="Select Zone & Chapter for Expected Visitors Analytics"
+      />
+
       <div className="cardd h-100 p-0 radius-12">
         <div className="card-body chapterwisebox p-24">
           <div className="row gy-4">
@@ -98,10 +147,13 @@ const ExpectedVisitorsLayer = () => {
                           display: 'inline-flex',
                           alignItems: 'center',
                           marginTop: '8px',
-                          gap: '4px'
+                          gap: '6px',
+                          textTransform: 'uppercase',
+                          fontWeight: '600'
                         }}>
-                          View Performers
+                          VIEW PERFORMERS
                           <Icon icon="solar:arrow-right-linear" style={{ fontSize: '14px' }} />
+                          <Icon icon="solar:users-group-rounded-linear" style={{ fontSize: '20px', opacity: 0.3, marginLeft: '2px' }} />
                         </span>
                       </div>
                       <div 
@@ -118,7 +170,7 @@ const ExpectedVisitorsLayer = () => {
                           flexShrink: 0
                         }}
                       >
-                        {chapter.activeVisitors.length}
+                        {chapter.activeVisitors?.length || 0}
                       </div>
                     </div>
                   </div>

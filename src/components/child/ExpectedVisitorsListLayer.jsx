@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ExpectedVisitorsApiProvider from "../../apiProvider/ExpectedVisitorsApiProvider";
 import { hasDeletePermission } from "../../utils/auth";
 import { toast, ToastContainer } from "react-toastify";
@@ -11,9 +11,11 @@ import Swal from 'sweetalert2';
 
 const ExpectedVisitorsListLayer = () => {
   const { chapterId } = useParams();
+  const navigate = useNavigate();
 
   const [chapterInfo, setChapterInfo] = useState({});
   const [expectedVisitors, setExpectedVisitors] = useState([]);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Pagination (optional)
   const [pagination, setPagination] = useState({
@@ -35,13 +37,25 @@ const ExpectedVisitorsListLayer = () => {
         params
       );
 
+      // Handle 403 Access Denied
+      if (!res?.status && (res?.httpStatus === 403 || res?.response?.message?.includes('Access Denied'))) {
+        setAccessDenied(true);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Access Denied',
+          text: 'You are not authorized to view this chapter.',
+          confirmButtonText: 'Go Back',
+        }).then(() => navigate(-1));
+        return;
+      }
+
       const apiData = res?.response?.data || {};
 
       setChapterInfo(apiData.chapter || {});
       setExpectedVisitors(apiData.records || []);
 
       // pagination update
-      const total = apiData.pagination?.total || apiData.records.length;
+      const total = apiData.pagination?.total || apiData.records?.length || 0;
       setPagination((prev) => ({
         ...prev,
         total,

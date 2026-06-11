@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useEffect, useState } from 'react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import chapterApiProvider from '../../apiProvider/chapterApi';
 import { toast, ToastContainer } from 'react-toastify';
 import { hasDeletePermission } from '../../utils/auth';
@@ -12,8 +12,10 @@ const ReferralListLayer = () => {
 
     const [chapterMembers, setchapterMembers] = useState([]);
     const [chapterName, setChapterName] = useState("");
+    const [accessDenied, setAccessDenied] = useState(false);
 
     const { id } = useParams();
+    const navigate = useNavigate();
 
     // ✅ PAGINATION STATE
     const [pagination, setPagination] = useState({
@@ -32,6 +34,18 @@ const ReferralListLayer = () => {
             };
 
             const response = await chapterApiProvider.refferalListMember(id, input);
+
+            // Handle 403 Access Denied
+            if (!response?.status && (response?.httpStatus === 403 || response?.response?.message?.includes('Access Denied'))) {
+                setAccessDenied(true);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'You are not authorized to view this chapter.',
+                    confirmButtonText: 'Go Back',
+                }).then(() => navigate(-1));
+                return;
+            }
 
             const listData = response?.response?.data?.records || [];
             const paginationData = response?.response?.data?.pagination || {};

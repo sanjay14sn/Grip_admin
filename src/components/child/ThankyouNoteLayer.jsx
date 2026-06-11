@@ -3,8 +3,8 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import chapterApiProvider from '../../apiProvider/chapterApi';
-import { useParams } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { hasDeletePermission } from '../../utils/auth';
 
@@ -12,8 +12,10 @@ const ThankyouNoteLayer = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState('');
     const [chapterMembers, setchapterMembers] = useState({});
+    const [accessDenied, setAccessDenied] = useState(false);
     
     const { id } = useParams();
+    const navigate = useNavigate();
 
     // ✅ PAGINATION STATE (ONLY NEW ADDITION)
     const [pagination, setPagination] = useState({
@@ -37,6 +39,18 @@ const ThankyouNoteLayer = () => {
             };
 
             const response = await chapterApiProvider.thankYouSlipListMember(id, input);
+
+            // Handle 403 Access Denied
+            if (!response?.status && (response?.httpStatus === 403 || response?.response?.message?.includes('Access Denied'))) {
+                setAccessDenied(true);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'You are not authorized to view this chapter.',
+                    confirmButtonText: 'Go Back',
+                }).then(() => navigate(-1));
+                return;
+            }
 
             const paginationData = response?.response?.data?.pagination || {};
 

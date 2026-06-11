@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import roleApiProvider from '../apiProvider/roleApi';
 import userApiProvider from '../apiProvider/userApi';
 import chapterApiProvider from '../apiProvider/chapterApi';
@@ -7,9 +8,22 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { toast, ToastContainer } from 'react-toastify';
 import { IMAGE_BASE_URL } from '../network/apiClient';
+import { getCurrentUser } from '../utils/auth';
 
 
 const AddUserLayer = () => {
+
+  // Special sentinel for "All Chapters in Zone"
+  const ALL_CHAPTERS_OPTION = { value: 'ALL', label: '⭐ All Chapters (All zones chapters)' };
+
+  const getZoneAdminZoneId = () => {
+    const user = getCurrentUser()?.data;
+    if (user?.role === 'zone-admin') {
+       return user.zoneId?._id || user.zoneId || user.id;
+    }
+    return null;
+  };
+
     const { id } = useParams();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
@@ -22,6 +36,7 @@ const AddUserLayer = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [roleOptions, setRoleOptions] = useState([]);
     const [zones, setZones] = useState([]);
+    const [chapters, setChapters] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showPin, setShowPin] = useState(false);
     const [error, setError] = useState({});
@@ -35,7 +50,8 @@ const AddUserLayer = () => {
         pin: '',
         mobileNumber: '',
         role: initialRole || '',
-        zoneId: initialZoneId || ''
+        zoneId: initialZoneId || getZoneAdminZoneId() || '',
+        chapterId: []
     });
 
     useEffect(() => {
@@ -74,6 +90,27 @@ const AddUserLayer = () => {
         }
     };
 
+    useEffect(() => {
+        if (formData.zoneId) {
+            fetchChaptersByZone(formData.zoneId);
+        } else {
+            setChapters([]);
+        }
+    }, [formData.zoneId]);
+
+    const fetchChaptersByZone = async (zoneId) => {
+        try {
+            const response = await chapterApiProvider.getChaptersByZone(zoneId);
+            if (response && response.status) {
+                const data = response.response?.data || response.response || [];
+                setChapters(Array.isArray(data) ? data : (data.chapters || []));
+            }
+        } catch (error) {
+            console.error("Error fetching chapters:", error);
+            setChapters([]);
+        }
+    };
+
     const fetchUserData = async () => {
         setLoading(true);
         try {
@@ -90,7 +127,9 @@ const AddUserLayer = () => {
                     pin: '', // Don't pre-fill PIN for security
                     mobileNumber: user.mobileNumber,
                     role: user?.role._id,
-                    zoneId: user?.zoneId || '',
+                    zoneId: user?.zoneId?._id || user?.zoneId || '',
+                    // If allChapters flag is set, pre-fill with the special sentinel
+                    chapterId: user?.allChapters ? ['ALL'] : (user?.chapterId || []),
                     image: user.profileImage || ''
                 });
                 if (user.profileImage) {
@@ -257,6 +296,9 @@ const AddUserLayer = () => {
         
         if (formData.zoneId) {
             formDataToSend.append('zoneId', formData.zoneId);
+        }
+        if (formData.chapterId && formData.chapterId.length > 0) {
+            formData.chapterId.forEach(id => formDataToSend.append('chapterId', id));
         }
 
         // Append the file if selected
@@ -502,7 +544,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                             id="zoneId"
                                             value={formData.zoneId}
                                             onChange={handleInputChange}
-                                            disabled={loading}
+                                            disabled={loading || getCurrentUser()?.data?.role === "zone-admin"}
                                         >
                                             <option value="">Select Zone</option>
                                             {zones.map((zone) => (
@@ -511,6 +553,51 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                                 </option>
                                             ))}
                                         </select>
+                                    </div>
+
+                                    {/* Chapter Selection */}
+                                    <div className="col-md-6 mb-20">
+                                        <label htmlFor="chapterId" className="form-label fw-semibold text-primary-light text-sm mb-8">
+                                            Chapter
+                                        </label>
+                                        <Select
+                                            isMulti
+                                            id="chapterId"
+                                            options={[
+                                                ALL_CHAPTERS_OPTION,
+                                                ...chapters.map(c => ({ value: c._id, label: c.chapterName }))
+                                            ]}
+                                            value={
+                                                formData.chapterId.includes('ALL')
+                                                    ? [ALL_CHAPTERS_OPTION]
+                                                    : chapters.filter(c => formData.chapterId.includes(c._id)).map(c => ({ value: c._id, label: c.chapterName }))
+                                            }
+                                            onChange={(selectedOptions) => {
+                                                if (!selectedOptions || selectedOptions.length === 0) {
+                                                    setFormData(prev => ({ ...prev, chapterId: [] }));
+                                                    return;
+                                                }
+                                                // If user selects "All Chapters", clear everything else
+                                                const hasAll = selectedOptions.some(opt => opt.value === 'ALL');
+                                                if (hasAll) {
+                                                    setFormData(prev => ({ ...prev, chapterId: ['ALL'] }));
+                                                } else {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        chapterId: selectedOptions.map(opt => opt.value)
+                                                    }));
+                                                }
+                                            }}
+                                            isDisabled={loading || !formData.zoneId}
+                                            placeholder="Select Chapter(s)"
+                                            className="react-select-container"
+                                            classNamePrefix="react-select"
+                                        />
+                                        {formData.chapterId.includes('ALL') && (
+                                            <small className="text-success mt-1 d-block">
+                                                ✅ This user can access all current and future chapters in the selected zone.
+                                            </small>
+                                        )}
                                     </div>
 
                                                                         </div>

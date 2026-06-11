@@ -1,17 +1,18 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import chapterApiProvider from "../apiProvider/chapterApi";
 import memberApiProvider from "../apiProvider/memberApi";
 import { IMAGE_BASE_URL } from "../network/apiClient";
-import { hasPermission } from "../utils/auth";
+import { hasPermission, getCurrentUser } from "../utils/auth";
 import { formatCurrencyValue } from "../utils/dateFormatter";
 import Select from "react-select";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ChapterViewLayer = () => {
+  const navigate = useNavigate();
   const CHART_OPTIONS = {
     chart: {
       height: 264,
@@ -546,8 +547,43 @@ const ChapterViewLayer = () => {
       const chapters = responce?.response?.data;
       console.log(chapters, "chapters");
       if (chapters) {
+        const user = getCurrentUser()?.data;
+        const rawRole = user?.role;
+        const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+        const roleNameLower = roleName.toLowerCase();
+        const isSuperAdmin = roleNameLower === 'admin' || roleNameLower === 'super admin' || roleNameLower === 'super-admin';
+        const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
+        const isZoneAdmin = roleNameLower === 'zone-admin';
+        const isZoneLevel = isZoneAdmin || isED;
+        const isChapterUser = !isSuperAdmin && !isZoneLevel;
+
+        const rawZoneId = user?.zoneId;
+        const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId;
+        const userChapterIds = user?.chapterIds || [];
+
+        const rawChapterZoneId = chapters?.zoneId;
+        const chapterZoneId = typeof rawChapterZoneId === 'object' ? rawChapterZoneId?._id || rawChapterZoneId?.id : rawChapterZoneId;
+
+        if (isZoneLevel) {
+          if (String(chapterZoneId) !== String(userZoneId)) {
+            navigate('/access-denied');
+            return;
+          }
+        } else if (isChapterUser) {
+          const allowedChapterIds = Array.isArray(userChapterIds)
+            ? userChapterIds.map(c => typeof c === 'object' ? c?._id || c?.id : c)
+            : [];
+          const hasAccess = allowedChapterIds.some(cid => String(cid) === String(id));
+          if (!hasAccess) {
+            navigate('/access-denied');
+            return;
+          }
+        }
+
         setChapterData(chapters);
       }
+    } else {
+      navigate('/access-denied');
     }
   };
 
