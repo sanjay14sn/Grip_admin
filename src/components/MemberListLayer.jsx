@@ -86,7 +86,7 @@ const MemberListLayer = () => {
         }
 
         if (isChapterUser) {
-          const userChapterIds = user?.chapterIds || [];
+          const userChapterIds = user?.chapterIds || user?.chapterId || [];
           const allowedChapterIds = Array.isArray(userChapterIds)
             ? userChapterIds.map(c => typeof c === 'object' ? c?._id || c?.id : c)
             : [];

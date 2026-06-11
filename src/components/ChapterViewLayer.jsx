@@ -559,7 +559,7 @@ const ChapterViewLayer = () => {
 
         const rawZoneId = user?.zoneId;
         const userZoneId = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId;
-        const userChapterIds = user?.chapterIds || [];
+        const userChapterIds = user?.chapterIds || user?.chapterId || [];
 
         const rawChapterZoneId = chapters?.zoneId;
         const chapterZoneId = typeof rawChapterZoneId === 'object' ? rawChapterZoneId?._id || rawChapterZoneId?.id : rawChapterZoneId;

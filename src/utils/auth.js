@@ -62,7 +62,8 @@ export const getCurrentUser = () => {
     // NOTE: only use chapterId presence to detect chapter-level users, NOT role.name,
     // to avoid falsely matching Admin role objects that haven't been populated yet.
     const sessionUser = user?.data;
-    const isChapterLevelUser = sessionUser?.chapterId && (Array.isArray(sessionUser.chapterId) ? sessionUser.chapterId.length > 0 : true);
+    const userChapters = sessionUser?.chapterId || sessionUser?.chapterIds;
+    const isChapterLevelUser = userChapters && (Array.isArray(userChapters) ? userChapters.length > 0 : true);
     
     if (isChapterLevelUser) {
       const allowedForChapterUser = [

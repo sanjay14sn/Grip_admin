@@ -484,15 +484,16 @@ const MeetingListLayer = () => {
 
     const getFilteredChapters = () => {
         const user = getCurrentUser();
+        const userChapterIds = user?.data?.chapterIds || user?.data?.chapterId;
         return chapterList.filter(c => {
             if (c.value === 'all') {
-                if (user?.data?.chapterIds && user?.data?.chapterIds.length <= 1) {
+                if (userChapterIds && userChapterIds.length <= 1) {
                     return false;
                 }
                 return true;
             }
-            if (user?.data?.chapterIds && user?.data?.chapterIds.length > 0) {
-                if (!user.data.chapterIds.includes(c.value)) return false;
+            if (userChapterIds && userChapterIds.length > 0) {
+                if (!userChapterIds.includes(c.value)) return false;
             }
             const currentZoneId = typeof formData.zoneId === 'object' ? formData.zoneId?._id || formData.zoneId?.id : formData.zoneId;
             if (currentZoneId && c.zoneId !== currentZoneId) {

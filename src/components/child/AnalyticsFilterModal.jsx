@@ -50,7 +50,7 @@ const AnalyticsFilterModal = ({ show, onClose, onConfirm, title }) => {
 
   const rawZoneId      = sessionUser?.zoneId;
   const userZoneId     = typeof rawZoneId === 'object' ? rawZoneId?._id || rawZoneId?.id : rawZoneId;
-  const userChapterIds = sessionUser?.chapterIds; // array of permitted chapter IDs
+  const userChapterIds = sessionUser?.chapterIds || sessionUser?.chapterId; // array of permitted chapter IDs
 
   // ── Initialise on open ────────────────────────────────────────────
   useEffect(() => {

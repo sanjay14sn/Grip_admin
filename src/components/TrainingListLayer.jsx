@@ -495,16 +495,17 @@ const EventListLayer = () => {
         const user = getCurrentUser();
         const selectedZone = zones.find(z => z.zoneName === formData.zone);
         const selectedZoneId = selectedZone?._id;
+        const userChapterIds = user?.data?.chapterIds || user?.data?.chapterId;
 
         return chapterList.filter(c => {
             if (c.value === 'all') {
-                if (user?.data?.chapterIds && user?.data?.chapterIds.length <= 1) {
+                if (userChapterIds && userChapterIds.length <= 1) {
                     return false;
                 }
                 return true;
             }
-            if (user?.data?.chapterIds && user?.data?.chapterIds.length > 0) {
-                if (!user.data.chapterIds.includes(c.value)) return false;
+            if (userChapterIds && userChapterIds.length > 0) {
+                if (!userChapterIds.includes(c.value)) return false;
             }
             if (selectedZoneId && c.zoneId !== selectedZoneId) {
                 return false;
