@@ -97,6 +97,7 @@ const ChapterViewLayer = () => {
     referralSlips: { totalCount: 0, topReceivers: [] },
   });
   const [members, setMembers] = useState([]);
+  const [allMembers, setAllMembers] = useState([]);
   const [referralMember, setReferralMember] = useState(null);
   const [businessMember, setBusinessMember] = useState(null);
   const [visitorMember, setVisitorMember] = useState(null);
@@ -140,7 +141,7 @@ const ChapterViewLayer = () => {
   };
 
   const formatOptionLabel = (option) => {
-    const member = members.find(m => m.id === option.value);
+    const member = allMembers.find(m => m.id === option.value);
     const imageUrl = member?.profileImage?.docPath
       ? `${IMAGE_BASE_URL}/${member.profileImage.docPath}/${member.profileImage.docName}`
       : null;
@@ -176,7 +177,7 @@ const ChapterViewLayer = () => {
 
   const renderMemberPreview = (selectedOption, subtitle, badgeText) => {
     if (!selectedOption) return null;
-    const memberObj = members.find(m => m.id === selectedOption.value);
+    const memberObj = allMembers.find(m => m.id === selectedOption.value);
     const imageUrl = memberObj?.profileImage?.docPath
       ? `${IMAGE_BASE_URL}/${memberObj.profileImage.docPath}/${memberObj.profileImage.docName}`
       : null;
@@ -311,6 +312,7 @@ const ChapterViewLayer = () => {
       fetchHeadTableUsers(id);
       fetchTopAchievers(id);
       fetchMonthlyRevenueforChapter(id);
+      fetchAllMembers(id);
       // Load data for specific chapter
     } else {
       // Handle no ID case
@@ -344,6 +346,23 @@ const ChapterViewLayer = () => {
     }
   }, [id, search, pagination.page, pagination.limit]);
 
+
+  const fetchAllMembers = async (chapterId) => {
+    try {
+      const response = await memberApiProvider.getMemberByChapterId({ limit: 1000 }, chapterId);
+      const fetchedMembers = response?.data?.data?.members || [];
+      const mappedMembers = fetchedMembers.map(m => ({
+        id: m._id,
+        name: `${m.personalDetails?.firstName || ""} ${m.personalDetails?.lastName || ""}`.trim(),
+        companyName: m.personalDetails?.companyName,
+        profileImage: m.personalDetails?.profileImage,
+        contactDetails: m.contactDetails,
+      }));
+      setAllMembers(mappedMembers);
+    } catch (error) {
+      console.error("Error fetching all members for selection:", error);
+    }
+  };
 
   // ---------------- MAIN FUNCTION ----------------
   const fetchMembersWithAttendance = async (chapterId) => {
@@ -470,10 +489,10 @@ const ChapterViewLayer = () => {
   };
 
   useEffect(() => {
-    if (id && members.length > 0) {
-      fetchSavedAchievers(id, members);
+    if (id && allMembers.length > 0) {
+      fetchSavedAchievers(id, allMembers);
     }
-  }, [id, members]);
+  }, [id, allMembers]);
 
   const fetchSavedAchievers = async (chapterId, members) => {
     const res = await memberApiProvider.getTopAchiver(chapterId);
@@ -2101,7 +2120,7 @@ const ChapterViewLayer = () => {
                 isMulti={roleModalTarget === "Associate Committee" || roleModalTarget === "Coordinator"}
                 menuPortalTarget={document.body}
                 menuPosition="fixed"
-                options={members.map((m) => ({
+                options={allMembers.map((m) => ({
                   label: m.name,
                   value: m.id,
                 }))}
