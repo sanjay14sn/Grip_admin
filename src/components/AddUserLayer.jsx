@@ -12,17 +12,21 @@ import { getCurrentUser } from '../utils/auth';
 
 
 const AddUserLayer = () => {
+  const loggedInUser = getCurrentUser()?.data;
+  const rawRole = loggedInUser?.role;
+  const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+  const roleNameLower = roleName.toLowerCase();
+  const isSuperAdmin = roleNameLower === 'admin' || roleNameLower === 'super admin' || roleNameLower === 'super-admin';
+  const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
+  const isZoneAdmin = roleNameLower === 'zone-admin';
+
+  const getRestrictedZoneId = () => {
+    if (isSuperAdmin) return null;
+    return loggedInUser?.zoneId?._id || loggedInUser?.zoneId || null;
+  };
 
   // Special sentinel for "All Chapters in Zone"
   const ALL_CHAPTERS_OPTION = { value: 'ALL', label: '⭐ All Chapters (All zones chapters)' };
-
-  const getZoneAdminZoneId = () => {
-    const user = getCurrentUser()?.data;
-    if (user?.role === 'zone-admin') {
-       return user.zoneId?._id || user.zoneId || user.id;
-    }
-    return null;
-  };
 
     const { id } = useParams();
     const location = useLocation();
@@ -50,7 +54,7 @@ const AddUserLayer = () => {
         pin: '',
         mobileNumber: '',
         role: initialRole || '',
-        zoneId: initialZoneId || getZoneAdminZoneId() || '',
+        zoneId: initialZoneId || getRestrictedZoneId() || '',
         chapterId: []
     });
 
@@ -104,7 +108,18 @@ const AddUserLayer = () => {
             if (response && response.status) {
                 const data = response.response?.data || response.response || [];
                 const allChapters = Array.isArray(data) ? data : (data.chapters || []);
-                setChapters(allChapters.filter(c => c.isActive === 1));
+                let filteredChapters = allChapters.filter(c => c.isActive === 1);
+
+                // Filter chapters based on logged-in user's access
+                if (!isSuperAdmin && !isED && !isZoneAdmin) {
+                    const userChapters = loggedInUser?.chapterId || loggedInUser?.chapterIds || [];
+                    const userChapterIds = Array.isArray(userChapters)
+                        ? userChapters.map(c => typeof c === 'object' ? c._id || c.id : c)
+                        : [typeof userChapters === 'object' ? userChapters._id || userChapters.id : userChapters];
+                    filteredChapters = filteredChapters.filter(c => userChapterIds.includes(c._id));
+                }
+
+                setChapters(filteredChapters);
             }
         } catch (error) {
             console.error("Error fetching chapters:", error);
@@ -545,7 +560,7 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                             id="zoneId"
                                             value={formData.zoneId}
                                             onChange={handleInputChange}
-                                            disabled={loading || getCurrentUser()?.data?.role === "zone-admin"}
+                                            disabled={loading || !isSuperAdmin}
                                         >
                                             <option value="">Select Zone</option>
                                             {zones.map((zone) => (
@@ -564,10 +579,11 @@ console.log("imagePreviewUrl", imagePreviewUrl);
                                         <Select
                                             isMulti
                                             id="chapterId"
-                                            options={[
-                                                ALL_CHAPTERS_OPTION,
-                                                ...chapters.map(c => ({ value: c._id, label: c.chapterName }))
-                                            ]}
+                                            options={
+                                                (isSuperAdmin || isED || isZoneAdmin)
+                                                    ? [ALL_CHAPTERS_OPTION, ...chapters.map(c => ({ value: c._id, label: c.chapterName }))]
+                                                    : chapters.map(c => ({ value: c._id, label: c.chapterName }))
+                                            }
                                             value={
                                                 formData.chapterId.includes('ALL')
                                                     ? [ALL_CHAPTERS_OPTION]

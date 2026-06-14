@@ -192,7 +192,7 @@ const UsersListLayer = () => {
                         <Icon icon="ion:search-outline" className="icon" />
                     </div>
                 </div>
-                {hasPermission("users-create") && (
+                {hasPermission("admin-users-create") && (
                     <Link
                         to="/add-user"
                         className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
@@ -263,7 +263,7 @@ const UsersListLayer = () => {
                                                 >
                                                     <Icon icon="majesticons:eye-line" className="icon text-xl" />
                                                 </button>
-                                                {hasPermission("users-update") && (
+                                                {hasPermission("admin-users-update") && (
                                                     <button
                                                         type="button"
                                                         className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -273,7 +273,7 @@ const UsersListLayer = () => {
                                                         <Icon icon="lucide:edit" className="menu-icon" />
                                                     </button>
                                                 )}
-                                                {hasPermission("users-delete") && (
+                                                {hasPermission("admin-users-delete") && (
                                                     <button
                                                         type="button"
                                                         className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"

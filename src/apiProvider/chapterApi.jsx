@@ -21,7 +21,7 @@ class ChapterApiProvider {
                 console.error("Error Response:", error.response.data);
             }
 
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? error.response?.data ?? null };
         }
     }
 
@@ -155,7 +155,7 @@ class ChapterApiProvider {
             }
         } catch (error) {
             console.error("Error updating zone:", error);
-            return { status: false, response: error.response?.data ?? null };
+            return { status: false, response: error.data ?? error.response?.data ?? null };
         }
     }
     async getChaptersByZone(input) {

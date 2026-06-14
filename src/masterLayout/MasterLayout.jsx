@@ -294,7 +294,7 @@ const MasterLayout = ({ children }) => {
               </li>
             )}
             {/* Invoice Dropdown */}
-            {(hasPermission("users-list") || hasPermission("roles-list")) && (
+            {(hasPermission("admin-users-list") || hasPermission("panel-associate-list") || hasPermission("users-list") || hasPermission("roles-list")) && (
               <li className="dropdown">
                 <Link to="#">
                   <Icon icon="mdi:account-cog-outline" className="menu-icon" />
@@ -302,18 +302,20 @@ const MasterLayout = ({ children }) => {
                   <span>User Management</span>
                 </Link>
                 <ul className="sidebar-submenu">
-                  <li>
-                    <NavLink
-                      to="/users-list"
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon="mdi:account-outline" className="menu-icon" />
-                      Admin Users
-                    </NavLink>
-                  </li>
-                  {userData?.role !== "zone-admin" && (
+                  {hasPermission("admin-users-list") && (
+                    <li>
+                      <NavLink
+                        to="/users-list"
+                        className={(navData) =>
+                          navData.isActive ? "active-page" : ""
+                        }
+                      >
+                        <Icon icon="mdi:account-outline" className="menu-icon" />
+                        Admin Users
+                      </NavLink>
+                    </li>
+                  )}
+                  {userData?.role !== "zone-admin" && hasPermission("panel-associate-list") && (
                     <>
                       <li>
                         <NavLink

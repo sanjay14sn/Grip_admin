@@ -219,7 +219,7 @@ const PrimaryMemberListLayer = () => {
             <Icon icon="ion:search-outline" className="icon" />
           </form>
         </div>
-        {hasPermission("users-create") && (
+        {hasPermission("panel-associate-create") && (
           <Link
             to="/add-primarymember"
             className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
@@ -279,7 +279,7 @@ const PrimaryMemberListLayer = () => {
                   <td className="text-nowrap">{member.contactDetails?.mobileNumber}</td>
                   <td className="text-nowrap">
                     <select
-                      disabled={!hasPermission("users-update")}
+                      disabled={!hasPermission("panel-associate-update")}
                       className={`form-select newonee form-select-sm w-auto radius-12 h-40-px custom-status-select ${member.status === "active"
                         ? "status-activate"
                         : member.status === "decline"
@@ -303,7 +303,7 @@ const PrimaryMemberListLayer = () => {
                   </td>
                   <td className="text-nowrap">
                     <div className="d-flex gap-10 justify-content-start">
-                      {hasPermission("users-update") && (
+                      {hasPermission("panel-associate-update") && (
                         <button
                           type="button"
                           className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -315,7 +315,7 @@ const PrimaryMemberListLayer = () => {
                           />
                         </button>
                       )}
-                      {hasPermission("users-update") && (
+                      {hasPermission("panel-associate-update") && (
                         <Link to={`/edit-primarymember/${member._id}`}>
                           <button
                             type="button"
@@ -325,7 +325,7 @@ const PrimaryMemberListLayer = () => {
                           </button>
                         </Link>
                       )}
-                      {hasPermission("users-delete") && (
+                      {hasPermission("panel-associate-delete") && (
                         <button
                           type="button"
                           className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"

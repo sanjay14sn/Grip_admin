@@ -1078,7 +1078,7 @@ const ChapterViewLayer = () => {
 
           {/* Right Section - Buttons */}
           <div className="col-md-3 d-flex flex-column align-items-end gap-3">
-            {hasPermission("users-create") && (
+            {hasPermission("panel-associate-create") && (
               <button
                 type="button"
                 className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"

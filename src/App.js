@@ -229,12 +229,12 @@ function App() {
           <Route
             exact
             path="/add-primarymember"
-            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><AddPrimaryMemberPage /></ProtectedRoute>}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="panel-associate-list"><AddPrimaryMemberPage /></ProtectedRoute>}
           />
           <Route
             exact
             path="/edit-primarymember/:id"
-            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><AddPrimaryMemberPage /></ProtectedRoute>}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="panel-associate-list"><AddPrimaryMemberPage /></ProtectedRoute>}
           />
 
           <Route exact path="/chapterwise" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="chapters-list"><ChapterwisePage /></ProtectedRoute>} />
@@ -335,7 +335,7 @@ function App() {
           <Route
             exact
             path="/primarymember-list"
-            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><PrimaryMemberListPage /></ProtectedRoute>}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="panel-associate-list"><PrimaryMemberListPage /></ProtectedRoute>}
           />
 
           <Route exact path="/payment-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="meeting-list"><PaymentListPage /></ProtectedRoute>} />
@@ -345,7 +345,7 @@ function App() {
           <Route
             exact
             path="/primarymember-list"
-            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><PrimaryMemberListPage /></ProtectedRoute>}
+            element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="panel-associate-list"><PrimaryMemberListPage /></ProtectedRoute>}
           />
 
           <Route exact path="/roles-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="roles-list"><RoleListPage /></ProtectedRoute>} />
@@ -369,7 +369,7 @@ function App() {
           <Route exact path="/roles-access/:id?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="roles-list"><RoleAcessPage /></ProtectedRoute>} />
 
           {/* SL */}
-          <Route exact path="/add-user/:id?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><AddUserPage /></ProtectedRoute>} />
+          <Route exact path="/add-user/:id?" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="admin-users-list"><AddUserPage /></ProtectedRoute>} />
           <Route exact path="/add-pin/:id?" element={<AddPinPage />} />
           <Route exact path="/alert" element={<AlertPage />} />
           <Route exact path="/assign-role" element={<AssignRolePage />} />
@@ -496,7 +496,7 @@ function App() {
           <Route exact path="/tooltip" element={<TooltipPage />} />
           <Route exact path="/typography" element={<TypographyPage />} />
 
-          <Route exact path="/users-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="users-list"><UsersListPage /></ProtectedRoute>} />
+          <Route exact path="/users-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="admin-users-list"><UsersListPage /></ProtectedRoute>} />
           <Route exact path="/view-details" element={<ViewDetailsPage />} />
           <Route
             exact

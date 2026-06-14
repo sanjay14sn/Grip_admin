@@ -187,7 +187,7 @@ const ReferralListLayer = () => {
 
 
                                         <td>
-                                            {hasDeletePermission("delete") && (
+                                            {hasDeletePermission("referrals-delete") && (
                                                 <button
                                                     type="button"
                                                     className="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"

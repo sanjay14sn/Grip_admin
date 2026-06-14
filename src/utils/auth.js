@@ -10,11 +10,18 @@ export const getCurrentUser = () => {
     
     // Zone admin specific permissions
     if (user?.data?.role === 'zone-admin') {
+      if (permissionKey.startsWith("admin-users") || permissionKey.startsWith("panel-associate")) {
+        const permissions = user?.data?.role?.permissions;
+        if (permissions && Array.isArray(permissions)) {
+          return permissions.some(p => p.key === permissionKey);
+        }
+        return false;
+      }
       const allowedForZoneAdmin = [
         "dashboard-list",
         "users-list", "users-create", "users-update",   // Needed to show and manage Admin Users
-                "roles-list", "roles-create", "roles-update", "roles-delete",    // Needed to show Role menu and manage roles
-                "chapters-list", "chapters-create", "chapters-update", // Needed to show Chapters under this menu and manage them
+        "roles-list", "roles-create", "roles-update", "roles-delete",    // Needed to show Role menu and manage roles
+        "chapters-list", "chapters-create", "chapters-update", // Needed to show Chapters under this menu and manage them
         "performers-list",
         "payments-list", "payments-create",
         // New permissions added
@@ -47,6 +54,13 @@ export const getCurrentUser = () => {
     // ED → read-only access: can view roles, access-requests, and standard zone-admin permissions
     const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
     if (isED) {
+      if (permissionKey.startsWith("admin-users") || permissionKey.startsWith("panel-associate")) {
+        const permissions = user?.data?.role?.permissions;
+        if (permissions && Array.isArray(permissions)) {
+          return permissions.some(p => p.key === permissionKey);
+        }
+        return false;
+      }
       const allowedForED = [
         "dashboard-list", "users-list", "users-update", "users-delete", "roles-list",
         "chapters-list", "chapters-create", "chapters-update", "performers-list", "payments-list", "payments-create",
@@ -65,46 +79,46 @@ export const getCurrentUser = () => {
     const userChapters = sessionUser?.chapterId || sessionUser?.chapterIds;
     const isChapterLevelUser = userChapters && (Array.isArray(userChapters) ? userChapters.length > 0 : true);
     
+    // Check role's specific permissions in DB
+    const permissions = user?.data?.role?.permissions;
+    if (permissions && Array.isArray(permissions)) {
+      if (permissions.some(p => p.key === permissionKey)) return true;
+    }
+
     if (isChapterLevelUser) {
       const allowedForChapterUser = [
         "dashboard-list",
-        "performers-list",
-        "121s-list", "121s-create",
-        "referrals-list", "referrals-create",
-        "thank-you-slip-list", "thank-you-slip-create",
-        "testimonial-list", "testimonial-create",
-        "visitor-guest-list", "visitor-guest-create",
-        "expected-visitors-list", "expected-visitors-create",
-        "associates-list",
       ];
       // Check if the permission is in the default chapter-user list
       if (allowedForChapterUser.includes(permissionKey)) return true;
-
-      // Or in the role's specific permissions
-      const permissions = user?.data?.role?.permissions;
-      if (permissions && Array.isArray(permissions)) {
-        return permissions.some(p => p.key === permissionKey);
-      }
-    } else {
-      // Role-object with permissions array (populated after MasterLayout fetchUserData) for non-chapter-level custom roles
-      const permissions = user?.data?.role?.permissions;
-      if (permissions && Array.isArray(permissions)) {
-        return permissions.some(p => p.key === permissionKey);
-      }
     }
 
     return false;
   }; 
 
-  export const hasDeletePermission = (permissionKey) => {
+export const hasDeletePermission = (permissionKey) => {
   const user = getCurrentUser();
+
+  const rawRole = user?.data?.role;
+  const roleName = (typeof rawRole === 'object' ? rawRole?.name : rawRole) || '';
+  const roleNameLower = roleName.toLowerCase();
+  const isSuperAdmin = roleNameLower === 'admin'
+                    || roleNameLower === 'super admin'
+                    || roleNameLower === 'super-admin';
+  if (isSuperAdmin) return true;
+
   if (user?.data?.role === 'zone-admin') {
     return false; // Or true depending on if they can delete. Let's return false by default for now unless specified.
   }
 
   const permissions = user?.data?.role?.permissions;
+  if (!permissions || !Array.isArray(permissions)) return false;
 
-  return permissions?.some((p) => {
+  if (permissionKey.includes('-')) {
+    return permissions.some(p => p.key === permissionKey);
+  }
+
+  return permissions.some((p) => {
     const keyPart = p.key?.split('-').pop()?.toLowerCase(); // get last part after "-"
     return keyPart === permissionKey.toLowerCase();
   });

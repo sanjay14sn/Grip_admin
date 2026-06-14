@@ -41,6 +41,8 @@ const RoleNewAccessLayer = () => {
                 const response = await roleApiProvider.getPermissions();
                 if (response && response.status) {
                     const permissionsData = response.response.data;
+                    // Sort by order first to keep logical ordering
+                    permissionsData.sort((a, b) => (a.order || 0) - (b.order || 0));
                     setPermissionOptions(permissionsData);
 
                     // Extract unique categories (features)
@@ -49,7 +51,14 @@ const RoleNewAccessLayer = () => {
                     // Create feature labels mapping
                     const labels = {};
                     features.forEach(feature => {
-                        labels[feature] = feature.charAt(0).toUpperCase() + feature.slice(1);
+                        if (feature === 'panel-associate') {
+                            labels[feature] = 'Panel Associate';
+                        } else if (feature === 'admin-users') {
+                            labels[feature] = 'Admin Users';
+                        } else {
+                            // Default capitalization
+                            labels[feature] = feature.charAt(0).toUpperCase() + feature.slice(1);
+                        }
                     });
                     setFeatureLabels(labels);
 
