@@ -631,6 +631,14 @@ const MasterLayout = ({ children }) => {
                   </NavLink>
                 </li>
             )}
+            {hasPermission("onboarding-form-list") && (
+                <li>
+                  <NavLink to="/onboarding-list" className={(navData) => navData.isActive ? "active-page" : "" }>
+                    <Icon icon="mdi:clipboard-text-outline" className="menu-icon" />
+                    Onboarding Form
+                  </NavLink>
+                </li>
+            )}
           </ul>
         </div>
       </aside>

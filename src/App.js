@@ -135,6 +135,7 @@ import ProtectedRoute from "./utils/ProtectedRoute";
 import TrainingListPage from "./pages/TrainingPage";
 import MemberSixMonthReport from "./components/AssociatePerformanceReport";
 import AccessRequestsPage from "./pages/AccessRequestsPage";
+import OnboardingListPage from "./pages/OnboardingListPage";
 
 function App() {
   // Initialize auth state from sessionStorage so we know the value during the first render
@@ -341,6 +342,7 @@ function App() {
           <Route exact path="/payment-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="meeting-list"><PaymentListPage /></ProtectedRoute>} />
           <Route exact path="/attedence-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="events-list"><AttedenceListPage /></ProtectedRoute>} />
           <Route exact path="/training-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="training-list"><TrainingListPage /></ProtectedRoute>} />
+          <Route exact path="/onboarding-list" element={<ProtectedRoute isAuthenticated={isAuthenticated} permission="onboarding-form-list"><OnboardingListPage /></ProtectedRoute>} />
 
           <Route
             exact

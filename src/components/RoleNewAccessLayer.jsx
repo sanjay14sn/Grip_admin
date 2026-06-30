@@ -55,6 +55,8 @@ const RoleNewAccessLayer = () => {
                             labels[feature] = 'Panel Associate';
                         } else if (feature === 'admin-users') {
                             labels[feature] = 'Admin Users';
+                        } else if (feature === 'onboarding-form') {
+                            labels[feature] = 'Onboarding form';
                         } else {
                             // Default capitalization
                             labels[feature] = feature.charAt(0).toUpperCase() + feature.slice(1);

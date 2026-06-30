@@ -10,7 +10,7 @@ export const getCurrentUser = () => {
     
     // Zone admin specific permissions
     if (user?.data?.role === 'zone-admin') {
-      if (permissionKey.startsWith("admin-users") || permissionKey.startsWith("panel-associate")) {
+      if (permissionKey.startsWith("admin-users") || permissionKey.startsWith("panel-associate") || permissionKey.startsWith("onboarding-form")) {
         const permissions = user?.data?.role?.permissions;
         if (permissions && Array.isArray(permissions)) {
           return permissions.some(p => p.key === permissionKey);
@@ -54,7 +54,7 @@ export const getCurrentUser = () => {
     // ED → read-only access: can view roles, access-requests, and standard zone-admin permissions
     const isED = roleNameLower === 'ed' || roleNameLower === 'executive director';
     if (isED) {
-      if (permissionKey.startsWith("admin-users") || permissionKey.startsWith("panel-associate")) {
+      if (permissionKey.startsWith("admin-users") || permissionKey.startsWith("panel-associate") || permissionKey.startsWith("onboarding-form")) {
         const permissions = user?.data?.role?.permissions;
         if (permissions && Array.isArray(permissions)) {
           return permissions.some(p => p.key === permissionKey);
