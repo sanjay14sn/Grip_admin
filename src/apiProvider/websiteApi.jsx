@@ -113,6 +113,73 @@ class WebsiteApiProvider {
       return { status: false };
     }
   }
+
+  // ── Website Events (homepage cards) ────────────────────────────────────────
+
+  async getWebsiteEvents() {
+    try {
+      const response = await apiClient.get(`/website/events`);
+      const list = Array.isArray(response.data?.data)
+        ? response.data.data
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
+      return response.status === 200
+        ? { status: true, data: list }
+        : { status: false, data: [], message: 'Unexpected response' };
+    } catch (error) {
+      console.error('getWebsiteEvents error:', error);
+      return {
+        status: false,
+        data: [],
+        message: error?.message || error?.data?.message || 'Failed to load events',
+      };
+    }
+  }
+
+  async createWebsiteEvent({ title, description, imageFile, sortOrder }) {
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      if (description) formData.append('description', description);
+      if (sortOrder !== undefined) formData.append('sortOrder', String(sortOrder));
+      if (imageFile) formData.append('image', imageFile);
+      const response = await apiClient.post(`/website/events`, formData);
+      return response.status === 200
+        ? { status: true, data: response.data.data }
+        : { status: false, message: 'Unexpected response' };
+    } catch (error) {
+      return { status: false, message: error?.message || error?.data?.message || 'Failed to create event' };
+    }
+  }
+
+  async updateWebsiteEvent(eventId, { title, description, imageFile, sortOrder, isActive }) {
+    try {
+      const formData = new FormData();
+      if (title !== undefined) formData.append('title', title);
+      if (description !== undefined) formData.append('description', description);
+      if (sortOrder !== undefined) formData.append('sortOrder', String(sortOrder));
+      if (isActive !== undefined) formData.append('isActive', String(isActive));
+      if (imageFile) formData.append('image', imageFile);
+      const response = await apiClient.patch(`/website/events/${eventId}`, formData);
+      return response.status === 200
+        ? { status: true, data: response.data.data }
+        : { status: false, message: 'Unexpected response' };
+    } catch (error) {
+      return { status: false, message: error?.message || error?.data?.message || 'Failed to update event' };
+    }
+  }
+
+  async deleteWebsiteEvent(eventId) {
+    try {
+      const response = await apiClient.delete(`/website/events/${eventId}`);
+      return response.status === 200
+        ? { status: true }
+        : { status: false, message: 'Unexpected response' };
+    } catch (error) {
+      return { status: false, message: error?.message || 'Failed to delete event' };
+    }
+  }
 }
 
 const websiteApiProvider = new WebsiteApiProvider();

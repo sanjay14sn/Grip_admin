@@ -138,6 +138,7 @@ import AccessRequestsPage from "./pages/AccessRequestsPage";
 import OnboardingListPage from "./pages/OnboardingListPage";
 import WebsitePage from "./pages/WebsitePage";
 import WebsiteEditPage from "./pages/WebsiteEditPage";
+import WebsiteEventsPage from "./pages/WebsiteEventsPage";
 
 function App() {
   // Initialize auth state from sessionStorage so we know the value during the first render
@@ -520,6 +521,7 @@ function App() {
 
           <Route exact path="/website" element={<WebsitePage />} />
           <Route exact path="/website-edit/:chapterId" element={<WebsiteEditPage />} />
+          <Route exact path="/website-events" element={<WebsiteEventsPage />} />
           <Route exact path="*" element={<ErrorPage />} />
         </Route>
       </Routes>

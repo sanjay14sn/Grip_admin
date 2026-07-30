@@ -39,19 +39,16 @@ const WebsiteLayer = () => {
       let data = [];
 
       if (isSuperAdmin) {
-        // Super admin → all chapters
         const res = await chapterApiProvider.getAllChapters({ limit: 500 });
         if (res.status) {
           data = res.response?.data || [];
         }
       } else if ((isED || isZoneAdmin) && userZoneId) {
-        // ED / Zone-admin → only their zone's chapters
         const res = await chapterApiProvider.getChaptersByZone(userZoneId);
         if (res.status) {
           data = res.response?.data || [];
         }
       } else {
-        // Other roles with website-list → all chapters (fallback)
         const res = await chapterApiProvider.getAllChapters({ limit: 500 });
         if (res.status) {
           data = res.response?.data || [];
@@ -98,7 +95,6 @@ const WebsiteLayer = () => {
             style={{ width: "100%", maxWidth: 480, margin: "0 16px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="d-flex align-items-center justify-content-between px-24 py-16 border-bottom">
               <div className="d-flex align-items-center gap-2">
                 <Icon icon="mdi:web" className="text-xl" style={{ color: "#d23b3b" }} />
@@ -107,13 +103,11 @@ const WebsiteLayer = () => {
               <button type="button" className="btn-close" onClick={() => setLinkModal(null)} />
             </div>
 
-            {/* Body */}
             <div className="p-24 d-flex flex-column gap-3">
               <p className="text-sm text-muted mb-0">
                 Chapter: <span className="fw-semibold text-dark">{linkModal.chapterName}</span>
               </p>
 
-              {/* URL box */}
               <div
                 className="d-flex align-items-center gap-2 p-12 radius-8"
                 style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", wordBreak: "break-all" }}
@@ -123,7 +117,6 @@ const WebsiteLayer = () => {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-24 py-16 border-top d-flex gap-2 justify-content-end">
               <button
                 type="button"
@@ -170,7 +163,6 @@ const WebsiteLayer = () => {
           </div>
 
           <div className="d-flex align-items-center flex-wrap gap-3">
-            {/* Search */}
             <div className="navbar-search">
               <input
                 type="text"
@@ -181,6 +173,15 @@ const WebsiteLayer = () => {
               />
               <Icon icon="ion:search-outline" className="icon" />
             </div>
+
+            <button
+              type="button"
+              className="btn btn-primary grip text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
+              onClick={() => navigate("/website-events")}
+            >
+              <Icon icon="mdi:calendar-star" className="icon text-xl line-height-1" />
+              Events
+            </button>
           </div>
         </div>
 

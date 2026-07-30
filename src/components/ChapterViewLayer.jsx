@@ -109,6 +109,7 @@ const ChapterViewLayer = () => {
   const [vicePresidentMember, setVicePresidentMember] = useState(null);
   const [associateCommitteeMembers, setAssociateCommitteeMembers] = useState([]);
   const [coordinatorMembers, setCoordinatorMembers] = useState([]);
+  const [visitorInteractionMembers, setVisitorInteractionMembers] = useState([]);
   const [roleModalTarget, setRoleModalTarget] = useState(null);
 
   const customSelectStyles = {
@@ -252,6 +253,7 @@ const ChapterViewLayer = () => {
       vicePresident: vicePresidentMember?.value || null,
       associateCommittee: associateCommitteeMembers ? associateCommitteeMembers.map(m => m.value) : [],
       coordinator: coordinatorMembers ? coordinatorMembers.map(m => m.value) : [],
+      visitorInteraction: visitorInteractionMembers ? visitorInteractionMembers.map(m => m.value) : [],
     };
 
     try {
@@ -715,8 +717,15 @@ const ChapterViewLayer = () => {
       const president = data.find((x) => x.roleName === "President");
       const secretary = data.find((x) => x.roleName === "Secretary");
       const vicePresident = data.find((x) => x.roleName === "Vice President");
-      const associateCommittee = data.filter((x) => x.roleName === "Associate Committee");
-      const coordinator = data.filter((x) => x.roleName === "Coordinator");
+      const associateCommittee = data.filter((x) =>
+        ["Associate Committee", "associate committee"].includes(x.roleName)
+      );
+      const coordinator = data.filter((x) =>
+        ["Coordinator", "coordinator"].includes(x.roleName)
+      );
+      const visitorInteraction = data.filter((x) =>
+        ["Visitor Interaction Team", "visitor interaction team", "Visitor Interaction", "visitor interaction"].includes(x.roleName)
+      );
 
       setPresidentMember(
         president
@@ -742,6 +751,10 @@ const ChapterViewLayer = () => {
 
       setCoordinatorMembers(
         coordinator.map((x) => ({ label: x.name, value: x.id }))
+      );
+
+      setVisitorInteractionMembers(
+        visitorInteraction.map((x) => ({ label: x.name, value: x.id }))
       );
 
     } else {
@@ -1011,7 +1024,14 @@ const ChapterViewLayer = () => {
             onClick={() => setRoleModalTarget(roleTitle)}
           >
             <div className="d-flex align-items-center gap-2">
-              <span className="fw-bold text-sm" style={{ color: themeColor }}>+ Add {roleTitle === "Associate Committee" ? "Committee Member" : "Coordinator"}</span>
+              <span className="fw-bold text-sm" style={{ color: themeColor }}>
+                + Add{" "}
+                {roleTitle === "Associate Committee"
+                  ? "Committee Member"
+                  : roleTitle === "Visitor Interaction Team"
+                    ? "Team Member"
+                    : "Coordinator"}
+              </span>
             </div>
           </div>
         </div>
@@ -1480,6 +1500,20 @@ const ChapterViewLayer = () => {
                   <h6 className="fw-bold text-dark mb-0">Coordinator Team</h6>
                 </div>
                 {renderMemberCards(coordinatorMembers, setCoordinatorMembers, "Coordinator")}
+              </div>
+            </div>
+          </div>
+
+          <hr style={{ borderColor: "#cbd5e1", margin: "32px 0" }} />
+
+          <div className="row g-4 mb-4">
+            {/* Visitor Interaction Team Section */}
+            <div className="col-md-6">
+              <div className="h-100">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <h6 className="fw-bold text-dark mb-0">Visitor Interaction Team</h6>
+                </div>
+                {renderMemberCards(visitorInteractionMembers, setVisitorInteractionMembers, "Visitor Interaction Team")}
               </div>
             </div>
           </div>
@@ -2129,7 +2163,11 @@ const ChapterViewLayer = () => {
                 Search Member
               </label>
               <Select
-                isMulti={roleModalTarget === "Associate Committee" || roleModalTarget === "Coordinator"}
+                isMulti={
+                  roleModalTarget === "Associate Committee" ||
+                  roleModalTarget === "Coordinator" ||
+                  roleModalTarget === "Visitor Interaction Team"
+                }
                 menuPortalTarget={document.body}
                 menuPosition="fixed"
                 options={allMembers.map((m) => ({
@@ -2142,6 +2180,7 @@ const ChapterViewLayer = () => {
                   roleModalTarget === "Vice President" ? vicePresidentMember :
                   roleModalTarget === "Associate Committee" ? associateCommitteeMembers :
                   roleModalTarget === "Coordinator" ? coordinatorMembers :
+                  roleModalTarget === "Visitor Interaction Team" ? visitorInteractionMembers :
                   roleModalTarget === "Maximum Referrals" ? referralMember :
                   roleModalTarget === "Maximum Business" ? businessMember :
                   roleModalTarget === "Maximum Visitors" ? visitorMember : null
@@ -2150,8 +2189,9 @@ const ChapterViewLayer = () => {
                   if (roleModalTarget === "President") setPresidentMember(selected);
                   else if (roleModalTarget === "Secretary") setSecretaryMember(selected);
                   else if (roleModalTarget === "Vice President") setVicePresidentMember(selected);
-                  else if (roleModalTarget === "Associate Committee") setAssociateCommitteeMembers(selected);
-                  else if (roleModalTarget === "Coordinator") setCoordinatorMembers(selected);
+                  else if (roleModalTarget === "Associate Committee") setAssociateCommitteeMembers(selected || []);
+                  else if (roleModalTarget === "Coordinator") setCoordinatorMembers(selected || []);
+                  else if (roleModalTarget === "Visitor Interaction Team") setVisitorInteractionMembers(selected || []);
                   else if (roleModalTarget === "Maximum Referrals") setReferralMember(selected);
                   else if (roleModalTarget === "Maximum Business") setBusinessMember(selected);
                   else if (roleModalTarget === "Maximum Visitors") setVisitorMember(selected);
