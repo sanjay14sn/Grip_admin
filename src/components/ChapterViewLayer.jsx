@@ -82,6 +82,7 @@ const ChapterViewLayer = () => {
   };
   const { id } = useParams();
   const [chapterData, setChapterData] = useState("");
+  const [loadingChapterData, setLoadingChapterData] = useState(true);
   const [monthlyRevenueData, setMonthlyRevenueData] = useState([]);
   const [gradientLineChartSeries, setGradientLineChartSeries] = useState([]);
   const [gradientLineChartOptions, setGradientLineChartOptions] =
@@ -561,6 +562,7 @@ const ChapterViewLayer = () => {
   };
 
   const fetchChapterData = async (id) => {
+    setLoadingChapterData(true);
     const responce = await chapterApiProvider.getChaptersById(id);
     if (responce && responce.status) {
       const chapters = responce?.response?.data;
@@ -600,8 +602,10 @@ const ChapterViewLayer = () => {
         }
 
         setChapterData(chapters);
+        setLoadingChapterData(false);
       }
     } else {
+      setLoadingChapterData(false);
       navigate('/access-denied');
     }
   };
@@ -1067,7 +1071,15 @@ const ChapterViewLayer = () => {
           {/* Center Section - Member Count */}
           <div className="col-md-3 text-center">
             <h6 className="fw-bold">Associate Count</h6>
-            <h1 className="text-grip display-4">{chapterData?.memberCount}</h1>
+            {loadingChapterData ? (
+              <div className="d-flex justify-content-center align-items-center" style={{ height: "72px" }}>
+                <div className="spinner-border text-danger" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : (
+              <h1 className="text-grip display-4">{chapterData?.memberCount ?? "—"}</h1>
+            )}
             <Link
               to={`/member-list/${chapterData?._id}`}
               className="text-grip text-sm"

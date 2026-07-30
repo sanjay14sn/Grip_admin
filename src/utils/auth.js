@@ -35,6 +35,7 @@ export const getCurrentUser = () => {
         "visitor-guest-list", "visitor-guest-create", "visitor-guest-update", "visitor-guest-delete",
         "expected-visitors-list", "expected-visitors-create", "expected-visitors-update", "expected-visitors-delete",
         "associates-list", "associates-create", "associates-update", "associates-delete",
+        "website-list", "website-create", "website-update", "website-delete",
       ];
       return allowedForZoneAdmin.includes(permissionKey);
     }
@@ -68,6 +69,7 @@ export const getCurrentUser = () => {
         "121s-list", "referrals-list", "thank-you-slip-list",
         "testimonial-list", "visitor-guest-list", "expected-visitors-list",
         "associates-list",
+        "website-list", "website-create", "website-update",
       ];
       return allowedForED.includes(permissionKey);
     }

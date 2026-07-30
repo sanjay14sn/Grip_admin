@@ -639,6 +639,14 @@ const MasterLayout = ({ children }) => {
                   </NavLink>
                 </li>
             )}
+            {hasPermission("website-list") && (
+              <li>
+                <NavLink to="/website" className={(navData) => navData.isActive ? "active-page" : ""}>
+                  <Icon icon="mdi:web" className="menu-icon" />
+                  <span>Website</span>
+                </NavLink>
+              </li>
+            )}
           </ul>
         </div>
       </aside>

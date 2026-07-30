@@ -32,6 +32,8 @@ const ZoneListLayer = () => {
     stateName: "",
     zoneName: "",
     dob: "",
+    description: "",
+    aboutText: "",
   });
 
   useEffect(() => {
@@ -93,6 +95,8 @@ const ZoneListLayer = () => {
       mobileNumber: zone.mobileNumber || "",
       password: "",
       dob: formattedDob,
+      description: zone.description || "",
+      aboutText: zone.aboutText || "",
     });
     setErrors({});
   };
@@ -104,6 +108,8 @@ const ZoneListLayer = () => {
       stateName: "",
       zoneName: "",
       dob: "",
+      description: "",
+      aboutText: "",
     });
     setErrors({});
   };
@@ -132,6 +138,14 @@ const ZoneListLayer = () => {
       if (dobDate > today) {
         newErrors.dob = "Date cannot be in the future";
       }
+    }
+
+    if (zoneFormData.description && zoneFormData.description.length > 250) {
+      newErrors.description = "Intro/Short Description must be 250 characters or less";
+    }
+
+    if (zoneFormData.aboutText && zoneFormData.aboutText.length > 350) {
+      newErrors.aboutText = "Detailed About Us Section must be 350 characters or less";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -633,6 +647,62 @@ const ZoneListLayer = () => {
                     />
                     {errors.dob && (
                       <div className="text-danger mt-1">{errors.dob}</div>
+                    )}
+                  </div>
+
+                  {/* Intro/Short Description */}
+                  <div className="col-12 mb-20">
+                    <div className="d-flex align-items-center justify-content-between mb-8">
+                      <label className="form-label fw-semibold text-primary-light text-sm mb-0">
+                        Intro/Short Description (Hero Banner Subtitle)
+                      </label>
+                      <span className={`text-xs ${(zoneFormData.description || '').length > 250 ? 'text-danger' : 'text-muted'}`}>
+                        {(zoneFormData.description || '').length}/250
+                      </span>
+                    </div>
+                    <textarea
+                      className={`form-control ${errors.description ? "is-invalid" : ""}`}
+                      rows="2"
+                      name="description"
+                      value={zoneFormData.description}
+                      onChange={(e) => {
+                        handleZoneInputChange(e);
+                        if (errors.description) {
+                          setErrors((prev) => ({ ...prev, description: "" }));
+                        }
+                      }}
+                      placeholder="e.g. India's 1st Paperless Digital empowered referral networking organization."
+                    />
+                    {errors.description && (
+                      <div className="text-danger mt-1">{errors.description}</div>
+                    )}
+                  </div>
+
+                  {/* Detailed About Us / What We Do Section */}
+                  <div className="col-12 mb-20">
+                    <div className="d-flex align-items-center justify-content-between mb-8">
+                      <label className="form-label fw-semibold text-primary-light text-sm mb-0">
+                        Detailed About Us / What We Do Section
+                      </label>
+                      <span className={`text-xs ${(zoneFormData.aboutText || '').length > 350 ? 'text-danger' : 'text-muted'}`}>
+                        {(zoneFormData.aboutText || '').length}/350
+                      </span>
+                    </div>
+                    <textarea
+                      className={`form-control ${errors.aboutText ? "is-invalid" : ""}`}
+                      rows="4"
+                      name="aboutText"
+                      value={zoneFormData.aboutText}
+                      onChange={(e) => {
+                        handleZoneInputChange(e);
+                        if (errors.aboutText) {
+                          setErrors((prev) => ({ ...prev, aboutText: "" }));
+                        }
+                      }}
+                      placeholder="e.g. As a leading provider of aviation services, we are committed..."
+                    />
+                    {errors.aboutText && (
+                      <div className="text-danger mt-1">{errors.aboutText}</div>
                     )}
                   </div>
 
